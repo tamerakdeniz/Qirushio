@@ -7,15 +7,29 @@ export const nicknameSchema = z
   .max(24, "Takma ad en fazla 24 karakter olabilir.")
   .regex(/^[\p{L}\p{N} ._-]+$/u, "Takma ad geçersiz karakter içeriyor.");
 
-export const roomSettingsSchema = z.object({
-  language: z.enum(["tr", "en"]),
-  category: z.enum(["general", "science", "sports", "arts", "history", "random"]),
-  difficulty: z.enum(["easy", "medium", "hard"]),
-  scope: z.enum(["global", "local"]),
-  questionCount: z.number().int().min(5).max(20),
-  questionTimeSeconds: z.number().int().min(5).max(30),
-  isPublic: z.boolean(),
-});
+export const roomSettingsSchema = z
+  .object({
+    language: z.enum(["tr", "en"]),
+    category: z.enum(["general", "science", "sports", "arts", "history", "random"]),
+    difficulty: z.enum(["easy", "medium", "hard"]),
+    scope: z.enum(["global", "local"]),
+    questionCount: z.number().int().min(5).max(20),
+    questionTimeSeconds: z.number().int().min(3).max(30),
+    speedrunMode: z.boolean(),
+    isPublic: z.boolean(),
+  })
+  .superRefine((settings, context) => {
+    const allowed = settings.speedrunMode ? [3, 5] : [5, 10, 15, 20, 30];
+    if (!allowed.includes(settings.questionTimeSeconds)) {
+      context.addIssue({
+        code: "custom",
+        path: ["questionTimeSeconds"],
+        message: settings.speedrunMode
+          ? "Speedrun modunda soru süresi 3 veya 5 saniye olmalı."
+          : "Soru süresi geçersiz.",
+      });
+    }
+  });
 
 export const createRoomSchema = z.object({
   nickname: nicknameSchema,

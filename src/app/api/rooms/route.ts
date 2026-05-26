@@ -35,7 +35,7 @@ export async function GET(): Promise<NextResponse> {
     const { data, error } = await admin
       .from("rooms")
       .select(
-        "id, code, phase, host_player_id, language, category, difficulty, scope, question_count, question_time_seconds, is_public, max_players, round_number, current_question_index, phase_ends_at, generation_error, players!players_room_id_fkey(nickname, is_host)",
+        "id, code, phase, host_player_id, language, category, difficulty, scope, question_count, question_time_seconds, speedrun_mode, is_public, max_players, round_number, current_question_index, phase_ends_at, generation_error, players!players_room_id_fkey(nickname, is_host)",
       )
       .eq("phase", "lobby")
       .eq("is_public", true)
@@ -59,6 +59,7 @@ export async function GET(): Promise<NextResponse> {
         scope: room.scope,
         questionCount: room.questionCount,
         questionTimeSeconds: room.questionTimeSeconds,
+        speedrunMode: room.speedrunMode,
         isPublic: room.isPublic,
         maxPlayers: room.maxPlayers,
         playerCount: row.players.length,
@@ -91,6 +92,7 @@ export async function POST(request: Request): Promise<NextResponse> {
           scope: input.settings.scope,
           question_count: input.settings.questionCount,
           question_time_seconds: input.settings.questionTimeSeconds,
+          speedrun_mode: input.settings.speedrunMode,
           is_public: input.settings.isPublic,
         })
         .select("id, code")

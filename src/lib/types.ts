@@ -19,6 +19,7 @@ export interface RoomSettings {
   scope: QuizScope;
   questionCount: number;
   questionTimeSeconds: number;
+  speedrunMode: boolean;
   isPublic: boolean;
 }
 

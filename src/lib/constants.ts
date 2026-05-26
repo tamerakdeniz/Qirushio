@@ -1,5 +1,8 @@
 import type { QuizCategory, QuizDifficulty, QuizLanguage, QuizScope, RoomSettings } from "@/lib/types";
 
+export const normalQuestionTimeOptions = [5, 10, 15, 20, 30] as const;
+export const speedrunQuestionTimeOptions = [3, 5] as const;
+
 export const defaultRoomSettings: RoomSettings = {
   language: "tr",
   category: "general",
@@ -7,6 +10,7 @@ export const defaultRoomSettings: RoomSettings = {
   scope: "global",
   questionCount: 10,
   questionTimeSeconds: 20,
+  speedrunMode: false,
   isPublic: true,
 };
 

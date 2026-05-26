@@ -610,7 +610,7 @@ function Lobby({
               </h2>
               {currentPlayer.isHost ? (
                 <RoomSettingsForm
-                  key={`${room.category}-${room.questionCount}-${room.questionTimeSeconds}-${room.difficulty}`}
+                  key={`${room.category}-${room.questionCount}-${room.questionTimeSeconds}-${room.speedrunMode}-${room.difficulty}`}
                   initial={room}
                   locale={locale}
                   submitLabel={copy.saveSettings}
@@ -661,6 +661,7 @@ function RoomSettingSummary({ locale, room }: { locale: QuizLanguage; room: Room
         [copy.category, categoryLabels[room.category]],
         [copy.questionCount, `${room.questionCount} ${copy.question}`],
         [copy.duration, `${room.questionTimeSeconds} ${copy.second}`],
+        ...(room.speedrunMode ? [[copy.speedrun, copy.speedrunOn] as const] : []),
         [copy.difficulty, difficultyLabels[room.difficulty]],
       ].map(([title, value]) => (
         <div key={title} className="soft-panel flex items-center justify-between px-4 py-3">

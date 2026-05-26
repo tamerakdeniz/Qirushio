@@ -1,6 +1,6 @@
 "use client";
 
-import { BookOpen, FlaskConical, Globe2, Palette, Shuffle, Trophy } from "lucide-react";
+import { BookOpen, FlaskConical, Globe2, Palette, Shuffle, Trophy, Zap } from "lucide-react";
 import { useState } from "react";
 
 import {
@@ -8,7 +8,9 @@ import {
   defaultRoomSettings,
   difficultyLabelsByLanguage,
   languageLabels,
+  normalQuestionTimeOptions,
   scopeLabelsByLanguage,
+  speedrunQuestionTimeOptions,
 } from "@/lib/constants";
 import { settingsCopy } from "@/lib/i18n";
 import type { QuizCategory, QuizLanguage, RoomSettings } from "@/lib/types";
@@ -23,6 +25,18 @@ const categoryIcons = {
   random: Shuffle,
 };
 
+function questionTimeOptions(speedrunMode: boolean): readonly number[] {
+  return speedrunMode ? speedrunQuestionTimeOptions : normalQuestionTimeOptions;
+}
+
+function normalizeQuestionTime(speedrunMode: boolean, seconds: number): number {
+  const options = questionTimeOptions(speedrunMode);
+  if (options.includes(seconds as (typeof options)[number])) {
+    return seconds;
+  }
+  return options[0];
+}
+
 export function RoomSettingsForm({
   initial = defaultRoomSettings,
   submitLabel,
@@ -36,14 +50,26 @@ export function RoomSettingsForm({
   busy?: boolean;
   onSubmit: (settings: RoomSettings) => Promise<void> | void;
 }) {
-  const [settings, setSettings] = useState(initial);
+  const [settings, setSettings] = useState({
+    ...initial,
+    questionTimeSeconds: normalizeQuestionTime(initial.speedrunMode, initial.questionTimeSeconds),
+  });
   const copy = settingsCopy[locale];
   const categoryLabels = categoryLabelsByLanguage[locale];
   const difficultyLabels = difficultyLabelsByLanguage[locale];
   const scopeLabels = scopeLabelsByLanguage[locale];
+  const timeOptions = questionTimeOptions(settings.speedrunMode);
 
   function update<K extends keyof RoomSettings>(key: K, value: RoomSettings[K]) {
     setSettings((previous) => ({ ...previous, [key]: value }));
+  }
+
+  function toggleSpeedrun(enabled: boolean) {
+    setSettings((previous) => ({
+      ...previous,
+      speedrunMode: enabled,
+      questionTimeSeconds: normalizeQuestionTime(enabled, previous.questionTimeSeconds),
+    }));
   }
 
   return (
@@ -165,7 +191,7 @@ export function RoomSettingsForm({
             value={settings.questionTimeSeconds}
             onChange={(event) => update("questionTimeSeconds", Number(event.target.value))}
           >
-            {[5, 10, 15, 20, 30].map((seconds) => (
+            {timeOptions.map((seconds) => (
               <option key={seconds} value={seconds}>
                 {seconds} {copy.second}
               </option>
@@ -173,6 +199,22 @@ export function RoomSettingsForm({
           </select>
         </label>
       </div>
+
+      <label className="flex items-start gap-3 rounded-xl border-2 border-[var(--outline)] bg-[var(--surface-raised)] p-3 text-sm">
+        <input
+          type="checkbox"
+          className="mt-0.5 h-5 w-5 accent-[#2170e4]"
+          checked={settings.speedrunMode}
+          onChange={(event) => toggleSpeedrun(event.target.checked)}
+        />
+        <span>
+          <span className="flex items-center gap-2 font-bold text-primary-deep">
+            <Zap size={16} />
+            {copy.speedrunMode}
+          </span>
+          <span className="mt-1 block font-medium text-muted">{copy.speedrunHint}</span>
+        </span>
+      </label>
 
       <label className="flex items-center gap-3 rounded-xl bg-[var(--surface-raised)] p-3 text-sm font-medium">
         <input

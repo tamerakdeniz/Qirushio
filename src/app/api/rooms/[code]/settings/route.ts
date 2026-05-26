@@ -27,6 +27,7 @@ export async function PATCH(
         scope: settings.scope,
         question_count: settings.questionCount,
         question_time_seconds: settings.questionTimeSeconds,
+        speedrun_mode: settings.speedrunMode,
         is_public: settings.isPublic,
       })
       .eq("id", room.id);

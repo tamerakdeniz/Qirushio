@@ -16,6 +16,7 @@ interface RoomRow {
   scope: RoomView["scope"];
   question_count: number;
   question_time_seconds: number;
+  speedrun_mode: boolean;
   is_public: boolean;
   max_players: number;
   round_number: number;
@@ -62,6 +63,7 @@ export function mapRoom(row: RoomRow): RoomView {
     scope: row.scope,
     questionCount: row.question_count,
     questionTimeSeconds: row.question_time_seconds,
+    speedrunMode: row.speedrun_mode,
     isPublic: row.is_public,
     maxPlayers: row.max_players,
     roundNumber: row.round_number,
@@ -85,7 +87,7 @@ export async function findRoom(code: string): Promise<RoomView> {
   const { data, error } = await getSupabaseAdmin()
     .from("rooms")
     .select(
-      "id, code, phase, host_player_id, language, category, difficulty, scope, question_count, question_time_seconds, is_public, max_players, round_number, current_question_index, phase_ends_at, generation_error",
+      "id, code, phase, host_player_id, language, category, difficulty, scope, question_count, question_time_seconds, speedrun_mode, is_public, max_players, round_number, current_question_index, phase_ends_at, generation_error",
     )
     .eq("code", code.toUpperCase())
     .maybeSingle<RoomRow>();

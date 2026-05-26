@@ -49,7 +49,8 @@ create table public.rooms (
   scope text not null default 'global' check (scope in ('global', 'local')),
   question_count integer not null default 10 check (question_count between 5 and 20),
   question_time_seconds integer not null default 20
-    check (question_time_seconds between 5 and 30),
+    check (question_time_seconds between 3 and 30),
+  speedrun_mode boolean not null default false,
   is_public boolean not null default true,
   max_players integer not null default 10 check (max_players between 2 and 20),
   round_number integer not null default 0,
@@ -376,6 +377,13 @@ begin
         set phase = 'finished', phase_ends_at = null
         where id = p_room_id;
         return query select true, 'finished'::public.room_phase;
+      elsif room_row.speedrun_mode then
+        update public.rooms
+        set phase = 'question',
+            current_question_index = current_question_index + 1,
+            phase_ends_at = v_now + make_interval(secs => room_row.question_time_seconds)
+        where id = p_room_id;
+        return query select true, 'question'::public.room_phase;
       else
         update public.rooms
         set phase = 'transition',
