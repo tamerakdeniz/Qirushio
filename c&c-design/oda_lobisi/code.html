@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+
+<html class="light" lang="tr"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Bilgi Yarışması - Lobi</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .material-symbols-outlined.fill {
+            font-variation-settings: 'FILL' 1;
+        }
+        /* Custom scrollbar for player list if it gets too long */
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background-color: #dfc0b3; /* outline-variant */
+            border-radius: 10px;
+        }
+    </style>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface": "#f7f9fb",
+                        "inverse-surface": "#2d3133",
+                        "on-tertiary-fixed-variant": "#5c4300",
+                        "on-primary-fixed-variant": "#793100",
+                        "primary-container": "#ff7e33",
+                        "on-background": "#191c1e",
+                        "outline": "#8b7266",
+                        "secondary-container": "#2170e4",
+                        "on-secondary-fixed-variant": "#004395",
+                        "tertiary-container": "#ce9a00",
+                        "surface-container-high": "#e6e8ea",
+                        "on-error": "#ffffff",
+                        "error-container": "#ffdad6",
+                        "on-tertiary-container": "#4a3500",
+                        "on-surface": "#191c1e",
+                        "on-error-container": "#93000a",
+                        "surface-container-highest": "#e0e3e5",
+                        "surface-variant": "#e0e3e5",
+                        "background": "#f7f9fb",
+                        "tertiary-fixed": "#ffdf9f",
+                        "primary": "#9f4200",
+                        "secondary-fixed-dim": "#adc6ff",
+                        "surface-tint": "#9f4200",
+                        "outline-variant": "#dfc0b3",
+                        "error": "#ba1a1a",
+                        "inverse-on-surface": "#eff1f3",
+                        "primary-fixed": "#ffdbcb",
+                        "on-primary-fixed": "#341100",
+                        "on-secondary-container": "#fefcff",
+                        "on-secondary-fixed": "#001a42",
+                        "on-tertiary": "#ffffff",
+                        "on-surface-variant": "#584238",
+                        "tertiary": "#795900",
+                        "inverse-primary": "#ffb692",
+                        "on-primary-container": "#632600",
+                        "secondary": "#0058be",
+                        "surface-container-low": "#f2f4f6",
+                        "primary-fixed-dim": "#ffb692",
+                        "on-primary": "#ffffff",
+                        "surface-container": "#eceef0",
+                        "secondary-fixed": "#d8e2ff",
+                        "surface-container-lowest": "#ffffff",
+                        "tertiary-fixed-dim": "#f9bd22",
+                        "surface-dim": "#d8dadc",
+                        "on-tertiary-fixed": "#261a00",
+                        "surface-bright": "#f7f9fb",
+                        "on-secondary": "#ffffff"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "2xl": "1.5rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "container-padding-mobile": "16px",
+                        "base": "8px",
+                        "gutter": "16px",
+                        "container-padding-desktop": "32px",
+                        "stack-md": "16px",
+                        "stack-lg": "24px",
+                        "stack-sm": "8px"
+                    },
+                    "fontFamily": {
+                        "body-md": ["Plus Jakarta Sans"],
+                        "label-bold": ["Plus Jakarta Sans"],
+                        "headline-sm": ["Plus Jakarta Sans"],
+                        "display-mobile": ["Plus Jakarta Sans"],
+                        "body-lg": ["Plus Jakarta Sans"],
+                        "headline-md": ["Plus Jakarta Sans"],
+                        "timer-numeric": ["Plus Jakarta Sans"],
+                        "display-lg": ["Plus Jakarta Sans"]
+                    },
+                    "fontSize": {
+                        "body-md": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                        "label-bold": ["14px", { "lineHeight": "20px", "fontWeight": "700" }],
+                        "headline-sm": ["20px", { "lineHeight": "28px", "fontWeight": "700" }],
+                        "display-mobile": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "800" }],
+                        "body-lg": ["18px", { "lineHeight": "28px", "fontWeight": "500" }],
+                        "headline-md": ["24px", { "lineHeight": "32px", "fontWeight": "700" }],
+                        "timer-numeric": ["40px", { "lineHeight": "40px", "fontWeight": "800" }],
+                        "display-lg": ["48px", { "lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "800" }]
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-surface min-h-screen text-on-surface font-body-md antialiased selection:bg-primary-container selection:text-on-primary-container">
+<!-- TopAppBar Component (from JSON) -->
+<header class="shadow-sm bg-surface sticky top-0 z-50">
+<div class="flex justify-between items-center px-container-padding-mobile md:px-container-padding-desktop h-16 w-full max-w-7xl mx-auto">
+<!-- Back Button for Lobby Context -->
+<button aria-label="Geri Dön" class="flex items-center justify-center w-10 h-10 rounded-full hover:bg-surface-variant text-on-surface-variant transition-colors">
+<span class="material-symbols-outlined">arrow_back</span>
+</button>
+<!-- Brand Logo -->
+<div class="font-display-mobile text-primary text-[24px] tracking-tight">
+                Bilgi Yarışması
+            </div>
+<!-- Trailing Actions -->
+<div class="flex items-center gap-stack-sm">
+<button aria-label="Yardım" class="flex items-center justify-center w-10 h-10 rounded-full hover:bg-primary-container/10 transition-colors duration-200 text-primary active:scale-95 transition-transform">
+<span class="material-symbols-outlined">help</span>
+</button>
+</div>
+</div>
+</header>
+<!-- Main Content Area -->
+<main class="max-w-7xl mx-auto px-container-padding-mobile md:px-container-padding-desktop py-stack-lg">
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-stack-lg items-start">
+<!-- Left Column: Room Code & Players -->
+<div class="lg:col-span-8 flex flex-col gap-stack-lg">
+<!-- Room Code Hero Card -->
+<section class="bg-surface-container-lowest rounded-2xl p-stack-lg shadow-[0_8px_30px_-4px_rgba(159,66,0,0.08)] border border-outline-variant/30 flex flex-col md:flex-row justify-between items-center gap-stack-md relative overflow-hidden">
+<!-- Decorative background element -->
+<div class="absolute -right-20 -top-20 w-64 h-64 bg-primary-container/20 rounded-full blur-3xl pointer-events-none"></div>
+<div class="flex flex-col items-center md:items-start z-10">
+<span class="font-label-bold text-on-surface-variant uppercase tracking-widest mb-2">Oda Kodu</span>
+<div class="flex items-center gap-4">
+<h1 class="font-display-lg text-primary bg-primary-container/10 px-6 py-2 rounded-xl border-2 border-primary/20 shadow-inner">AB12</h1>
+</div>
+</div>
+<button class="z-10 group flex items-center gap-2 px-6 py-3 rounded-full border-2 border-secondary text-secondary font-label-bold hover:bg-secondary hover:text-on-secondary transition-all duration-300 active:scale-95">
+<span class="material-symbols-outlined group-hover:scale-110 transition-transform">share</span>
+                        Bağlantıyı Paylaş
+                    </button>
+</section>
+<!-- Player List Section -->
+<section>
+<div class="flex justify-between items-end mb-stack-md px-2">
+<h2 class="font-headline-md text-on-surface">Oyuncular</h2>
+<span class="font-label-bold text-on-surface-variant bg-surface-variant px-3 py-1 rounded-full">4 / 10</span>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-stack-md custom-scrollbar max-h-[614px] overflow-y-auto pb-4 px-2">
+<!-- Player Card 1 (Host) -->
+<div class="bg-surface-container-lowest rounded-2xl p-4 shadow-[0_4px_12px_-4px_rgba(0,88,190,0.08)] border border-secondary/10 flex items-center gap-4 hover:-translate-y-1 transition-transform duration-200 relative overflow-hidden">
+<div class="absolute left-0 top-0 bottom-0 w-1 bg-secondary rounded-l-2xl"></div>
+<img alt="Oyuncu Avatarı" class="w-14 h-14 rounded-full object-cover border-2 border-secondary/20 shadow-sm" data-alt="A stylized, playful 3D rendered avatar of a young woman with vibrant purple hair and trendy streetwear, smiling energetically. The background is a solid soft pastel pink. The lighting is bright and modern, creating a fun, Gen-Z gaming aesthetic perfectly suited for a mobile trivia app profile picture." src="https://lh3.googleusercontent.com/aida-public/AB6AXuALJWnaw8Q0GCPgJbsDxs2bKgQqTMPAXsPMgl4OA0VEz6DnetKenCeNwVwaY59fsvRkfWySfUX6GSBC57IiTcKAy2tpHoZr9Nfj_0kT5trgSjRq5Xo8OYALI2cRAmuqjl8yvwRkF3di6cFQLsgagX6aR-FoA1dZxSdviYt_P_oehgJw2b-lwMr8TGGG851o09Tt840YG3KI06ttBw03t--Yfaglf0XmbfK-ij7Dr9W3_F4-BfOprO-5hXr_TpUBAlKYjqrOsqxQMgaU"/>
+<div class="flex flex-col flex-1">
+<span class="font-body-lg text-on-surface font-bold">Zeynep Y.</span>
+<span class="font-label-bold text-secondary text-xs flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">star</span> Kurucu
+                                </span>
+</div>
+<div class="bg-secondary-container text-on-secondary-container px-3 py-1.5 rounded-full font-label-bold text-sm flex items-center gap-1 shadow-sm">
+<span class="material-symbols-outlined text-[16px] fill">check_circle</span>
+                                Hazır
+                            </div>
+</div>
+<!-- Player Card 2 -->
+<div class="bg-surface-container-lowest rounded-2xl p-4 shadow-sm border border-outline-variant/20 flex items-center gap-4 hover:-translate-y-1 transition-transform duration-200">
+<img alt="Oyuncu Avatarı" class="w-14 h-14 rounded-full object-cover border-2 border-surface-variant shadow-sm" data-alt="A stylized, playful 3D rendered avatar of a young man wearing cool oversized yellow glasses and a blue beanie. He has a slightly mischievous grin. The background is a solid bright mint green. The lighting is soft and cheerful, fitting a modern, casual multiplayer game environment." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAgOwy8Dx94RykSCwHq_jcgvLX2khZwGwqcTthmlYC7_3sVhbMr3A_vzHZJfJ82PHyofokPCa13KyV29QAYybggEELrKKXQPFoRoB38k_ahL3Iqg72MYyJdiVKL639bBB41reRGz-geEciYI5d97PDfbLuye7wIDIqTmnwS0yEVFRNsPgIpIey22Np12TLI4ydAWuEZqfV4DVGlibTfbrUqyuUbd7kWdGyo1maWvvgQzF0lReyiLnvvwDX_DedWNXp-BBLzhaKXdgvm"/>
+<div class="flex flex-col flex-1">
+<span class="font-body-lg text-on-surface font-bold">Can T.</span>
+</div>
+<div class="bg-surface-container-highest text-on-surface-variant px-3 py-1.5 rounded-full font-label-bold text-sm flex items-center gap-1">
+<span class="material-symbols-outlined text-[16px]">hourglass_empty</span>
+                                Bekleniyor
+                            </div>
+</div>
+<!-- Player Card 3 -->
+<div class="bg-surface-container-lowest rounded-2xl p-4 shadow-[0_4px_12px_-4px_rgba(0,88,190,0.08)] border border-secondary/10 flex items-center gap-4 hover:-translate-y-1 transition-transform duration-200">
+<img alt="Oyuncu Avatarı" class="w-14 h-14 rounded-full object-cover border-2 border-secondary/20 shadow-sm" data-alt="A playful and modern 3D avatar of a young woman with a messy bun and a bright orange hoodie. She looks excited and ready for action. The background is a soft sky blue. High-quality render with smooth soft-box lighting, designed for a vibrant Gen-Z mobile app user profile." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBVtzXRFY4Cht-tOrTXt5qF5Yk12kvcKuAjNP0QykhmCz3DlOeISSKk98QsDuXgicE0XGMSVe-N_LZn7nE1HopRaEuXmT2_DUCKp6Tf6xFlu8RdzctdWUGNtMyI9-oJaKblyyF0M3vBqyTd7sz_aPqVwK-bHIFIOmsmmwe-WO8RxfqVLOS0h8hhYeomSLOXUxtjMuyB3UtoTZVIaXcHgv4S4EX6qtNe8-u2zHJpKXO5IT0WGcnXKbSNzLxzUFKAns7JjH8QhxJw-uTR"/>
+<div class="flex flex-col flex-1">
+<span class="font-body-lg text-on-surface font-bold">Ayşe K.</span>
+</div>
+<div class="bg-secondary-container text-on-secondary-container px-3 py-1.5 rounded-full font-label-bold text-sm flex items-center gap-1 shadow-sm">
+<span class="material-symbols-outlined text-[16px] fill">check_circle</span>
+                                Hazır
+                            </div>
+</div>
+<!-- Player Card 4 -->
+<div class="bg-surface-container-lowest rounded-2xl p-4 shadow-[0_4px_12px_-4px_rgba(0,88,190,0.08)] border border-secondary/10 flex items-center gap-4 hover:-translate-y-1 transition-transform duration-200">
+<img alt="Oyuncu Avatarı" class="w-14 h-14 rounded-full object-cover border-2 border-secondary/20 shadow-sm" data-alt="A vibrant, cartoon-style 3D avatar of a guy with messy curly brown hair and a sporty red jacket. He is winking playfully. The background is a clean, light yellow circle. The aesthetic is highly polished, colorful, and energetic, perfectly matching a modern trivia game UI." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAqVQN-Imw4ZlAhRXihajO4xU7KVph9gDyQhVXLPg2h4o8xxijEn0sszHA7_VT6zpEkd4aMKx-8AWQp5NdoRWzAUfwvErlkvSGGLsmpbUx_Rc0LAyGgtR1YMhIVE2NxZ2kwalZ3kmOVW7-ysA0UQpzXXKY-2sYfMBBLxkMwm452aMaM2olRToQIAu3Vak-oc4U3dxo6j1W2NAWG6SHCohQhVIMXicUrYR8E81i5VJSsOwiTHF52QZDQDXJrlAVRJV_72O1rL0GQ0uIu"/>
+<div class="flex flex-col flex-1">
+<span class="font-body-lg text-on-surface font-bold">Burak S.</span>
+</div>
+<div class="bg-secondary-container text-on-secondary-container px-3 py-1.5 rounded-full font-label-bold text-sm flex items-center gap-1 shadow-sm">
+<span class="material-symbols-outlined text-[16px] fill">check_circle</span>
+                                Hazır
+                            </div>
+</div>
+</div>
+</section>
+</div>
+<!-- Right Column: Settings & CTA Panel -->
+<div class="lg:col-span-4 flex flex-col gap-stack-md lg:sticky lg:top-24">
+<!-- Room Settings Panel -->
+<div class="bg-surface-container rounded-2xl p-stack-lg shadow-sm border border-outline-variant/20 flex flex-col gap-stack-md">
+<div class="flex items-center gap-3 border-b border-outline-variant/20 pb-4">
+<span class="material-symbols-outlined text-secondary text-[28px]">settings_suggest</span>
+<h3 class="font-headline-sm text-on-surface">Oda Ayarları</h3>
+</div>
+<div class="flex flex-col gap-4 py-2">
+<!-- Setting Item -->
+<div class="flex justify-between items-center">
+<div class="flex items-center gap-2 text-on-surface-variant">
+<span class="material-symbols-outlined text-[20px]">category</span>
+<span class="font-body-md">Kategori</span>
+</div>
+<span class="font-label-bold text-on-surface bg-surface-container-highest px-3 py-1 rounded-full">Genel Kültür</span>
+</div>
+<!-- Setting Item -->
+<div class="flex justify-between items-center">
+<div class="flex items-center gap-2 text-on-surface-variant">
+<span class="material-symbols-outlined text-[20px]">format_list_numbered</span>
+<span class="font-body-md">Soru Sayısı</span>
+</div>
+<span class="font-label-bold text-on-surface bg-surface-container-highest px-3 py-1 rounded-full">15 Soru</span>
+</div>
+<!-- Setting Item -->
+<div class="flex justify-between items-center">
+<div class="flex items-center gap-2 text-on-surface-variant">
+<span class="material-symbols-outlined text-[20px]">speed</span>
+<span class="font-body-md">Zorluk</span>
+</div>
+<span class="font-label-bold text-on-surface bg-surface-container-highest px-3 py-1 rounded-full">Orta</span>
+</div>
+</div>
+</div>
+<!-- Start Game CTA -->
+<div class="fixed bottom-0 left-0 w-full p-container-padding-mobile bg-surface/80 backdrop-blur-md border-t border-outline-variant/20 lg:relative lg:p-0 lg:bg-transparent lg:border-none lg:backdrop-blur-none z-40">
+<button class="w-full bg-primary-container text-on-primary-container py-4 rounded-xl font-headline-sm shadow-[0_8px_24px_-4px_rgba(255,126,51,0.5)] hover:bg-[#ff8e4d] hover:-translate-y-1 active:scale-[0.98] transition-all duration-200 flex justify-center items-center gap-3">
+<span class="material-symbols-outlined text-[28px]">play_arrow</span>
+                        Oyunu Başlat
+                    </button>
+<p class="text-center font-body-md text-on-surface-variant text-sm mt-3 lg:block hidden">Tüm oyuncular hazır olduğunda başlatabilirsiniz.</p>
+</div>
+</div>
+</div>
+</main>
+<!-- Spacer for mobile fixed bottom button -->
+<div class="h-24 lg:hidden"></div>
+</body></html>

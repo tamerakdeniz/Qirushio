@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+
+<html class="light" lang="tr"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Bilgi Yarışması - Hoş Geldin</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "surface": "#f7f9fb",
+                    "inverse-surface": "#2d3133",
+                    "on-tertiary-fixed-variant": "#5c4300",
+                    "on-primary-fixed-variant": "#793100",
+                    "primary-container": "#ff7e33",
+                    "on-background": "#191c1e",
+                    "outline": "#8b7266",
+                    "secondary-container": "#2170e4",
+                    "on-secondary-fixed-variant": "#004395",
+                    "tertiary-container": "#ce9a00",
+                    "surface-container-high": "#e6e8ea",
+                    "on-error": "#ffffff",
+                    "error-container": "#ffdad6",
+                    "on-tertiary-container": "#4a3500",
+                    "on-surface": "#191c1e",
+                    "on-error-container": "#93000a",
+                    "surface-container-highest": "#e0e3e5",
+                    "surface-variant": "#e0e3e5",
+                    "background": "#f7f9fb",
+                    "tertiary-fixed": "#ffdf9f",
+                    "primary": "#9f4200",
+                    "secondary-fixed-dim": "#adc6ff",
+                    "surface-tint": "#9f4200",
+                    "outline-variant": "#dfc0b3",
+                    "error": "#ba1a1a",
+                    "inverse-on-surface": "#eff1f3",
+                    "primary-fixed": "#ffdbcb",
+                    "on-primary-fixed": "#341100",
+                    "on-secondary-container": "#fefcff",
+                    "on-secondary-fixed": "#001a42",
+                    "on-tertiary": "#ffffff",
+                    "on-surface-variant": "#584238",
+                    "tertiary": "#795900",
+                    "inverse-primary": "#ffb692",
+                    "on-primary-container": "#632600",
+                    "secondary": "#0058be",
+                    "surface-container-low": "#f2f4f6",
+                    "primary-fixed-dim": "#ffb692",
+                    "on-primary": "#ffffff",
+                    "surface-container": "#eceef0",
+                    "secondary-fixed": "#d8e2ff",
+                    "surface-container-lowest": "#ffffff",
+                    "tertiary-fixed-dim": "#f9bd22",
+                    "surface-dim": "#d8dadc",
+                    "on-tertiary-fixed": "#261a00",
+                    "surface-bright": "#f7f9fb",
+                    "on-secondary": "#ffffff"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px",
+                    "2xl": "1.5rem"
+            },
+            "spacing": {
+                    "container-padding-mobile": "16px",
+                    "base": "8px",
+                    "gutter": "16px",
+                    "container-padding-desktop": "32px",
+                    "stack-md": "16px",
+                    "stack-lg": "24px",
+                    "stack-sm": "8px"
+            },
+            "fontFamily": {
+                    "body-md": ["Plus Jakarta Sans"],
+                    "label-bold": ["Plus Jakarta Sans"],
+                    "headline-sm": ["Plus Jakarta Sans"],
+                    "display-mobile": ["Plus Jakarta Sans"],
+                    "body-lg": ["Plus Jakarta Sans"],
+                    "headline-md": ["Plus Jakarta Sans"],
+                    "timer-numeric": ["Plus Jakarta Sans"],
+                    "display-lg": ["Plus Jakarta Sans"]
+            },
+            "fontSize": {
+                    "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                    "label-bold": ["14px", {"lineHeight": "20px", "fontWeight": "700"}],
+                    "headline-sm": ["20px", {"lineHeight": "28px", "fontWeight": "700"}],
+                    "display-mobile": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "800"}],
+                    "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "500"}],
+                    "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "700"}],
+                    "timer-numeric": ["40px", {"lineHeight": "40px", "fontWeight": "800"}],
+                    "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "800"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: #f7f9fb;
+            overflow: hidden;
+        }
+        
+        /* Floating animations for background shapes */
+        @keyframes float-slow {
+            0% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-20px) rotate(5deg); }
+            100% { transform: translateY(0px) rotate(0deg); }
+        }
+        @keyframes float-medium {
+            0% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-15px) rotate(-5deg); }
+            100% { transform: translateY(0px) rotate(0deg); }
+        }
+        @keyframes float-fast {
+            0% { transform: translateY(0px) scale(1); }
+            50% { transform: translateY(-10px) scale(1.05); }
+            100% { transform: translateY(0px) scale(1); }
+        }
+        
+        .blob-1 { animation: float-slow 6s ease-in-out infinite; }
+        .blob-2 { animation: float-medium 5s ease-in-out infinite; }
+        .blob-3 { animation: float-fast 4s ease-in-out infinite; }
+        
+        /* Custom glow effects based on design guidelines */
+        .glow-primary {
+            box-shadow: 0 0 20px 0 rgba(255, 126, 51, 0.3);
+        }
+        .glow-secondary {
+            box-shadow: 0 0 20px 0 rgba(33, 112, 228, 0.3);
+        }
+        .card-shadow {
+            box-shadow: 0 10px 25px -5px rgba(255, 126, 51, 0.1), 0 8px 10px -6px rgba(255, 126, 51, 0.05);
+        }
+    </style>
+</head>
+<body class="bg-background text-on-background min-h-screen flex items-center justify-center relative">
+<!-- Background Decorative Elements -->
+<div class="absolute inset-0 overflow-hidden pointer-events-none z-0">
+<!-- Orange Blob Top Left -->
+<div class="absolute -top-20 -left-20 w-64 h-64 bg-primary-container rounded-full mix-blend-multiply filter blur-3xl opacity-30 blob-1"></div>
+<!-- Blue Blob Bottom Right -->
+<div class="absolute -bottom-32 -right-20 w-80 h-80 bg-secondary-container rounded-full mix-blend-multiply filter blur-3xl opacity-20 blob-2"></div>
+<!-- Floating Icons -->
+<div class="absolute top-1/4 left-1/4 text-primary-container opacity-40 blob-3">
+<span class="material-symbols-outlined" style="font-size: 64px; font-variation-settings: 'FILL' 1;">help</span>
+</div>
+<div class="absolute bottom-1/3 right-1/4 text-secondary-container opacity-40 blob-1" style="animation-delay: 1s;">
+<span class="material-symbols-outlined" style="font-size: 48px; font-variation-settings: 'FILL' 1;">bolt</span>
+</div>
+<div class="absolute top-1/3 right-1/3 text-tertiary-container opacity-30 blob-2" style="animation-delay: 2s;">
+<span class="material-symbols-outlined" style="font-size: 32px; font-variation-settings: 'FILL' 1;">lightbulb</span>
+</div>
+</div>
+<!-- Main Content Canvas -->
+<main class="relative z-10 w-full max-w-md px-container-padding-mobile md:px-0">
+<!-- Header Section -->
+<div class="text-center mb-stack-lg">
+<h1 class="font-display-mobile text-display-mobile text-primary mb-stack-sm">
+                Bilgi Yarışmasına<br/>Hoş Geldin!
+            </h1>
+<p class="font-body-lg text-body-lg text-on-surface-variant">
+                Zekanı test etmeye ve eğlenmeye hazır mısın?
+            </p>
+</div>
+<!-- Entry Card (Bento/Glassmorphism style) -->
+<div class="bg-surface-container-lowest rounded-2xl p-stack-lg card-shadow border border-surface-container-high backdrop-blur-sm relative overflow-hidden">
+<!-- Subtle Card Top Tint -->
+<div class="absolute top-0 left-0 right-0 h-2 bg-gradient-to-r from-primary-container to-secondary-container opacity-50"></div>
+<form class="flex flex-col gap-stack-md" id="nickname-form" onsubmit="event.preventDefault(); submitNickname();">
+<div class="flex flex-col gap-base">
+<label class="font-label-bold text-label-bold text-on-surface" for="nickname">
+                        Takma Ad
+                    </label>
+<div class="relative group">
+<span class="absolute inset-y-0 left-0 flex items-center pl-4 text-on-surface-variant group-focus-within:text-secondary">
+<span class="material-symbols-outlined">person</span>
+</span>
+<input autocomplete="off" class="w-full pl-12 pr-4 py-4 bg-surface rounded-xl border-none font-body-md text-body-md text-on-surface focus:ring-2 focus:ring-secondary focus:bg-surface-container-lowest transition-all duration-300 outline-none group-focus-within:glow-secondary" id="nickname" name="nickname" placeholder="Harika bir isim seç..." required="" type="text"/>
+</div>
+<p class="text-[12px] text-on-surface-variant mt-1 pl-1">Bu isim liderlik tablosunda görünecek.</p>
+</div>
+<div class="mt-stack-sm">
+<button class="w-full bg-gradient-to-r from-primary-container to-primary text-on-primary-container font-label-bold text-label-bold py-4 px-6 rounded-2xl flex items-center justify-center gap-2 hover:opacity-90 active:scale-95 transition-all duration-200 glow-primary shadow-lg shadow-primary-container/30" type="submit">
+<span>Devam Et</span>
+<span class="material-symbols-outlined">arrow_forward</span>
+</button>
+</div>
+</form>
+</div>
+</main>
+<script>
+        function submitNickname() {
+            const input = document.getElementById('nickname');
+            const button = document.querySelector('button[type="submit"]');
+            
+            if(input.value.trim() !== '') {
+                // Micro-interaction for button state
+                const originalText = button.innerHTML;
+                button.innerHTML = '<span class="material-symbols-outlined animate-spin">refresh</span>';
+                button.classList.add('opacity-75', 'cursor-not-allowed');
+                
+                // Simulate loading state before theoretical redirect
+                setTimeout(() => {
+                    button.innerHTML = '<span class="material-symbols-outlined">check</span> <span>Giriş Yapılıyor</span>';
+                    button.classList.remove('from-primary-container', 'to-primary');
+                    button.classList.add('bg-secondary', 'text-on-secondary');
+                    button.classList.replace('glow-primary', 'glow-secondary');
+                }, 800);
+            }
+        }
+    </script>
+</body></html>

@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+
+<html lang="tr"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Oda Kur - Bilgi Yarışması</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "surface": "#f7f9fb",
+                        "inverse-surface": "#2d3133",
+                        "on-tertiary-fixed-variant": "#5c4300",
+                        "on-primary-fixed-variant": "#793100",
+                        "primary-container": "#ff7e33",
+                        "on-background": "#191c1e",
+                        "outline": "#8b7266",
+                        "secondary-container": "#2170e4",
+                        "on-secondary-fixed-variant": "#004395",
+                        "tertiary-container": "#ce9a00",
+                        "surface-container-high": "#e6e8ea",
+                        "on-error": "#ffffff",
+                        "error-container": "#ffdad6",
+                        "on-tertiary-container": "#4a3500",
+                        "on-surface": "#191c1e",
+                        "on-error-container": "#93000a",
+                        "surface-container-highest": "#e0e3e5",
+                        "surface-variant": "#e0e3e5",
+                        "background": "#f7f9fb",
+                        "tertiary-fixed": "#ffdf9f",
+                        "primary": "#9f4200",
+                        "secondary-fixed-dim": "#adc6ff",
+                        "surface-tint": "#9f4200",
+                        "outline-variant": "#dfc0b3",
+                        "error": "#ba1a1a",
+                        "inverse-on-surface": "#eff1f3",
+                        "primary-fixed": "#ffdbcb",
+                        "on-primary-fixed": "#341100",
+                        "on-secondary-container": "#fefcff",
+                        "on-secondary-fixed": "#001a42",
+                        "on-tertiary": "#ffffff",
+                        "on-surface-variant": "#584238",
+                        "tertiary": "#795900",
+                        "inverse-primary": "#ffb692",
+                        "on-primary-container": "#632600",
+                        "secondary": "#0058be",
+                        "surface-container-low": "#f2f4f6",
+                        "primary-fixed-dim": "#ffb692",
+                        "on-primary": "#ffffff",
+                        "surface-container": "#eceef0",
+                        "secondary-fixed": "#d8e2ff",
+                        "surface-container-lowest": "#ffffff",
+                        "tertiary-fixed-dim": "#f9bd22",
+                        "surface-dim": "#d8dadc",
+                        "on-tertiary-fixed": "#261a00",
+                        "surface-bright": "#f7f9fb",
+                        "on-secondary": "#ffffff"
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    spacing: {
+                        "container-padding-mobile": "16px",
+                        "base": "8px",
+                        "gutter": "16px",
+                        "container-padding-desktop": "32px",
+                        "stack-md": "16px",
+                        "stack-lg": "24px",
+                        "stack-sm": "8px"
+                    },
+                    fontFamily: {
+                        "body-md": ["Plus Jakarta Sans"],
+                        "label-bold": ["Plus Jakarta Sans"],
+                        "headline-sm": ["Plus Jakarta Sans"],
+                        "display-mobile": ["Plus Jakarta Sans"],
+                        "body-lg": ["Plus Jakarta Sans"],
+                        "headline-md": ["Plus Jakarta Sans"],
+                        "timer-numeric": ["Plus Jakarta Sans"],
+                        "display-lg": ["Plus Jakarta Sans"]
+                    },
+                    fontSize: {
+                        "body-md": ["16px", { lineHeight: "24px", fontWeight: "400" }],
+                        "label-bold": ["14px", { lineHeight: "20px", fontWeight: "700" }],
+                        "headline-sm": ["20px", { lineHeight: "28px", fontWeight: "700" }],
+                        "display-mobile": ["32px", { lineHeight: "40px", letterSpacing: "-0.01em", fontWeight: "800" }],
+                        "body-lg": ["18px", { lineHeight: "28px", fontWeight: "500" }],
+                        "headline-md": ["24px", { lineHeight: "32px", fontWeight: "700" }],
+                        "timer-numeric": ["40px", { lineHeight: "40px", fontWeight: "800" }],
+                        "display-lg": ["48px", { lineHeight: "56px", letterSpacing: "-0.02em", fontWeight: "800" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        body {
+            background-color: #f7f9fb;
+            color: #191c1e;
+        }
+        /* Custom scrollbar for webkit */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f7f9fb; 
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #e0e3e5; 
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #d8dadc; 
+        }
+        
+        .glass-card {
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 4px 24px -4px rgba(255, 126, 51, 0.1);
+        }
+        
+        .option-active {
+            background-color: #ff7e33;
+            color: white;
+            box-shadow: 0 0 20px rgba(255, 126, 51, 0.3);
+            border-color: #ff7e33;
+        }
+        
+        .option-inactive {
+            background-color: #f7f9fb;
+            color: #584238;
+            border-color: #e0e3e5;
+        }
+    </style>
+</head>
+<body class="bg-surface font-body-md text-on-surface antialiased min-h-screen flex flex-col md:flex-row pb-24 md:pb-0">
+<!-- SideNavBar (Desktop) -->
+<nav class="h-full w-64 hidden md:flex flex-col bg-surface-container dark:bg-surface-container-high shadow-md fixed left-0 top-0 z-40">
+<div class="p-6">
+<h1 class="font-display-mobile text-primary mb-8">Bilgi Yarışması</h1>
+<div class="flex items-center gap-4 mb-8 p-4 bg-surface rounded-2xl shadow-sm border border-outline-variant/20">
+<div class="w-12 h-12 rounded-full bg-primary-container text-on-primary-container flex items-center justify-center overflow-hidden">
+<img alt="Kullanıcı Avatarı" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuALJWnaw8Q0GCPgJbsDxs2bKgQqTMPAXsPMgl4OA0VEz6DnetKenCeNwVwaY59fsvRkfWySfUX6GSBC57IiTcKAy2tpHoZr9Nfj_0kT5trgSjRq5Xo8OYALI2cRAmuqjl8yvwRkF3di6cFQLsgagX6aR-FoA1dZxSdviYt_P_oehgJw2b-lwMr8TGGG851o09Tt840YG3KI06ttBw03t--Yfaglf0XmbfK-ij7Dr9W3_F4-BfOprO-5hXr_TpUBAlKYjqrOsqxQMgaU"/>
+</div>
+<div>
+<div class="font-label-bold text-label-bold text-on-surface">Hoşgeldin!</div>
+<div class="text-sm text-on-surface-variant">Yarışmaya hazır mısın?</div>
+</div>
+</div>
+<div class="space-y-2">
+<a class="text-on-surface-variant hover:bg-surface-variant rounded-xl mx-2 p-3 flex items-center gap-3 hover:bg-surface-container-highest transition-all hover:translate-x-1 transition-transform" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">home</span>
+<span class="font-label-bold text-label-bold">Ana Sayfa</span>
+</a>
+<a class="bg-secondary-container text-on-secondary-container rounded-xl mx-2 p-3 flex items-center gap-3 shadow-[0_0_20px_rgba(33,112,228,0.2)]" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">meeting_room</span>
+<span class="font-label-bold text-label-bold">Odalarım</span>
+</a>
+<a class="text-on-surface-variant hover:bg-surface-variant rounded-xl mx-2 p-3 flex items-center gap-3 hover:bg-surface-container-highest transition-all hover:translate-x-1 transition-transform" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">leaderboard</span>
+<span class="font-label-bold text-label-bold">Liderlik</span>
+</a>
+<a class="text-on-surface-variant hover:bg-surface-variant rounded-xl mx-2 p-3 flex items-center gap-3 hover:bg-surface-container-highest transition-all hover:translate-x-1 transition-transform" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">person</span>
+<span class="font-label-bold text-label-bold">Profil</span>
+</a>
+</div>
+</div>
+<div class="mt-auto p-6">
+<button class="w-full bg-gradient-to-r from-primary-container to-primary text-white font-label-bold text-label-bold py-4 rounded-[16px] shadow-[0_4px_14px_rgba(255,126,51,0.4)] hover:shadow-[0_6px_20px_rgba(255,126,51,0.6)] transform hover:-translate-y-1 transition-all">
+                Oda Kur
+            </button>
+</div>
+</nav>
+<!-- TopAppBar (Mobile) -->
+<header class="flex justify-between items-center px-container-padding-mobile md:px-container-padding-desktop h-16 w-full max-w-7xl mx-auto docked full-width top-0 shadow-sm bg-surface dark:bg-on-background md:hidden sticky z-30">
+<div class="text-headline-md font-display-mobile font-extrabold text-primary dark:text-primary-fixed">
+            Bilgi Yarışması
+        </div>
+<div class="flex gap-4">
+<button class="w-10 h-10 rounded-full flex items-center justify-center text-on-surface-variant hover:bg-primary-container/10 transition-colors duration-200 active:scale-95 transition-transform">
+<span class="material-symbols-outlined">help</span>
+</button>
+<div class="w-10 h-10 rounded-full overflow-hidden border-2 border-primary-container">
+<img alt="Profil Resmi" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAXXVDLcGYPAZat9Tq7vRD7cUvMr-R0MHVWBtsfFCg96pCiOvoQ5XoxpNPVE3vIdbcR1riPP0Js8uA0XTkYm7bjlkYvSFVNCLg-5NdHDVFoUZ-YUyiasZc2NGnQUTVMM86A_1yjYFuVH43sEBPj1FTduOLb4r3gm_A7y92uOOjl2UA_k5bBwJpTXEwt2s9pYDfYA6oQFbtC6LMN7r1dVA9-TsmhQZBiv85W4oY16KezmUTw3N9I2xTKI0IFC1RMtQp5I0NQwIbYlaiD"/>
+</div>
+</div>
+</header>
+<!-- Main Content Area -->
+<main class="flex-1 md:ml-64 p-container-padding-mobile md:p-container-padding-desktop flex flex-col items-center">
+<div class="w-full max-w-3xl glass-card rounded-[24px] p-6 md:p-8 mt-4 md:mt-8 relative overflow-hidden">
+<!-- Decorative background elements -->
+<div class="absolute -top-20 -right-20 w-64 h-64 bg-primary-container opacity-10 rounded-full blur-3xl"></div>
+<div class="absolute -bottom-20 -left-20 w-64 h-64 bg-secondary-container opacity-10 rounded-full blur-3xl"></div>
+<div class="relative z-10">
+<div class="flex items-center gap-4 mb-8 pb-6 border-b border-outline-variant/30">
+<div class="w-12 h-12 rounded-xl bg-primary-container/20 text-primary-container flex items-center justify-center">
+<span class="material-symbols-outlined text-2xl">add_circle</span>
+</div>
+<div>
+<h2 class="font-headline-md text-headline-md text-on-surface">Yeni Oda Kur</h2>
+<p class="font-body-md text-body-md text-on-surface-variant mt-1">Yarışma ayarlarını belirleyip hemen oynamaya başla.</p>
+</div>
+</div>
+<form class="space-y-8" onsubmit="event.preventDefault();">
+<!-- Diller -->
+<div class="space-y-3">
+<label class="font-label-bold text-label-bold text-on-surface block">Dil Seçimi</label>
+<div class="flex flex-wrap gap-3">
+<button class="option-active px-6 py-3 rounded-full font-label-bold text-label-bold border-2 transition-all" onclick="toggleActive(this, 'lang')" type="button">Türkçe</button>
+<button class="option-inactive px-6 py-3 rounded-full font-label-bold text-label-bold border-2 transition-all hover:bg-surface-variant" onclick="toggleActive(this, 'lang')" type="button">English</button>
+</div>
+</div>
+<!-- Kategori -->
+<div class="space-y-3">
+<label class="font-label-bold text-label-bold text-on-surface block">Kategori</label>
+<div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+<button class="flex flex-col items-center justify-center p-4 rounded-xl border-2 border-outline-variant/50 option-active transition-all" onclick="toggleActive(this, 'cat')" type="button">
+<span class="material-symbols-outlined mb-2 text-3xl">public</span>
+<span class="font-label-bold text-label-bold">Genel</span>
+</button>
+<button class="flex flex-col items-center justify-center p-4 rounded-xl border-2 border-outline-variant/50 bg-surface hover:bg-surface-variant transition-all text-on-surface-variant" onclick="toggleActive(this, 'cat')" type="button">
+<span class="material-symbols-outlined mb-2 text-3xl">science</span>
+<span class="font-label-bold text-label-bold">Bilim</span>
+</button>
+<button class="flex flex-col items-center justify-center p-4 rounded-xl border-2 border-outline-variant/50 bg-surface hover:bg-surface-variant transition-all text-on-surface-variant" onclick="toggleActive(this, 'cat')" type="button">
+<span class="material-symbols-outlined mb-2 text-3xl">sports_soccer</span>
+<span class="font-label-bold text-label-bold">Spor</span>
+</button>
+<button class="flex flex-col items-center justify-center p-4 rounded-xl border-2 border-outline-variant/50 bg-surface hover:bg-surface-variant transition-all text-on-surface-variant" onclick="toggleActive(this, 'cat')" type="button">
+<span class="material-symbols-outlined mb-2 text-3xl">palette</span>
+<span class="font-label-bold text-label-bold">Sanat</span>
+</button>
+</div>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+<!-- Zorluk -->
+<div class="space-y-3">
+<label class="font-label-bold text-label-bold text-on-surface block">Zorluk Seviyesi</label>
+<div class="bg-surface-container rounded-xl p-1 flex">
+<button class="flex-1 py-2 rounded-lg font-label-bold text-label-bold text-on-surface-variant hover:bg-surface-variant transition-all" onclick="toggleSegment(this, 'diff')" type="button">Kolay</button>
+<button class="flex-1 py-2 rounded-lg bg-white shadow-sm font-label-bold text-label-bold text-primary-container transition-all" onclick="toggleSegment(this, 'diff')" type="button">Orta</button>
+<button class="flex-1 py-2 rounded-lg font-label-bold text-label-bold text-on-surface-variant hover:bg-surface-variant transition-all" onclick="toggleSegment(this, 'diff')" type="button">Zor</button>
+</div>
+</div>
+<!-- Kapsam -->
+<div class="space-y-3">
+<label class="font-label-bold text-label-bold text-on-surface block">Kapsam</label>
+<div class="bg-surface-container rounded-xl p-1 flex">
+<button class="flex-1 py-2 rounded-lg bg-white shadow-sm font-label-bold text-label-bold text-secondary-container transition-all" onclick="toggleSegment(this, 'scope')" type="button">Global</button>
+<button class="flex-1 py-2 rounded-lg font-label-bold text-label-bold text-on-surface-variant hover:bg-surface-variant transition-all" onclick="toggleSegment(this, 'scope')" type="button">Yerel</button>
+</div>
+</div>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+<!-- Soru Sayısı -->
+<div class="space-y-3">
+<label class="font-label-bold text-label-bold text-on-surface block">Soru Sayısı</label>
+<select class="w-full bg-surface-container border-0 rounded-xl p-4 font-body-md text-on-surface focus:ring-2 focus:ring-secondary-container focus:bg-white transition-all outline-none appearance-none cursor-pointer">
+<option value="10">10 Soru</option>
+<option selected="" value="15">15 Soru</option>
+<option value="20">20 Soru</option>
+</select>
+<div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-on-surface-variant" style="margin-top: 36px; right: 16px;">
+<span class="material-symbols-outlined">expand_more</span>
+</div>
+</div>
+<!-- Soru Başına Süre -->
+<div class="space-y-3">
+<label class="font-label-bold text-label-bold text-on-surface block">Soru Başına Süre</label>
+<select class="w-full bg-surface-container border-0 rounded-xl p-4 font-body-md text-on-surface focus:ring-2 focus:ring-secondary-container focus:bg-white transition-all outline-none appearance-none cursor-pointer">
+<option value="10">10 Saniye</option>
+<option selected="" value="20">20 Saniye</option>
+<option value="30">30 Saniye</option>
+</select>
+<div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-on-surface-variant" style="margin-top: 36px; right: 16px; position: absolute; margin-left: auto;">
+<span class="material-symbols-outlined">expand_more</span>
+</div>
+</div>
+</div>
+<!-- Actions -->
+<div class="pt-6 border-t border-outline-variant/30 flex flex-col sm:flex-row gap-4 justify-end">
+<button class="px-8 py-4 rounded-[16px] font-label-bold text-label-bold text-on-surface-variant hover:bg-surface-variant transition-all border border-outline-variant/50 md:w-auto w-full" type="button">
+                            Vazgeç
+                        </button>
+<button class="px-8 py-4 rounded-[16px] font-label-bold text-label-bold text-white bg-gradient-to-r from-primary-container to-primary shadow-[0_4px_14px_rgba(255,126,51,0.4)] hover:shadow-[0_6px_20px_rgba(255,126,51,0.6)] transform hover:-translate-y-1 transition-all md:w-auto w-full flex items-center justify-center gap-2" type="submit">
+<span class="material-symbols-outlined text-white" style="font-variation-settings: 'FILL' 1;">play_arrow</span>
+                            Oda Kur
+                        </button>
+</div>
+</form>
+</div>
+</div>
+</main>
+<!-- BottomNavBar (Mobile) -->
+<nav class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center h-20 px-4 pb-safe bg-surface border-t border-outline-variant/20 shadow-[0_-4px_6px_-1px_rgba(255,126,51,0.1)] rounded-t-xl md:hidden">
+<a class="flex flex-col items-center justify-center text-on-surface-variant hover:text-primary transition-colors active:scale-90 transition-transform" href="#">
+<span class="material-symbols-outlined">home</span>
+<span class="font-label-bold text-label-bold mt-1 text-[10px]">Ana Sayfa</span>
+</a>
+<a class="flex flex-col items-center justify-center bg-primary-container text-on-primary-container rounded-full w-12 h-12 shadow-[0_0_15px_rgba(255,126,51,0.3)]" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">dashboard</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant hover:text-primary transition-colors active:scale-90 transition-transform" href="#">
+<span class="material-symbols-outlined">military_tech</span>
+<span class="font-label-bold text-label-bold mt-1 text-[10px]">Liderlik</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant hover:text-primary transition-colors active:scale-90 transition-transform" href="#">
+<span class="material-symbols-outlined">person_outline</span>
+<span class="font-label-bold text-label-bold mt-1 text-[10px]">Profil</span>
+</a>
+</nav>
+<script>
+        function toggleActive(btn, group) {
+            // Find all buttons in the same container
+            const container = btn.parentElement;
+            const buttons = container.querySelectorAll('button');
+            
+            // Remove active classes from all
+            buttons.forEach(b => {
+                b.classList.remove('option-active');
+                b.classList.add('option-inactive');
+                
+                // For category cards, handle specific internal styling
+                if(group === 'cat') {
+                    b.classList.remove('border-primary-container');
+                    b.classList.remove('text-primary-container');
+                    b.classList.add('text-on-surface-variant');
+                    b.classList.add('bg-surface');
+                }
+            });
+            
+            // Add active class to clicked
+            btn.classList.remove('option-inactive');
+            btn.classList.add('option-active');
+            
+            if(group === 'cat') {
+                btn.classList.add('border-primary-container');
+                btn.classList.add('text-primary-container');
+                btn.classList.remove('text-on-surface-variant');
+                btn.classList.remove('bg-surface');
+            }
+        }
+
+        function toggleSegment(btn, group) {
+            const container = btn.parentElement;
+            const buttons = container.querySelectorAll('button');
+            
+            buttons.forEach(b => {
+                b.classList.remove('bg-white', 'shadow-sm');
+                if(group === 'diff') b.classList.remove('text-primary-container');
+                if(group === 'scope') b.classList.remove('text-secondary-container');
+                b.classList.add('text-on-surface-variant');
+            });
+            
+            btn.classList.add('bg-white', 'shadow-sm');
+            btn.classList.remove('text-on-surface-variant');
+            
+            if(group === 'diff') btn.classList.add('text-primary-container');
+            if(group === 'scope') btn.classList.add('text-secondary-container');
+        }
+    </script>
+</body></html>

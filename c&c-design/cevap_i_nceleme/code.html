@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+
+<html class="light" lang="tr"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Cevapları İncele - Bilgi Yarışı</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "surface": "#f7f9fb",
+                        "inverse-surface": "#2d3133",
+                        "on-tertiary-fixed-variant": "#5c4300",
+                        "on-primary-fixed-variant": "#793100",
+                        "primary-container": "#ff7e33",
+                        "on-background": "#191c1e",
+                        "outline": "#8b7266",
+                        "secondary-container": "#2170e4",
+                        "on-secondary-fixed-variant": "#004395",
+                        "tertiary-container": "#ce9a00",
+                        "surface-container-high": "#e6e8ea",
+                        "on-error": "#ffffff",
+                        "error-container": "#ffdad6",
+                        "on-tertiary-container": "#4a3500",
+                        "on-surface": "#191c1e",
+                        "on-error-container": "#93000a",
+                        "surface-container-highest": "#e0e3e5",
+                        "surface-variant": "#e0e3e5",
+                        "background": "#f7f9fb",
+                        "tertiary-fixed": "#ffdf9f",
+                        "primary": "#9f4200",
+                        "secondary-fixed-dim": "#adc6ff",
+                        "surface-tint": "#9f4200",
+                        "outline-variant": "#dfc0b3",
+                        "error": "#ba1a1a",
+                        "inverse-on-surface": "#eff1f3",
+                        "primary-fixed": "#ffdbcb",
+                        "on-primary-fixed": "#341100",
+                        "on-secondary-container": "#fefcff",
+                        "on-secondary-fixed": "#001a42",
+                        "on-tertiary": "#ffffff",
+                        "on-surface-variant": "#584238",
+                        "tertiary": "#795900",
+                        "inverse-primary": "#ffb692",
+                        "on-primary-container": "#632600",
+                        "secondary": "#0058be",
+                        "surface-container-low": "#f2f4f6",
+                        "primary-fixed-dim": "#ffb692",
+                        "on-primary": "#ffffff",
+                        "surface-container": "#eceef0",
+                        "secondary-fixed": "#d8e2ff",
+                        "surface-container-lowest": "#ffffff",
+                        "tertiary-fixed-dim": "#f9bd22",
+                        "surface-dim": "#d8dadc",
+                        "on-tertiary-fixed": "#261a00",
+                        "surface-bright": "#f7f9fb",
+                        "on-secondary": "#ffffff"
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    spacing: {
+                        "container-padding-mobile": "16px",
+                        "base": "8px",
+                        "gutter": "16px",
+                        "container-padding-desktop": "32px",
+                        "stack-md": "16px",
+                        "stack-lg": "24px",
+                        "stack-sm": "8px"
+                    },
+                    fontFamily: {
+                        "body-md": ["Plus Jakarta Sans"],
+                        "label-bold": ["Plus Jakarta Sans"],
+                        "headline-sm": ["Plus Jakarta Sans"],
+                        "display-mobile": ["Plus Jakarta Sans"],
+                        "body-lg": ["Plus Jakarta Sans"],
+                        "headline-md": ["Plus Jakarta Sans"],
+                        "timer-numeric": ["Plus Jakarta Sans"],
+                        "display-lg": ["Plus Jakarta Sans"]
+                    },
+                    fontSize: {
+                        "body-md": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                        "label-bold": ["14px", { "lineHeight": "20px", "fontWeight": "700" }],
+                        "headline-sm": ["20px", { "lineHeight": "28px", "fontWeight": "700" }],
+                        "display-mobile": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "800" }],
+                        "body-lg": ["18px", { "lineHeight": "28px", "fontWeight": "500" }],
+                        "headline-md": ["24px", { "lineHeight": "32px", "fontWeight": "700" }],
+                        "timer-numeric": ["40px", { "lineHeight": "40px", "fontWeight": "800" }],
+                        "display-lg": ["48px", { "lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "800" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        body { font-family: 'Plus Jakarta Sans', sans-serif; }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+        }
+    </style>
+</head>
+<body class="bg-background text-on-background min-h-screen pb-safe antialiased">
+<!-- Top Navigation (Task-focused, so no global nav, just a back header) -->
+<header class="sticky top-0 z-50 bg-surface/90 backdrop-blur-md shadow-sm">
+<div class="flex justify-between items-center px-container-padding-mobile md:px-container-padding-desktop h-16 w-full max-w-7xl mx-auto">
+<button class="flex items-center gap-2 text-on-surface-variant hover:text-primary transition-colors p-2 -ml-2 rounded-lg hover:bg-surface-variant">
+<span class="material-symbols-outlined">arrow_back</span>
+<span class="font-label-bold text-label-bold">Geri Dön</span>
+</button>
+<div class="font-headline-sm text-headline-sm text-primary">Sonuç İncelemesi</div>
+<div class="w-20"></div> <!-- Spacer for centering -->
+</div>
+</header>
+<!-- Main Content Canvas -->
+<main class="max-w-3xl mx-auto px-container-padding-mobile md:px-container-padding-desktop py-stack-lg">
+<!-- Summary Header -->
+<section class="mb-stack-lg text-center">
+<h1 class="font-display-mobile text-display-mobile text-on-background mb-stack-sm">Tebrikler!</h1>
+<p class="font-body-lg text-body-lg text-on-surface-variant">İşte bu turdaki performansın. Hatalarından öğren ve bir sonraki turda daha iyisini yap!</p>
+<div class="flex justify-center gap-stack-md mt-stack-md">
+<div class="bg-surface-container-high rounded-xl p-stack-md min-w-[120px]">
+<div class="font-label-bold text-label-bold text-on-surface-variant mb-1">Doğru</div>
+<div class="font-timer-numeric text-timer-numeric text-secondary">7/10</div>
+</div>
+<div class="bg-surface-container-high rounded-xl p-stack-md min-w-[120px]">
+<div class="font-label-bold text-label-bold text-on-surface-variant mb-1">Puan</div>
+<div class="font-timer-numeric text-timer-numeric text-primary">850</div>
+</div>
+</div>
+</section>
+<!-- Question List -->
+<section class="space-y-stack-md">
+<!-- Correct Question Card -->
+<article class="glass-card rounded-[24px] overflow-hidden shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:shadow-[0_8px_30px_rgba(33,112,228,0.1)] transition-shadow">
+<div class="bg-[#e8f5e9]/50 px-stack-md py-stack-sm border-b border-[#c8e6c9]/50 flex justify-between items-center">
+<span class="bg-white/80 text-[#2e7d32] px-3 py-1 rounded-full font-label-bold text-label-bold border border-[#c8e6c9]">Soru 1</span>
+<div class="flex items-center gap-3 font-label-bold text-label-bold text-on-surface-variant">
+<span class="flex items-center gap-1"><span class="material-symbols-outlined text-[16px]">timer</span> 2.4s</span>
+<span class="flex items-center gap-1 text-primary"><span class="material-symbols-outlined text-[16px]">add_circle</span> +150P</span>
+</div>
+</div>
+<div class="p-stack-md">
+<h3 class="font-body-lg text-body-lg text-on-background mb-stack-md">Türkiye'nin en yüksek dağı hangisidir?</h3>
+<div class="grid grid-cols-1 sm:grid-cols-2 gap-stack-sm">
+<!-- Player choice (Correct) -->
+<div class="flex items-center justify-between p-stack-sm rounded-xl border-2 border-[#4caf50] bg-[#e8f5e9]/30">
+<span class="font-body-md text-body-md text-on-background">Ağrı Dağı</span>
+<span class="material-symbols-outlined text-[#4caf50]">check_circle</span>
+</div>
+<!-- Other option -->
+<div class="flex items-center justify-between p-stack-sm rounded-xl border-2 border-surface-container bg-surface-container/20 opacity-60">
+<span class="font-body-md text-body-md text-on-surface-variant">Erciyes Dağı</span>
+</div>
+</div>
+</div>
+</article>
+<!-- Incorrect Question Card -->
+<article class="glass-card rounded-[24px] overflow-hidden shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:shadow-[0_8px_30px_rgba(255,126,51,0.1)] transition-shadow">
+<div class="bg-error-container/30 px-stack-md py-stack-sm border-b border-error-container/50 flex justify-between items-center">
+<span class="bg-white/80 text-error px-3 py-1 rounded-full font-label-bold text-label-bold border border-error-container">Soru 2</span>
+<div class="flex items-center gap-3 font-label-bold text-label-bold text-on-surface-variant">
+<span class="flex items-center gap-1"><span class="material-symbols-outlined text-[16px]">timer</span> 4.1s</span>
+<span class="flex items-center gap-1 text-on-surface-variant"><span class="material-symbols-outlined text-[16px]">remove_circle_outline</span> 0P</span>
+</div>
+</div>
+<div class="p-stack-md">
+<h3 class="font-body-lg text-body-lg text-on-background mb-stack-md">Hangi gezegen "Kızıl Gezegen" olarak bilinir?</h3>
+<div class="grid grid-cols-1 sm:grid-cols-2 gap-stack-sm">
+<!-- Player choice (Incorrect) -->
+<div class="flex items-center justify-between p-stack-sm rounded-xl border-2 border-error bg-error-container/20">
+<span class="font-body-md text-body-md text-on-background">Venüs</span>
+<span class="material-symbols-outlined text-error">cancel</span>
+</div>
+<!-- Correct option missed -->
+<div class="flex items-center justify-between p-stack-sm rounded-xl border-2 border-[#4caf50] bg-[#e8f5e9]/30">
+<span class="font-body-md text-body-md text-on-background">Mars</span>
+<span class="material-symbols-outlined text-[#4caf50] text-[18px]">check</span>
+</div>
+</div>
+<div class="mt-stack-md p-stack-sm bg-surface-container-low rounded-lg flex items-start gap-2">
+<span class="material-symbols-outlined text-secondary text-[20px] mt-0.5">info</span>
+<p class="font-body-md text-body-md text-on-surface-variant text-sm">Mars, yüzeyindeki demir oksit (pas) yaygınlığı nedeniyle kızılımsı bir görünüme sahiptir.</p>
+</div>
+</div>
+</article>
+<!-- Correct Question Card -->
+<article class="glass-card rounded-[24px] overflow-hidden shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:shadow-[0_8px_30px_rgba(33,112,228,0.1)] transition-shadow">
+<div class="bg-[#e8f5e9]/50 px-stack-md py-stack-sm border-b border-[#c8e6c9]/50 flex justify-between items-center">
+<span class="bg-white/80 text-[#2e7d32] px-3 py-1 rounded-full font-label-bold text-label-bold border border-[#c8e6c9]">Soru 3</span>
+<div class="flex items-center gap-3 font-label-bold text-label-bold text-on-surface-variant">
+<span class="flex items-center gap-1"><span class="material-symbols-outlined text-[16px]">timer</span> 1.2s</span>
+<span class="flex items-center gap-1 text-primary"><span class="material-symbols-outlined text-[16px]">add_circle</span> +200P</span>
+</div>
+</div>
+<div class="p-stack-md">
+<h3 class="font-body-lg text-body-lg text-on-background mb-stack-md">Periyodik tabloda "O" sembolü hangi elementi temsil eder?</h3>
+<div class="grid grid-cols-1 sm:grid-cols-2 gap-stack-sm">
+<!-- Other option -->
+<div class="flex items-center justify-between p-stack-sm rounded-xl border-2 border-surface-container bg-surface-container/20 opacity-60">
+<span class="font-body-md text-body-md text-on-surface-variant">Osmiyum</span>
+</div>
+<!-- Player choice (Correct) -->
+<div class="flex items-center justify-between p-stack-sm rounded-xl border-2 border-[#4caf50] bg-[#e8f5e9]/30">
+<span class="font-body-md text-body-md text-on-background">Oksijen</span>
+<span class="material-symbols-outlined text-[#4caf50]">check_circle</span>
+</div>
+</div>
+</div>
+</article>
+</section>
+<!-- CTA Section -->
+<div class="mt-stack-lg flex justify-center pb-stack-lg">
+<button class="bg-gradient-to-r from-[#ff7e33] to-[#ff5722] text-white font-label-bold text-label-bold py-4 px-12 rounded-[16px] shadow-[0_8px_20px_rgba(255,126,51,0.4)] hover:scale-105 active:scale-95 transition-all">
+                Yeni Oyun Oyna
+            </button>
+</div>
+</main>
+</body></html>

@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+
+<html class="light" lang="tr"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Sorular Hazırlanıyor - Bilgi Yarışı</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "surface": "#f7f9fb",
+                        "inverse-surface": "#2d3133",
+                        "on-tertiary-fixed-variant": "#5c4300",
+                        "on-primary-fixed-variant": "#793100",
+                        "primary-container": "#ff7e33",
+                        "on-background": "#191c1e",
+                        "outline": "#8b7266",
+                        "secondary-container": "#2170e4",
+                        "on-secondary-fixed-variant": "#004395",
+                        "tertiary-container": "#ce9a00",
+                        "surface-container-high": "#e6e8ea",
+                        "on-error": "#ffffff",
+                        "error-container": "#ffdad6",
+                        "on-tertiary-container": "#4a3500",
+                        "on-surface": "#191c1e",
+                        "on-error-container": "#93000a",
+                        "surface-container-highest": "#e0e3e5",
+                        "surface-variant": "#e0e3e5",
+                        "background": "#f7f9fb",
+                        "tertiary-fixed": "#ffdf9f",
+                        "primary": "#9f4200",
+                        "secondary-fixed-dim": "#adc6ff",
+                        "surface-tint": "#9f4200",
+                        "outline-variant": "#dfc0b3",
+                        "error": "#ba1a1a",
+                        "inverse-on-surface": "#eff1f3",
+                        "primary-fixed": "#ffdbcb",
+                        "on-primary-fixed": "#341100",
+                        "on-secondary-container": "#fefcff",
+                        "on-secondary-fixed": "#001a42",
+                        "on-tertiary": "#ffffff",
+                        "on-surface-variant": "#584238",
+                        "tertiary": "#795900",
+                        "inverse-primary": "#ffb692",
+                        "on-primary-container": "#632600",
+                        "secondary": "#0058be",
+                        "surface-container-low": "#f2f4f6",
+                        "primary-fixed-dim": "#ffb692",
+                        "on-primary": "#ffffff",
+                        "surface-container": "#eceef0",
+                        "secondary-fixed": "#d8e2ff",
+                        "surface-container-lowest": "#ffffff",
+                        "tertiary-fixed-dim": "#f9bd22",
+                        "surface-dim": "#d8dadc",
+                        "on-tertiary-fixed": "#261a00",
+                        "surface-bright": "#f7f9fb",
+                        "on-secondary": "#ffffff"
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    spacing: {
+                        "container-padding-mobile": "16px",
+                        "base": "8px",
+                        "gutter": "16px",
+                        "container-padding-desktop": "32px",
+                        "stack-md": "16px",
+                        "stack-lg": "24px",
+                        "stack-sm": "8px"
+                    },
+                    fontFamily: {
+                        "body-md": ["Plus Jakarta Sans"],
+                        "label-bold": ["Plus Jakarta Sans"],
+                        "headline-sm": ["Plus Jakarta Sans"],
+                        "display-mobile": ["Plus Jakarta Sans"],
+                        "body-lg": ["Plus Jakarta Sans"],
+                        "headline-md": ["Plus Jakarta Sans"],
+                        "timer-numeric": ["Plus Jakarta Sans"],
+                        "display-lg": ["Plus Jakarta Sans"]
+                    },
+                    fontSize: {
+                        "body-md": ["16px", { lineHeight: "24px", fontWeight: "400" }],
+                        "label-bold": ["14px", { lineHeight: "20px", fontWeight: "700" }],
+                        "headline-sm": ["20px", { lineHeight: "28px", fontWeight: "700" }],
+                        "display-mobile": ["32px", { lineHeight: "40px", letterSpacing: "-0.01em", fontWeight: "800" }],
+                        "body-lg": ["18px", { lineHeight: "28px", fontWeight: "500" }],
+                        "headline-md": ["24px", { lineHeight: "32px", fontWeight: "700" }],
+                        "timer-numeric": ["40px", { lineHeight: "40px", fontWeight: "800" }],
+                        "display-lg": ["48px", { lineHeight: "56px", letterSpacing: "-0.02em", fontWeight: "800" }]
+                    },
+                    animation: {
+                        'spin-slow': 'spin 3s linear infinite',
+                        'bounce-slight': 'bounce 2s infinite',
+                        'pulse-glow': 'pulseGlow 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                    },
+                    keyframes: {
+                        pulseGlow: {
+                            '0%, 100%': { opacity: 1, transform: 'scale(1)' },
+                            '50%': { opacity: .8, transform: 'scale(1.05)' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .fill-icon {
+            font-variation-settings: 'FILL' 1;
+        }
+        
+        .bg-pattern {
+            background-image: radial-gradient(var(--tw-colors-primary-container) 1px, transparent 1px);
+            background-size: 20px 20px;
+            opacity: 0.1;
+        }
+    </style>
+</head>
+<body class="bg-surface text-on-surface min-h-screen flex flex-col items-center justify-center relative overflow-hidden font-body-md">
+<!-- Decorative Background Pattern -->
+<div class="absolute inset-0 bg-pattern z-0 pointer-events-none"></div>
+<!-- Main Content Container -->
+<main class="z-10 flex flex-col items-center justify-center px-container-padding-mobile md:px-container-padding-desktop w-full max-w-md mx-auto text-center">
+<!-- Animated Graphic Area -->
+<div class="relative w-48 h-48 mb-stack-lg flex items-center justify-center">
+<!-- Glow Effect -->
+<div class="absolute inset-0 bg-primary-container rounded-full blur-[40px] opacity-30 animate-pulse-glow"></div>
+<!-- Central Icon -->
+<div class="relative z-10 w-32 h-32 bg-white rounded-full shadow-[0_8px_24px_rgba(255,126,51,0.2)] flex items-center justify-center animate-bounce-slight">
+<span class="material-symbols-outlined text-[80px] text-primary animate-spin-slow" data-icon="smart_toy">smart_toy</span>
+</div>
+<!-- Orbiting Elements (Optional details to add excitement) -->
+<div class="absolute inset-0 animate-[spin_4s_linear_infinite]">
+<span class="material-symbols-outlined absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 text-secondary text-2xl" data-icon="star">star</span>
+</div>
+<div class="absolute inset-0 animate-[spin_5s_linear_infinite_reverse]">
+<span class="material-symbols-outlined absolute bottom-0 right-1/4 text-tertiary-container text-xl" data-icon="bolt">bolt</span>
+</div>
+</div>
+<!-- Typography -->
+<h1 class="font-display-mobile text-display-mobile text-on-background mb-stack-sm tracking-tight">Sorular hazırlanıyor...</h1>
+<p class="font-body-lg text-body-lg text-on-surface-variant mb-stack-lg">AI soruları senin için seçiyor.</p>
+<!-- Progress Bar Section -->
+<div class="w-full bg-white p-stack-md rounded-[24px] shadow-[0_4px_16px_rgba(0,88,190,0.1)] flex flex-col gap-stack-sm mb-stack-lg relative overflow-hidden">
+<!-- Subtle tint overlay for the card -->
+<div class="absolute top-0 left-0 right-0 h-8 bg-secondary-container opacity-5 rounded-t-[24px]"></div>
+<div class="flex justify-between items-center z-10">
+<span class="font-label-bold text-label-bold text-secondary">Tarih Kategorisi</span>
+<span class="font-label-bold text-label-bold text-on-surface-variant">75%</span>
+</div>
+<!-- The Progress Bar -->
+<div class="w-full h-3 bg-surface-container-high rounded-full overflow-hidden z-10">
+<div class="h-full bg-gradient-to-r from-secondary to-secondary-fixed-dim rounded-full transition-all duration-1000 ease-out" style="width: 75%;"></div>
+</div>
+</div>
+<!-- Room Info Summary -->
+<div class="flex gap-gutter items-center justify-center w-full">
+<div class="flex items-center gap-base bg-surface-container px-4 py-2 rounded-full">
+<span class="material-symbols-outlined text-on-surface-variant text-sm" data-icon="group">group</span>
+<span class="font-label-bold text-label-bold text-on-surface-variant">4 Oyuncu</span>
+</div>
+<div class="flex items-center gap-base bg-surface-container px-4 py-2 rounded-full">
+<span class="material-symbols-outlined text-on-surface-variant text-sm" data-icon="timer">timer</span>
+<span class="font-label-bold text-label-bold text-on-surface-variant">15 Saniye/Soru</span>
+</div>
+</div>
+</main>
+<script>
+        // Simple script to simulate progress bar advancing
+        document.addEventListener('DOMContentLoaded', () => {
+            const progressBar = document.querySelector('.bg-gradient-to-r');
+            const progressText = document.querySelector('.text-on-surface-variant.font-label-bold:last-child');
+            let progress = 75;
+
+            const interval = setInterval(() => {
+                if (progress < 98) {
+                    progress += Math.random() * 5;
+                    if(progress > 98) progress = 98; // Cap it before real load
+                    progressBar.style.width = `${progress}%`;
+                    progressText.textContent = `${Math.floor(progress)}%`;
+                } else {
+                    clearInterval(interval);
+                    // In a real app, this is where you'd redirect
+                    setTimeout(() => {
+                        progressText.textContent = 'Hazır!';
+                        progressBar.style.width = '100%';
+                    }, 500);
+                }
+            }, 800);
+        });
+    </script>
+</body></html>

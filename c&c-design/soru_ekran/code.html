@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+
+<html lang="tr"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Bilgi Yarışması - Soru Ekranı</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "surface": "#f7f9fb",
+                    "inverse-surface": "#2d3133",
+                    "on-tertiary-fixed-variant": "#5c4300",
+                    "on-primary-fixed-variant": "#793100",
+                    "primary-container": "#ff7e33",
+                    "on-background": "#191c1e",
+                    "outline": "#8b7266",
+                    "secondary-container": "#2170e4",
+                    "on-secondary-fixed-variant": "#004395",
+                    "tertiary-container": "#ce9a00",
+                    "surface-container-high": "#e6e8ea",
+                    "on-error": "#ffffff",
+                    "error-container": "#ffdad6",
+                    "on-tertiary-container": "#4a3500",
+                    "on-surface": "#191c1e",
+                    "on-error-container": "#93000a",
+                    "surface-container-highest": "#e0e3e5",
+                    "surface-variant": "#e0e3e5",
+                    "background": "#f7f9fb",
+                    "tertiary-fixed": "#ffdf9f",
+                    "primary": "#9f4200",
+                    "secondary-fixed-dim": "#adc6ff",
+                    "surface-tint": "#9f4200",
+                    "outline-variant": "#dfc0b3",
+                    "error": "#ba1a1a",
+                    "inverse-on-surface": "#eff1f3",
+                    "primary-fixed": "#ffdbcb",
+                    "on-primary-fixed": "#341100",
+                    "on-secondary-container": "#fefcff",
+                    "on-secondary-fixed": "#001a42",
+                    "on-tertiary": "#ffffff",
+                    "on-surface-variant": "#584238",
+                    "tertiary": "#795900",
+                    "inverse-primary": "#ffb692",
+                    "on-primary-container": "#632600",
+                    "secondary": "#0058be",
+                    "surface-container-low": "#f2f4f6",
+                    "primary-fixed-dim": "#ffb692",
+                    "on-primary": "#ffffff",
+                    "surface-container": "#eceef0",
+                    "secondary-fixed": "#d8e2ff",
+                    "surface-container-lowest": "#ffffff",
+                    "tertiary-fixed-dim": "#f9bd22",
+                    "surface-dim": "#d8dadc",
+                    "on-tertiary-fixed": "#261a00",
+                    "surface-bright": "#f7f9fb",
+                    "on-secondary": "#ffffff"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px",
+                    "2xl": "1.5rem"
+            },
+            "spacing": {
+                    "container-padding-mobile": "16px",
+                    "base": "8px",
+                    "gutter": "16px",
+                    "container-padding-desktop": "32px",
+                    "stack-md": "16px",
+                    "stack-lg": "24px",
+                    "stack-sm": "8px"
+            },
+            "fontFamily": {
+                    "body-md": ["Plus Jakarta Sans"],
+                    "label-bold": ["Plus Jakarta Sans"],
+                    "headline-sm": ["Plus Jakarta Sans"],
+                    "display-mobile": ["Plus Jakarta Sans"],
+                    "body-lg": ["Plus Jakarta Sans"],
+                    "headline-md": ["Plus Jakarta Sans"],
+                    "timer-numeric": ["Plus Jakarta Sans"],
+                    "display-lg": ["Plus Jakarta Sans"]
+            },
+            "fontSize": {
+                    "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                    "label-bold": ["14px", {"lineHeight": "20px", "fontWeight": "700"}],
+                    "headline-sm": ["20px", {"lineHeight": "28px", "fontWeight": "700"}],
+                    "display-mobile": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "800"}],
+                    "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "500"}],
+                    "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "700"}],
+                    "timer-numeric": ["40px", {"lineHeight": "40px", "fontWeight": "800"}],
+                    "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "800"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: #f7f9fb; /* surface */
+        }
+        
+        .timer-circle {
+            transition: stroke-dashoffset 1s linear;
+        }
+        
+        .option-button {
+            transition: all 0.2s ease-in-out;
+        }
+        
+        .option-button:hover:not(.selected) {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(33, 112, 228, 0.1);
+        }
+        
+        .option-button.selected {
+            border-color: #2170e4; /* secondary-container */
+            background-color: rgba(33, 112, 228, 0.05);
+            box-shadow: 0 0 20px rgba(33, 112, 228, 0.3);
+            transform: scale(1.02);
+        }
+    </style>
+</head>
+<body class="bg-surface text-on-surface h-screen flex flex-col antialiased selection:bg-primary-container selection:text-on-primary-container">
+<!-- TopAppBar Semantic Shell: Suppressed because this is a focused, in-game linear task flow without global navigation. -->
+<!-- Gameplay Header -->
+<header class="w-full flex justify-between items-center px-container-padding-mobile md:px-container-padding-desktop h-16 max-w-7xl mx-auto pt-4 shrink-0">
+<div class="flex items-center gap-2">
+<span class="bg-tertiary-container/20 text-tertiary font-label-bold text-label-bold px-3 py-1 rounded-full">
+                Tarih
+            </span>
+</div>
+<div class="font-headline-sm text-headline-sm text-on-surface-variant">
+            Soru 3 / 20
+        </div>
+<button class="text-on-surface-variant hover:text-error transition-colors p-2 rounded-full hover:bg-error-container/20">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">close</span>
+</button>
+</header>
+<!-- Main Content Area -->
+<main class="flex-1 flex flex-col items-center justify-start w-full max-w-3xl mx-auto px-container-padding-mobile md:px-container-padding-desktop overflow-y-auto pb-24 pt-8">
+<!-- Timer -->
+<div class="relative flex items-center justify-center w-24 h-24 mb-8 shrink-0">
+<svg class="w-full h-full -rotate-90" viewbox="0 0 100 100">
+<!-- Background circle -->
+<circle cx="50" cy="50" fill="none" r="45" stroke="#e0e3e5" stroke-width="6"></circle>
+<!-- Progress circle -->
+<circle class="timer-circle" cx="50" cy="50" fill="none" r="45" stroke="#ff7e33" stroke-dasharray="283" stroke-dashoffset="70" stroke-linecap="round" stroke-width="8"></circle>
+</svg>
+<div class="absolute inset-0 flex items-center justify-center font-timer-numeric text-timer-numeric text-primary-container">
+                12
+            </div>
+</div>
+<!-- Question Card -->
+<div class="w-full bg-surface-container-lowest rounded-2xl p-6 md:p-8 shadow-sm border border-surface-container-high mb-8 relative overflow-hidden">
+<!-- Decorative faint category tint in background -->
+<div class="absolute top-0 right-0 w-32 h-32 bg-tertiary-container opacity-5 rounded-bl-full pointer-events-none"></div>
+<h1 class="font-headline-md text-headline-md text-center text-on-surface">
+                Osmanlı İmparatorluğu'nun en uzun süre tahtta kalan padişahı kimdir?
+            </h1>
+</div>
+<!-- Options Container -->
+<div class="w-full flex flex-col gap-4">
+<!-- Option A -->
+<button class="option-button w-full bg-surface-container-lowest border-2 border-surface-container-high rounded-xl p-4 flex items-center gap-4 text-left group">
+<div class="flex-shrink-0 w-10 h-10 rounded-lg bg-surface-container flex items-center justify-center font-label-bold text-label-bold text-on-surface-variant group-hover:bg-primary-container/10 group-hover:text-primary transition-colors">
+                    A
+                </div>
+<div class="font-body-lg text-body-lg text-on-surface flex-1">
+                    Fatih Sultan Mehmet
+                </div>
+</button>
+<!-- Option B -->
+<button class="option-button w-full bg-surface-container-lowest border-2 border-surface-container-high rounded-xl p-4 flex items-center gap-4 text-left group">
+<div class="flex-shrink-0 w-10 h-10 rounded-lg bg-surface-container flex items-center justify-center font-label-bold text-label-bold text-on-surface-variant group-hover:bg-primary-container/10 group-hover:text-primary transition-colors">
+                    B
+                </div>
+<div class="font-body-lg text-body-lg text-on-surface flex-1">
+                    Yavuz Sultan Selim
+                </div>
+</button>
+<!-- Option C - Selected State -->
+<button class="option-button selected w-full bg-surface-container-lowest border-2 rounded-xl p-4 flex items-center gap-4 text-left group">
+<div class="flex-shrink-0 w-10 h-10 rounded-lg bg-secondary-container text-on-secondary-container flex items-center justify-center font-label-bold text-label-bold">
+                    C
+                </div>
+<div class="font-body-lg text-body-lg text-on-surface flex-1 font-bold">
+                    Kanuni Sultan Süleyman
+                </div>
+</button>
+<!-- Option D -->
+<button class="option-button w-full bg-surface-container-lowest border-2 border-surface-container-high rounded-xl p-4 flex items-center gap-4 text-left group">
+<div class="flex-shrink-0 w-10 h-10 rounded-lg bg-surface-container flex items-center justify-center font-label-bold text-label-bold text-on-surface-variant group-hover:bg-primary-container/10 group-hover:text-primary transition-colors">
+                    D
+                </div>
+<div class="font-body-lg text-body-lg text-on-surface flex-1">
+                    II. Abdülhamit
+                </div>
+</button>
+<!-- Option E -->
+<button class="option-button w-full bg-surface-container-lowest border-2 border-surface-container-high rounded-xl p-4 flex items-center gap-4 text-left group">
+<div class="flex-shrink-0 w-10 h-10 rounded-lg bg-surface-container flex items-center justify-center font-label-bold text-label-bold text-on-surface-variant group-hover:bg-primary-container/10 group-hover:text-primary transition-colors">
+                    E
+                </div>
+<div class="font-body-lg text-body-lg text-on-surface flex-1">
+                    Osman Gazi
+                </div>
+</button>
+</div>
+</main>
+<!-- Bottom Status Bar -->
+<div class="fixed bottom-0 left-0 w-full bg-surface-container-low border-t border-surface-container-high py-4 px-container-padding-mobile pb-safe shadow-[0_-4px_12px_rgba(0,0,0,0.03)] z-50">
+<div class="max-w-3xl mx-auto flex items-center justify-between">
+<div class="flex items-center gap-3">
+<div class="flex -space-x-2">
+<!-- Placeholder Avatars -->
+<div class="w-8 h-8 rounded-full bg-primary-container/30 border-2 border-surface-container-low flex items-center justify-center">
+<span class="material-symbols-outlined text-[16px] text-primary" style="font-variation-settings: 'FILL' 1;">face</span>
+</div>
+<div class="w-8 h-8 rounded-full bg-secondary-container/30 border-2 border-surface-container-low flex items-center justify-center">
+<span class="material-symbols-outlined text-[16px] text-secondary" style="font-variation-settings: 'FILL' 1;">face_3</span>
+</div>
+<div class="w-8 h-8 rounded-full bg-tertiary-container/30 border-2 border-surface-container-low flex items-center justify-center">
+<span class="material-symbols-outlined text-[16px] text-tertiary" style="font-variation-settings: 'FILL' 1;">face_4</span>
+</div>
+</div>
+<span class="font-body-md text-body-md text-on-surface-variant">
+<strong class="text-on-surface">4/6</strong> oyuncu cevap verdi
+                </span>
+</div>
+<!-- Small Progress Indicator -->
+<div class="w-32 h-2 bg-surface-container-high rounded-full overflow-hidden">
+<div class="h-full bg-primary-container rounded-full" style="width: 66%;"></div>
+</div>
+</div>
+</div>
+<!-- SideNavBar & BottomNavBar Semantic Shells: Suppressed because this is an active gameplay screen, a linear transactional flow. -->
+<script>
+        // Simple script to toggle option selection for demonstration
+        const options = document.querySelectorAll('.option-button');
+        options.forEach(option => {
+            option.addEventListener('click', () => {
+                // Remove selected class from all
+                options.forEach(opt => {
+                    opt.classList.remove('selected');
+                    // Reset styling for unselected
+                    opt.classList.add('border-surface-container-high');
+                    const letterBox = opt.querySelector('div:first-child');
+                    letterBox.className = 'flex-shrink-0 w-10 h-10 rounded-lg bg-surface-container flex items-center justify-center font-label-bold text-label-bold text-on-surface-variant group-hover:bg-primary-container/10 group-hover:text-primary transition-colors';
+                    const textBox = opt.querySelector('div:last-child');
+                    textBox.classList.remove('font-bold');
+                });
+
+                // Add selected class to clicked
+                option.classList.add('selected');
+                option.classList.remove('border-surface-container-high');
+                
+                // Update specific styles for selected state to match hardcoded HTML
+                const letterBox = option.querySelector('div:first-child');
+                letterBox.className = 'flex-shrink-0 w-10 h-10 rounded-lg bg-secondary-container text-on-secondary-container flex items-center justify-center font-label-bold text-label-bold';
+                
+                const textBox = option.querySelector('div:last-child');
+                textBox.classList.add('font-bold');
+            });
+        });
+    </script>
+</body></html>

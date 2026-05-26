@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+
+<html class="light" lang="tr"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Liderlik Tablosu - Bilgi Yarışı</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "surface": "#f7f9fb",
+                        "inverse-surface": "#2d3133",
+                        "on-tertiary-fixed-variant": "#5c4300",
+                        "on-primary-fixed-variant": "#793100",
+                        "primary-container": "#ff7e33",
+                        "on-background": "#191c1e",
+                        "outline": "#8b7266",
+                        "secondary-container": "#2170e4",
+                        "on-secondary-fixed-variant": "#004395",
+                        "tertiary-container": "#ce9a00",
+                        "surface-container-high": "#e6e8ea",
+                        "on-error": "#ffffff",
+                        "error-container": "#ffdad6",
+                        "on-tertiary-container": "#4a3500",
+                        "on-surface": "#191c1e",
+                        "on-error-container": "#93000a",
+                        "surface-container-highest": "#e0e3e5",
+                        "surface-variant": "#e0e3e5",
+                        "background": "#f7f9fb",
+                        "tertiary-fixed": "#ffdf9f",
+                        "primary": "#9f4200",
+                        "secondary-fixed-dim": "#adc6ff",
+                        "surface-tint": "#9f4200",
+                        "outline-variant": "#dfc0b3",
+                        "error": "#ba1a1a",
+                        "inverse-on-surface": "#eff1f3",
+                        "primary-fixed": "#ffdbcb",
+                        "on-primary-fixed": "#341100",
+                        "on-secondary-container": "#fefcff",
+                        "on-secondary-fixed": "#001a42",
+                        "on-tertiary": "#ffffff",
+                        "on-surface-variant": "#584238",
+                        "tertiary": "#795900",
+                        "inverse-primary": "#ffb692",
+                        "on-primary-container": "#632600",
+                        "secondary": "#0058be",
+                        "surface-container-low": "#f2f4f6",
+                        "primary-fixed-dim": "#ffb692",
+                        "on-primary": "#ffffff",
+                        "surface-container": "#eceef0",
+                        "secondary-fixed": "#d8e2ff",
+                        "surface-container-lowest": "#ffffff",
+                        "tertiary-fixed-dim": "#f9bd22",
+                        "surface-dim": "#d8dadc",
+                        "on-tertiary-fixed": "#261a00",
+                        "surface-bright": "#f7f9fb",
+                        "on-secondary": "#ffffff"
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    spacing: {
+                        "container-padding-mobile": "16px",
+                        "base": "8px",
+                        "gutter": "16px",
+                        "container-padding-desktop": "32px",
+                        "stack-md": "16px",
+                        "stack-lg": "24px",
+                        "stack-sm": "8px"
+                    },
+                    fontFamily: {
+                        "body-md": ["Plus Jakarta Sans"],
+                        "label-bold": ["Plus Jakarta Sans"],
+                        "headline-sm": ["Plus Jakarta Sans"],
+                        "display-mobile": ["Plus Jakarta Sans"],
+                        "body-lg": ["Plus Jakarta Sans"],
+                        "headline-md": ["Plus Jakarta Sans"],
+                        "timer-numeric": ["Plus Jakarta Sans"],
+                        "display-lg": ["Plus Jakarta Sans"]
+                    },
+                    fontSize: {
+                        "body-md": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                        "label-bold": ["14px", { "lineHeight": "20px", "fontWeight": "700" }],
+                        "headline-sm": ["20px", { "lineHeight": "28px", "fontWeight": "700" }],
+                        "display-mobile": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "800" }],
+                        "body-lg": ["18px", { "lineHeight": "28px", "fontWeight": "500" }],
+                        "headline-md": ["24px", { "lineHeight": "32px", "fontWeight": "700" }],
+                        "timer-numeric": ["40px", { "lineHeight": "40px", "fontWeight": "800" }],
+                        "display-lg": ["48px", { "lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "800" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .confetti-piece {
+            position: absolute;
+            width: 10px;
+            height: 20px;
+            background: #ffd300;
+            top: -20px;
+            opacity: 0;
+            animation: fall 4s linear infinite;
+        }
+        @keyframes fall {
+            0% { top: -20px; opacity: 1; transform: translateX(0) rotate(0deg); }
+            100% { top: 100vh; opacity: 0; transform: translateX(100px) rotate(360deg); }
+        }
+        .glow-effect {
+            box-shadow: 0 0 20px rgba(255, 126, 51, 0.3);
+        }
+        .podium-1 { transform: translateY(-20px); }
+        .podium-2 { transform: translateY(10px); }
+        .podium-3 { transform: translateY(30px); }
+    </style>
+</head>
+<body class="bg-background text-on-background font-body-md min-h-screen relative overflow-x-hidden">
+<!-- Confetti Container -->
+<div class="fixed inset-0 pointer-events-none z-0" id="confetti-container"></div>
+<!-- TopAppBar -->
+<header class="docked full-width top-0 shadow-sm bg-surface dark:bg-on-background z-50">
+<div class="flex justify-between items-center px-container-padding-mobile md:px-container-padding-desktop h-16 w-full max-w-7xl mx-auto">
+<div class="text-headline-md font-display-mobile font-extrabold text-primary dark:text-primary-fixed">Bilgi Yarışı</div>
+<div class="flex items-center gap-4 hidden md:flex">
+<a class="text-on-surface-variant font-medium hover:bg-primary-container/10 transition-colors duration-200 px-3 py-2 rounded-lg" href="#">Ana Sayfa</a>
+<a class="text-on-surface-variant font-medium hover:bg-primary-container/10 transition-colors duration-200 px-3 py-2 rounded-lg" href="#">Odalarım</a>
+<a class="text-primary font-bold border-b-2 border-primary hover:bg-primary-container/10 transition-colors duration-200 px-3 py-2" href="#">Liderlik</a>
+<a class="text-on-surface-variant font-medium hover:bg-primary-container/10 transition-colors duration-200 px-3 py-2 rounded-lg" href="#">Profil</a>
+</div>
+<div class="flex items-center gap-2">
+<button class="p-2 hover:bg-primary-container/10 rounded-full transition-colors duration-200 active:scale-95 transition-transform text-primary dark:text-primary-fixed">
+<span class="material-symbols-outlined">help</span>
+</button>
+</div>
+</div>
+</header>
+<!-- SideNavBar (Hidden on Mobile) -->
+<nav class="h-full w-64 hidden md:flex flex-col bg-surface-container dark:bg-surface-container-high shadow-md fixed left-0 top-0 z-40 pt-16">
+<div class="p-6">
+<h2 class="font-label-bold text-label-bold text-on-surface">Hoşgeldin!</h2>
+<p class="text-sm text-on-surface-variant">Yarışmaya hazır mısın?</p>
+</div>
+<div class="flex-1 px-4 space-y-2">
+<a class="text-on-surface-variant hover:bg-surface-variant rounded-xl mx-2 p-3 flex items-center gap-3 hover:translate-x-1 transition-transform" href="#">
+<span class="material-symbols-outlined">home</span>
+<span class="font-label-bold text-label-bold">Ana Sayfa</span>
+</a>
+<a class="text-on-surface-variant hover:bg-surface-variant rounded-xl mx-2 p-3 flex items-center gap-3 hover:translate-x-1 transition-transform" href="#">
+<span class="material-symbols-outlined">meeting_room</span>
+<span class="font-label-bold text-label-bold">Odalarım</span>
+</a>
+<a class="bg-secondary-container text-on-secondary-container rounded-xl mx-2 p-3 flex items-center gap-3 hover:translate-x-1 transition-transform shadow-sm" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">leaderboard</span>
+<span class="font-label-bold text-label-bold">Liderlik</span>
+</a>
+<a class="text-on-surface-variant hover:bg-surface-variant rounded-xl mx-2 p-3 flex items-center gap-3 hover:translate-x-1 transition-transform" href="#">
+<span class="material-symbols-outlined">person</span>
+<span class="font-label-bold text-label-bold">Profil</span>
+</a>
+</div>
+<div class="p-4">
+<button class="w-full bg-primary-container text-on-primary-container font-label-bold text-label-bold py-3 rounded-xl hover:bg-primary transition-colors hover:text-on-primary glow-effect">
+                Oda Kur
+            </button>
+</div>
+</nav>
+<!-- Main Content -->
+<main class="md:ml-64 pt-20 pb-24 px-container-padding-mobile md:px-container-padding-desktop max-w-7xl mx-auto relative z-10">
+<div class="text-center mb-stack-lg">
+<h1 class="font-display-lg text-display-lg text-primary mb-2">Tebrikler!</h1>
+<p class="font-body-lg text-body-lg text-on-surface-variant">İşte bu turdaki sıralamanız.</p>
+</div>
+<!-- Podium Section -->
+<div class="flex justify-center items-end gap-4 mb-12 h-64">
+<!-- Silver -->
+<div class="flex flex-col items-center podium-2">
+<div class="relative w-20 h-20 mb-4">
+<img alt="Ayşe" class="w-full h-full rounded-full border-4 border-surface-variant object-cover shadow-lg" data-alt="A portrait of a young woman with a joyful expression, wearing a stylish modern top. The background is a soft, vibrant blue gradient. The lighting is studio quality, highlighting her features, fitting a cheerful, modern-playful UI avatar aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuALJWnaw8Q0GCPgJbsDxs2bKgQqTMPAXsPMgl4OA0VEz6DnetKenCeNwVwaY59fsvRkfWySfUX6GSBC57IiTcKAy2tpHoZr9Nfj_0kT5trgSjRq5Xo8OYALI2cRAmuqjl8yvwRkF3di6cFQLsgagX6aR-FoA1dZxSdviYt_P_oehgJw2b-lwMr8TGGG851o09Tt840YG3KI06ttBw03t--Yfaglf0XmbfK-ij7Dr9W3_F4-BfOprO-5hXr_TpUBAlKYjqrOsqxQMgaU"/>
+<div class="absolute -bottom-2 -right-2 bg-surface-variant text-on-surface w-8 h-8 rounded-full flex items-center justify-center font-bold shadow-md border-2 border-surface">2</div>
+</div>
+<div class="bg-gradient-to-t from-surface-variant to-surface-container p-4 rounded-t-xl w-24 text-center shadow-inner h-32 flex flex-col justify-end">
+<span class="font-headline-sm text-headline-sm text-on-surface block truncate">Ayşe</span>
+<span class="font-label-bold text-label-bold text-primary">850 Puan</span>
+</div>
+</div>
+<!-- Gold -->
+<div class="flex flex-col items-center podium-1 relative z-10">
+<span class="material-symbols-outlined text-tertiary-fixed-dim text-5xl mb-2" style="font-variation-settings: 'FILL' 1; filter: drop-shadow(0 4px 6px rgba(206,154,0,0.5));">military_tech</span>
+<div class="relative w-28 h-28 mb-4">
+<img alt="Can" class="w-full h-full rounded-full border-4 border-tertiary-fixed-dim object-cover shadow-xl glow-effect" data-alt="A portrait of a confident young man smiling brightly. He is wearing a casual, premium t-shirt. The background is a soft, warm orange gradient. Studio lighting enhances his expression, perfectly matching a high-energy, modern-playful top-player avatar style." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBR7ujyShJjULJPwfaXinulFq8a-bDXRLQ4ux8E1gDc_AlyVcM4wCdXamuPlMIpPOFp-PRb64QXRsK3ETjYcJ70gsCxvuugNWDN_Fhuehdy8w89acHqOIBfW6pDXm9LIopvHltwAqVYA6t6PAGm-l_lR7RQKHP82_bKyIN7DxVCO36JvVgxg_GbtdL6dzMphzpPBVVMfbhHYruTo1nW3KEFKquZwR0rc-LWRPQBZCB2AQU7d-rTD1yirS4KEmEWQRSfcO1bl1YRONWv"/>
+<div class="absolute -bottom-3 -right-3 bg-tertiary-fixed-dim text-on-tertiary-fixed w-10 h-10 rounded-full flex items-center justify-center font-bold text-lg shadow-lg border-2 border-surface">1</div>
+</div>
+<div class="bg-gradient-to-t from-tertiary-container to-tertiary-fixed p-4 rounded-t-xl w-32 text-center shadow-lg h-40 flex flex-col justify-end border-t-4 border-tertiary-fixed-dim">
+<span class="font-headline-md text-headline-md text-on-tertiary-container block truncate">Can</span>
+<span class="font-label-bold text-label-bold text-on-tertiary-fixed">1200 Puan</span>
+</div>
+</div>
+<!-- Bronze -->
+<div class="flex flex-col items-center podium-3">
+<div class="relative w-16 h-16 mb-4">
+<img alt="Deniz" class="w-full h-full rounded-full border-4 border-[#cd7f32] object-cover shadow-md" data-alt="A portrait of a young person with an excited, playful smile. They are wearing a bright, casual outfit. The background is a clean, minimal light grey. The lighting is bright and cheerful, fitting the overall modern-playful, energetic UI aesthetic of the app." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCvaDoNve_jAxa6tHE5NAwVlMMX15frg7i0VlT3W696YrujWiqp9rOforAVfuSHEx_DHbiHNli198v81I6Qk-Y606ENXrOKoR94OzUq0h9ivQSFJAEdOAJnH0epnJCTd3JLggdBrl3Dw8q5d0yrG5KfQrlNVHdYbS9DTFVBjwnrmZjYadOKFYN0SC0x05437aNQeMFoOhVYfdDzYiKecV99wBlFv3bBfxwnePnmWQ2A8T8y7B-5L-CnjWwfdD29K4QG-bARsu8wdM7M"/>
+<div class="absolute -bottom-2 -right-2 bg-[#cd7f32] text-white w-8 h-8 rounded-full flex items-center justify-center font-bold shadow-md border-2 border-surface">3</div>
+</div>
+<div class="bg-gradient-to-t from-[#cd7f32]/40 to-[#cd7f32]/10 p-4 rounded-t-xl w-24 text-center shadow-inner h-24 flex flex-col justify-end">
+<span class="font-headline-sm text-headline-sm text-on-surface block truncate">Deniz</span>
+<span class="font-label-bold text-label-bold text-primary">720 Puan</span>
+</div>
+</div>
+</div>
+<!-- Action Buttons Grid -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-2xl mx-auto mb-stack-lg">
+<button class="bg-gradient-to-r from-primary-container to-primary text-on-primary font-headline-sm text-headline-sm py-4 px-6 rounded-[16px] hover:opacity-90 transition-opacity shadow-[0_4px_14px_0_rgba(255,126,51,0.39)] flex items-center justify-center gap-2">
+<span class="material-symbols-outlined">replay</span>
+                Tekrar Oyna
+            </button>
+<button class="bg-surface border-2 border-secondary text-secondary font-headline-sm text-headline-sm py-4 px-6 rounded-[16px] hover:bg-secondary/10 transition-colors flex items-center justify-center gap-2 shadow-sm">
+<span class="material-symbols-outlined">visibility</span>
+                Cevaplarımı Gör
+            </button>
+<button class="bg-surface-variant text-on-surface-variant font-body-lg text-body-lg py-3 px-6 rounded-[16px] hover:bg-surface-dim transition-colors flex items-center justify-center gap-2">
+<span class="material-symbols-outlined">arrow_back</span>
+                Odaya Dön
+            </button>
+<button class="bg-transparent text-primary font-body-lg text-body-lg py-3 px-6 rounded-[16px] hover:bg-primary/5 transition-colors flex items-center justify-center gap-2">
+<span class="material-symbols-outlined">home</span>
+                Ana Sayfaya Dön
+            </button>
+</div>
+<!-- Leaderboard List -->
+<div class="max-w-2xl mx-auto bg-surface-container-lowest rounded-[24px] shadow-[0_8px_30px_rgb(0,0,0,0.04)] overflow-hidden border border-surface-variant/30">
+<div class="bg-primary/5 p-4 border-b border-surface-variant/30">
+<h3 class="font-headline-sm text-headline-sm text-on-surface">Tüm Oyuncular</h3>
+</div>
+<div class="divide-y divide-surface-variant/30">
+<!-- List Item 4 -->
+<div class="flex items-center justify-between p-4 hover:bg-surface-container-low transition-colors">
+<div class="flex items-center gap-4">
+<span class="font-headline-sm text-headline-sm text-on-surface-variant w-8 text-center">4</span>
+<img alt="Burak" class="w-12 h-12 rounded-full object-cover" data-alt="A portrait of a young man with a casual, relaxed expression. He is wearing a simple dark blue shirt. The background is a solid white. The lighting is soft and neutral, fitting perfectly into a clean, modern-playful UI leaderboard list." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDrWivvKbmyYe_5LvxTPLuS0wL4_V2FsUol4dIft_Q5cjebMPjRRZn5XAGIWLv-MF8XKY6kifFm8m15qZGnbwE5w2IehBz8xchIrG_6-oNeShJFXR8MpttN97pBbPPkQBAP0l_1_M00K7ByHnWvmoeToekdP8C8QyTu_eLKpLpnx-oAPpIhQdN0-OGMRMeTqijhBLmCjZsxrrAcuRdCHqrUtWKtykVkMbVOz34uijMGcYh02az3hairziBg-AkMvSpDfbJrvhnu__Ye"/>
+<span class="font-body-lg text-body-lg text-on-surface font-medium">Burak</span>
+</div>
+<span class="font-label-bold text-label-bold bg-surface-variant px-3 py-1 rounded-full text-on-surface-variant">650 Puan</span>
+</div>
+<!-- List Item 5 -->
+<div class="flex items-center justify-between p-4 hover:bg-surface-container-low transition-colors">
+<div class="flex items-center gap-4">
+<span class="font-headline-sm text-headline-sm text-on-surface-variant w-8 text-center">5</span>
+<img alt="Zeynep" class="w-12 h-12 rounded-full object-cover" data-alt="A portrait of a young woman with a focused, competitive look. She is wearing a modern yellow top. The background is a soft beige. The lighting highlights her expression, fitting seamlessly into a high-quality, modern-playful UI list component." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDZL55jpTyiAB2qlIy8oR-bWdIN_hN-FBQKv7duMizIMnEpuiZrdLr-l5PXKUJuw7PEdKexcif9XLDXlSUVsCKtd_LSy0l4yF_XM_XqNXmSNO5_1y3flLzRjS_bIaJ3KQ-qUaIUcbAXYIeohCKICX1uiGm-ANEzJNr5cNTVMONkvrRHWvragGYlV5eYU0a_svlVe7D-fZn-NXmWG1JKSvnTv-ZlnwTisv8yR2AbAQe0AIsb0X9kgAq4EsOd5r-jY5DIxGIe42BasAJu"/>
+<span class="font-body-lg text-body-lg text-on-surface font-medium">Zeynep</span>
+</div>
+<span class="font-label-bold text-label-bold bg-surface-variant px-3 py-1 rounded-full text-on-surface-variant">590 Puan</span>
+</div>
+<!-- List Item 6 -->
+<div class="flex items-center justify-between p-4 bg-primary/5 border-l-4 border-primary">
+<div class="flex items-center gap-4">
+<span class="font-headline-sm text-headline-sm text-primary w-8 text-center">6</span>
+<img alt="Sen" class="w-12 h-12 rounded-full object-cover border-2 border-primary" data-alt="A portrait of a young person, representing the current user, looking determined. Wearing a casual grey hoodie. The background is a subtle gradient. The lighting is studio quality, making the avatar stand out slightly in a modern-playful UI leaderboard list." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCrR1sYowNmfbNT_qYJ6RH5o1LaXEn6OVVf8OXW6-NY2J4HDzLYfdBj4x-zkJYk-5wn2x23KetaCuCmQGWTIVzlbnDXICEZ6xUzmupeaj0tblXRHZjHZklEcc9R0JhMgPZiUIRvui-aNE2GZVBDGqsFRN2xL1RAL_3Of-jnkpzeUrpusCGpWlbNywfk3_q2FHNlEcS0J7-ug-eM4pFIeFr82Kc3tqOHKaCwat6T5t3tqtmLyN4qKjiTVaIzbknM3Mm64Cd3_J-jabXq"/>
+<span class="font-body-lg text-body-lg text-primary font-bold">Sen</span>
+</div>
+<span class="font-label-bold text-label-bold bg-primary-container text-on-primary-container px-3 py-1 rounded-full">420 Puan</span>
+</div>
+<!-- List Item 7 -->
+<div class="flex items-center justify-between p-4 hover:bg-surface-container-low transition-colors">
+<div class="flex items-center gap-4">
+<span class="font-headline-sm text-headline-sm text-on-surface-variant w-8 text-center">7</span>
+<div class="w-12 h-12 rounded-full bg-surface-variant flex items-center justify-center text-on-surface-variant font-bold text-lg">
+                            M
+                        </div>
+<span class="font-body-lg text-body-lg text-on-surface font-medium">Murat</span>
+</div>
+<span class="font-label-bold text-label-bold bg-surface-variant px-3 py-1 rounded-full text-on-surface-variant">380 Puan</span>
+</div>
+</div>
+</div>
+</main>
+<!-- BottomNavBar (Mobile Only) -->
+<nav class="docked full-width bottom-0 rounded-t-xl md:hidden bg-surface dark:bg-inverse-surface shadow-[0_-4px_6px_-1px_rgba(255,126,51,0.1)] fixed left-0 w-full z-50 flex justify-around items-center h-20 px-4 pb-safe border-t border-outline-variant/20">
+<button class="flex flex-col items-center justify-center text-on-surface-variant hover:text-primary transition-colors active:scale-90 transition-transform">
+<span class="material-symbols-outlined">home</span>
+<span class="font-label-bold text-label-bold text-[10px] mt-1">Ana Sayfa</span>
+</button>
+<button class="flex flex-col items-center justify-center text-on-surface-variant hover:text-primary transition-colors active:scale-90 transition-transform">
+<span class="material-symbols-outlined">dashboard</span>
+<span class="font-label-bold text-label-bold text-[10px] mt-1">Odalar</span>
+</button>
+<button class="flex flex-col items-center justify-center bg-primary-container text-on-primary-container rounded-full w-12 h-12 active:scale-90 transition-transform -mt-4 shadow-lg glow-effect border-4 border-surface">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">military_tech</span>
+</button>
+<button class="flex flex-col items-center justify-center text-on-surface-variant hover:text-primary transition-colors active:scale-90 transition-transform">
+<span class="material-symbols-outlined">person_outline</span>
+<span class="font-label-bold text-label-bold text-[10px] mt-1">Profil</span>
+</button>
+</nav>
+<script>
+        // Simple confetti animation
+        const colors = ['#ff7e33', '#2170e4', '#ce9a00', '#9f4200', '#0058be'];
+        const container = document.getElementById('confetti-container');
+
+        for (let i = 0; i < 50; i++) {
+            const confetti = document.createElement('div');
+            confetti.classList.add('confetti-piece');
+            confetti.style.left = Math.random() * 100 + 'vw';
+            confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+            confetti.style.animationDuration = (Math.random() * 3 + 2) + 's';
+            confetti.style.animationDelay = Math.random() * 5 + 's';
+            container.appendChild(confetti);
+        }
+    </script>
+</body></html>
