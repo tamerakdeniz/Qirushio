@@ -1,10 +1,11 @@
 "use client";
 
-import type { QuizLanguage, RoomSession } from "@/lib/types";
+import type { AppTheme, QuizLanguage, RoomSession } from "@/lib/types";
 
 const nicknameKey = "qirushio:nickname";
 const sessionPrefix = "qirushio:room:";
 const languageKey = "qirushio:language";
+const themeKey = "qirushio:theme";
 const legacyNicknameKey = "bilgi-yarisi:nickname";
 const legacySessionPrefix = "bilgi-yarisi:room:";
 
@@ -57,4 +58,17 @@ export function readLanguage(): QuizLanguage {
 
 export function saveLanguage(language: QuizLanguage): void {
   localStorage.setItem(languageKey, language);
+}
+
+export function readTheme(): AppTheme {
+  if (typeof window === "undefined") {
+    return "dark";
+  }
+
+  return localStorage.getItem(themeKey) === "light" ? "light" : "dark";
+}
+
+export function saveTheme(theme: AppTheme): void {
+  localStorage.setItem(themeKey, theme);
+  document.documentElement.dataset.theme = theme;
 }

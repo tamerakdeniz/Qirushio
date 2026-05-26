@@ -7,8 +7,10 @@ import {
   Gamepad2,
   Languages,
   LogIn,
+  Moon,
   PlusCircle,
   Sparkles,
+  Sun,
   Timer,
   Trophy,
   Users,
@@ -23,8 +25,8 @@ import { ErrorNotice, Modal, Spinner } from "@/components/ui";
 import { apiRequest } from "@/lib/client-api";
 import { categoryLabelsByLanguage, defaultRoomSettings } from "@/lib/constants";
 import { commonCopy, homeCopy } from "@/lib/i18n";
-import { readLanguage, readNickname, saveLanguage, saveNickname, saveRoomSession } from "@/lib/storage";
-import type { QuizLanguage, RoomSession, RoomSettings, RoomSummary } from "@/lib/types";
+import { readLanguage, readNickname, readTheme, saveLanguage, saveNickname, saveRoomSession, saveTheme } from "@/lib/storage";
+import type { AppTheme, QuizLanguage, RoomSession, RoomSettings, RoomSummary } from "@/lib/types";
 import { nicknameSchema } from "@/lib/validation";
 
 type Dialog = "create" | "join" | "rooms" | "help" | null;
@@ -34,6 +36,7 @@ export function HomeScreen() {
   const [hydrated, setHydrated] = useState(false);
   const [nickname, setNickname] = useState("");
   const [locale, setLocale] = useState<QuizLanguage>("tr");
+  const [theme, setTheme] = useState<AppTheme>("dark");
   const [dialog, setDialog] = useState<Dialog>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -44,6 +47,7 @@ export function HomeScreen() {
     queueMicrotask(() => {
       setNickname(readNickname());
       setLocale(readLanguage());
+      setTheme(readTheme());
       setHydrated(true);
     });
   }, []);
@@ -59,7 +63,7 @@ export function HomeScreen() {
       saveRoomSession(result.session);
       router.push(`/room/${result.session.roomCode}`);
     } catch (reason) {
-      setError(reason instanceof Error ? reason.message : "Oda oluşturulamadı.");
+      setError(reason instanceof Error ? reason.message : copy.createFailed);
     } finally {
       setBusy(false);
     }
@@ -68,7 +72,7 @@ export function HomeScreen() {
   async function joinRoom(code: string) {
     const normalizedCode = code.trim().toUpperCase();
     if (!normalizedCode) {
-      setError("Oda kodunu girin.");
+      setError(copy.roomCodeRequired);
       return;
     }
     setBusy(true);
@@ -81,7 +85,7 @@ export function HomeScreen() {
       saveRoomSession(result.session);
       router.push(`/room/${result.session.roomCode}`);
     } catch (reason) {
-      setError(reason instanceof Error ? reason.message : "Odaya katılınamadı.");
+      setError(reason instanceof Error ? reason.message : copy.joinFailed);
     } finally {
       setBusy(false);
     }
@@ -95,7 +99,7 @@ export function HomeScreen() {
       const result = await apiRequest<{ rooms: RoomSummary[] }>("/api/rooms");
       setRooms(result.rooms);
     } catch (reason) {
-      setError(reason instanceof Error ? reason.message : "Odalar alınamadı.");
+      setError(reason instanceof Error ? reason.message : copy.roomsFailed);
       setRooms([]);
     }
   }
@@ -111,6 +115,12 @@ export function HomeScreen() {
     setLocale(nextLocale);
   }
 
+  function toggleTheme() {
+    const nextTheme = theme === "dark" ? "light" : "dark";
+    saveTheme(nextTheme);
+    setTheme(nextTheme);
+  }
+
   const copy = homeCopy[locale];
   const common = commonCopy[locale];
   const categoryLabels = categoryLabelsByLanguage[locale];
@@ -124,7 +134,15 @@ export function HomeScreen() {
   }
 
   if (!nickname) {
-    return <NicknameEntry locale={locale} onLanguageChange={toggleLanguage} onComplete={setNickname} />;
+    return (
+      <NicknameEntry
+        locale={locale}
+        theme={theme}
+        onLanguageChange={toggleLanguage}
+        onThemeChange={toggleTheme}
+        onComplete={setNickname}
+      />
+    );
   }
 
   return (
@@ -150,7 +168,15 @@ export function HomeScreen() {
               <span className="text-xs font-extrabold uppercase">{locale === "tr" ? "EN" : "TR"}</span>
             </button>
             <button
-              className="hidden rounded-full bg-slate-900/65 px-4 py-2 text-sm font-bold text-muted sm:block"
+              aria-label={theme === "dark" ? copy.switchToLight : copy.switchToDark}
+              className="ghost-button !min-h-10 !px-3 text-secondary-deep"
+              onClick={toggleTheme}
+              type="button"
+            >
+              {theme === "dark" ? <Sun size={20} /> : <Moon size={20} />}
+            </button>
+            <button
+              className="hidden rounded-full bg-[var(--surface-raised)] px-4 py-2 text-sm font-bold text-muted sm:block"
               onClick={() => {
                 saveNickname("");
                 setNickname("");
@@ -177,7 +203,7 @@ export function HomeScreen() {
             </p>
           </div>
           <div className="relative mx-auto flex h-56 w-full max-w-[300px] items-center justify-center rounded-3xl bg-gradient-to-br from-orange-500/15 to-blue-500/18">
-            <div className="absolute left-5 top-7 rounded-2xl bg-slate-900/85 p-3 shadow-md">
+            <div className="absolute left-5 top-7 rounded-2xl bg-[var(--surface-raised)] p-3 shadow-md">
               <Timer className="text-secondary" />
             </div>
             <Image
@@ -189,8 +215,8 @@ export function HomeScreen() {
               loading="eager"
               className="drop-shadow-xl"
             />
-            <div className="absolute bottom-7 right-5 rounded-2xl bg-slate-900/85 p-3 shadow-md">
-              <Trophy className="text-[#ce9a00]" />
+            <div className="absolute bottom-7 right-5 rounded-2xl bg-[var(--surface-raised)] p-3 shadow-md">
+              <Trophy className="text-gold" />
             </div>
           </div>
         </section>
@@ -268,7 +294,7 @@ export function HomeScreen() {
         {rooms === null ? (
           <Spinner label={copy.searchingRooms} />
         ) : rooms.length === 0 ? (
-          <div className="rounded-2xl bg-slate-900/60 p-8 text-center">
+          <div className="rounded-2xl bg-[var(--surface-raised)] p-8 text-center">
             <Gamepad2 className="mx-auto mb-3 text-secondary" />
             <p className="font-bold">{copy.noRooms}</p>
             <p className="mt-1 text-sm text-muted">{copy.noRoomsHelp}</p>
@@ -305,11 +331,15 @@ export function HomeScreen() {
 
 function NicknameEntry({
   locale,
+  theme,
   onLanguageChange,
+  onThemeChange,
   onComplete,
 }: {
   locale: QuizLanguage;
+  theme: AppTheme;
   onLanguageChange: () => void;
+  onThemeChange: () => void;
   onComplete: (nickname: string) => void;
 }) {
   const [value, setValue] = useState("");
@@ -320,10 +350,20 @@ function NicknameEntry({
   return (
     <main className="flex min-h-screen items-center justify-center px-4 py-8">
       <section className="w-full max-w-md text-center">
-        <button className="ghost-button mb-4 ml-auto !min-h-10 !px-3 text-secondary-deep" onClick={onLanguageChange} type="button">
-          <Languages size={19} />
-          {locale === "tr" ? "EN" : "TR"}
-        </button>
+        <div className="mb-4 flex justify-end gap-1">
+          <button className="ghost-button !min-h-10 !px-3 text-secondary-deep" onClick={onLanguageChange} type="button">
+            <Languages size={19} />
+            {locale === "tr" ? "EN" : "TR"}
+          </button>
+          <button
+            aria-label={theme === "dark" ? copy.switchToLight : copy.switchToDark}
+            className="ghost-button !min-h-10 !px-3 text-secondary-deep"
+            onClick={onThemeChange}
+            type="button"
+          >
+            {theme === "dark" ? <Sun size={19} /> : <Moon size={19} />}
+          </button>
+        </div>
         <Image
           src="/assets/logo.png"
           width={100}
@@ -341,7 +381,7 @@ function NicknameEntry({
             event.preventDefault();
             const result = nicknameSchema.safeParse(value);
             if (!result.success) {
-              setError(result.error.issues[0]?.message ?? "Takma ad gerekli.");
+              setError(copy.nicknameRequired);
               return;
             }
             saveNickname(result.data);
@@ -386,7 +426,7 @@ function ActionCard({
   const tones = {
     orange: "border-orange-400/15 hover:shadow-[0_12px_28px_rgba(255,126,51,0.22)] text-primary",
     blue: "border-blue-400/15 hover:shadow-[0_12px_28px_rgba(33,112,228,0.2)] text-secondary",
-    neutral: "border-slate-700/70 text-muted",
+    neutral: "border-[var(--outline)] text-muted",
   };
   return (
     <button
@@ -418,7 +458,7 @@ function HowToPlay({ locale, open, onClose }: { locale: QuizLanguage; open: bool
 
 function Rule({ icon: Icon, text }: { icon: typeof Users; text: string }) {
   return (
-    <li className="flex items-start gap-3 rounded-xl bg-slate-900/55 p-3">
+    <li className="flex items-start gap-3 rounded-xl bg-[var(--surface-raised)] p-3">
       <span className="rounded-xl bg-blue-500/15 p-2 text-secondary">
         <Icon size={20} />
       </span>

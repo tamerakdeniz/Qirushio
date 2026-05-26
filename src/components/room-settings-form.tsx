@@ -65,7 +65,7 @@ export function RoomSettingsForm({
                 "rounded-full border-2 px-5 py-2.5 text-sm font-bold",
                 settings.language === language
                   ? "border-primary bg-primary text-white"
-                  : "border-white/10 bg-slate-900/55 text-muted",
+                  : "border-[var(--outline)] bg-[var(--surface-raised)] text-muted",
               )}
               onClick={() => update("language", language)}
             >
@@ -88,7 +88,7 @@ export function RoomSettingsForm({
                   "flex min-h-20 flex-col items-center justify-center gap-1 rounded-xl border-2 p-2 text-xs font-bold",
                   settings.category === category
                     ? "border-primary bg-primary text-white shadow-md"
-                    : "border-white/10 bg-slate-900/55 text-muted",
+                    : "border-[var(--outline)] bg-[var(--surface-raised)] text-muted",
                 )}
                 onClick={() => update("category", category)}
               >
@@ -103,7 +103,7 @@ export function RoomSettingsForm({
       <div className="grid gap-4 sm:grid-cols-2">
         <div>
           <p className="mb-2 text-sm font-bold">{copy.difficulty}</p>
-          <div className="flex rounded-xl bg-slate-950/60 p-1">
+          <div className="flex rounded-xl bg-[var(--control-track)] p-1">
             {(Object.keys(difficultyLabels) as RoomSettings["difficulty"][]).map((difficulty) => (
               <button
                 key={difficulty}
@@ -111,7 +111,7 @@ export function RoomSettingsForm({
                 className={cn(
                   "flex-1 rounded-lg px-2 py-2 text-sm font-bold",
                   settings.difficulty === difficulty
-                    ? "bg-slate-800 text-primary shadow-sm"
+                    ? "bg-[var(--control-selected)] text-primary shadow-sm"
                     : "text-muted",
                 )}
                 onClick={() => update("difficulty", difficulty)}
@@ -123,7 +123,7 @@ export function RoomSettingsForm({
         </div>
         <div>
           <p className="mb-2 text-sm font-bold">{copy.scope}</p>
-          <div className="flex rounded-xl bg-slate-950/60 p-1">
+          <div className="flex rounded-xl bg-[var(--control-track)] p-1">
             {(Object.keys(scopeLabels) as RoomSettings["scope"][]).map((scope) => (
               <button
                 key={scope}
@@ -131,7 +131,7 @@ export function RoomSettingsForm({
                 className={cn(
                   "flex-1 rounded-lg px-2 py-2 text-sm font-bold",
                   settings.scope === scope
-                    ? "bg-slate-800 text-secondary shadow-sm"
+                    ? "bg-[var(--control-selected)] text-secondary shadow-sm"
                     : "text-muted",
                 )}
                 onClick={() => update("scope", scope)}
@@ -174,7 +174,7 @@ export function RoomSettingsForm({
         </label>
       </div>
 
-      <label className="flex items-center gap-3 rounded-xl bg-slate-900/60 p-3 text-sm font-medium">
+      <label className="flex items-center gap-3 rounded-xl bg-[var(--surface-raised)] p-3 text-sm font-medium">
         <input
           type="checkbox"
           className="h-5 w-5 accent-[#2170e4]"

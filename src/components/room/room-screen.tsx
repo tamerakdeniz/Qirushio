@@ -349,7 +349,7 @@ function JoinRoomGate({
           event.preventDefault();
           const parsed = nicknameSchema.safeParse(nickname);
           if (!parsed.success) {
-            setError(parsed.error.issues[0]?.message ?? "Takma ad gerekli.");
+            setError(copy.nicknameRequired);
             return;
           }
           setBusy(true);
@@ -362,7 +362,7 @@ function JoinRoomGate({
             saveRoomSession(response.session);
             onJoined(response.session);
           } catch (reason) {
-            setError(reason instanceof Error ? reason.message : "Odaya katılınamadı.");
+            setError(reason instanceof Error ? reason.message : copy.joinFailed);
           } finally {
             setBusy(false);
           }
@@ -482,7 +482,7 @@ function Lobby({
             <section>
               <div className="mb-3 flex items-center justify-between px-1">
                 <h2 className="text-xl font-bold">{copy.players}</h2>
-                <span className="rounded-full bg-slate-900/65 px-3 py-1 text-sm font-bold text-muted">
+                <span className="rounded-full bg-[var(--surface-raised)] px-3 py-1 text-sm font-bold text-muted">
                   {snapshot.players.length} / {room.maxPlayers}
                 </span>
               </div>
@@ -513,7 +513,7 @@ function Lobby({
                           <input
                             autoFocus
                             id="lobby-nickname"
-                            className="min-w-0 flex-1 rounded-lg border-2 border-secondary bg-slate-950/70 px-2 py-1.5 text-sm font-bold outline-none"
+                            className="min-w-0 flex-1 rounded-lg border-2 border-secondary bg-[var(--field)] px-2 py-1.5 text-sm font-bold outline-none"
                             maxLength={24}
                             value={nicknameDraft}
                             onChange={(event) => setNicknameDraft(event.target.value)}
@@ -528,7 +528,7 @@ function Lobby({
                           </button>
                           <button
                             aria-label={copy.cancelEdit}
-                            className="rounded-lg bg-slate-800 p-2 text-muted"
+                            className="rounded-lg bg-[var(--control-selected)] p-2 text-muted"
                             disabled={busy !== null}
                             onClick={() => setEditingNickname(false)}
                             type="button"
@@ -556,14 +556,14 @@ function Lobby({
                         </p>
                       )}
                       {player.id === currentPlayer.id && editingNickname && nicknameError && (
-                        <p className="mt-1 text-xs font-medium text-red-300">{nicknameError}</p>
+                        <p className="mt-1 text-xs font-medium text-[var(--danger)]">{nicknameError}</p>
                       )}
                     </div>
                     {!(player.id === currentPlayer.id && editingNickname) && (
                       <span
                         className={cn(
                           "rounded-full px-3 py-1.5 text-xs font-bold",
-                          player.isReady ? "bg-blue-600 text-white" : "bg-slate-800 text-muted",
+                          player.isReady ? "bg-blue-600 text-white" : "bg-[var(--control-selected)] text-muted",
                         )}
                       >
                         {player.isReady ? copy.ready : copy.waiting}
@@ -656,7 +656,7 @@ function Generating({ locale, snapshot }: { locale: QuizLanguage; snapshot: Room
       <section className="w-full max-w-md text-center">
         <div className="relative mx-auto mb-8 flex h-40 w-40 items-center justify-center">
           <span className="absolute inset-0 animate-pulse-soft rounded-full bg-primary/20 blur-2xl" />
-          <span className="animate-float relative flex h-28 w-28 items-center justify-center rounded-full bg-slate-900 shadow-xl">
+          <span className="animate-float relative flex h-28 w-28 items-center justify-center rounded-full bg-[var(--surface-raised)] shadow-xl">
             <Bot size={57} className="text-primary-deep" />
           </span>
           <Star className="animate-orbit absolute inset-0 m-auto text-secondary" />
@@ -747,14 +747,14 @@ function Question({
   return (
     <main className="mx-auto flex min-h-screen max-w-4xl flex-col px-4 py-5 md:py-8">
       <header className="mb-5 flex items-center justify-between font-bold text-muted">
-        <span className="rounded-full bg-amber-400/15 px-4 py-2 text-sm text-amber-200">{question.category}</span>
+        <span className="rounded-full bg-amber-400/15 px-4 py-2 text-sm text-gold">{question.category}</span>
         <span>
           {copy.question} {question.position + 1} / {snapshot.room.questionCount}
         </span>
         <span className="w-16 text-right text-sm">{snapshot.answeredCount}/{snapshot.players.length}</span>
       </header>
       <div className="mb-6 flex justify-center">
-        <div className="flex h-24 w-24 items-center justify-center rounded-full border-[7px] border-orange-400 bg-slate-900 text-4xl font-extrabold tabular-nums text-primary">
+        <div className="flex h-24 w-24 items-center justify-center rounded-full border-[7px] border-orange-400 bg-[var(--surface-raised)] text-4xl font-extrabold tabular-nums text-primary">
           {remaining}
         </div>
       </div>
@@ -766,10 +766,10 @@ function Question({
           <button
             key={option}
             className={cn(
-              "flex min-h-16 w-full items-center gap-4 rounded-2xl border-2 bg-slate-900/85 p-4 text-left font-medium shadow-sm",
+              "flex min-h-16 w-full items-center gap-4 rounded-2xl border-2 bg-[var(--surface-card)] p-4 text-left font-medium shadow-sm",
               choice === index
                 ? "border-secondary bg-blue-500/15 font-bold shadow-[0_5px_18px_rgba(33,112,228,0.17)]"
-                : "border-white/10 hover:border-secondary/40",
+                : "border-[var(--outline)] hover:border-secondary/40",
             )}
             disabled={disabled || remaining === 0}
             onClick={() => onAnswer(index)}
@@ -777,7 +777,7 @@ function Question({
             <span
               className={cn(
                 "flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-sm font-bold",
-                choice === index ? "bg-secondary text-white" : "bg-slate-800 text-muted",
+                choice === index ? "bg-secondary text-white" : "bg-[var(--control-selected)] text-muted",
               )}
             >
               {String.fromCharCode(65 + index)}
@@ -855,11 +855,11 @@ function Results({
             <Eye size={19} /> {copy.viewAnswers}
           </button>
           {currentPlayer.isHost && (
-            <button className="ghost-button w-full bg-slate-900/55" disabled={busy !== null} onClick={() => void onLobby()}>
+            <button className="ghost-button w-full bg-[var(--surface-raised)]" disabled={busy !== null} onClick={() => void onLobby()}>
               <Settings2 size={18} /> {copy.lobbySettings}
             </button>
           )}
-          <Link className="ghost-button w-full bg-slate-900/55" href="/">
+          <Link className="ghost-button w-full bg-[var(--surface-raised)]" href="/">
             <Home size={18} /> {copy.home}
           </Link>
         </div>
@@ -872,7 +872,7 @@ function Results({
             <div
               key={player.id}
               className={cn(
-                "flex items-center gap-4 border-b border-white/10 px-5 py-4 last:border-0",
+                "flex items-center gap-4 border-b border-[var(--outline)] px-5 py-4 last:border-0",
                 player.id === currentPlayer.id && "bg-orange-500/10",
               )}
             >
@@ -881,7 +881,7 @@ function Results({
                 {initials(player.nickname)}
               </span>
               <strong className="flex-1">{player.id === currentPlayer.id ? `${player.nickname} (${copy.you})` : player.nickname}</strong>
-              <span className="rounded-full bg-slate-800 px-3 py-1 text-sm font-bold">{player.score} {copy.points}</span>
+              <span className="rounded-full bg-[var(--control-selected)] px-3 py-1 text-sm font-bold">{player.score} {copy.points}</span>
             </div>
           ))}
         </section>
@@ -891,11 +891,11 @@ function Results({
 }
 
 function PodiumPlayer({ player, rank, pointsLabel }: { player: PlayerView; rank: number; pointsLabel: string }) {
-  const heights = { 1: "h-36 bg-gradient-to-t from-yellow-500/80 to-yellow-300/25", 2: "h-28 bg-slate-800", 3: "h-24 bg-orange-500/20" };
+  const heights = { 1: "h-36 bg-gradient-to-t from-yellow-500/80 to-yellow-300/25", 2: "h-28 bg-[var(--control-selected)]", 3: "h-24 bg-orange-500/20" };
   return (
     <div className={cn("flex w-28 flex-col items-center sm:w-36", rank === 1 && "-translate-y-4")}>
-      <span className="mb-2 flex h-14 w-14 items-center justify-center rounded-full border-4 border-slate-700 bg-slate-900 font-bold shadow-md">
-        {rank === 1 ? <Crown className="text-[#ce9a00]" /> : initials(player.nickname)}
+      <span className="mb-2 flex h-14 w-14 items-center justify-center rounded-full border-4 border-[var(--outline)] bg-[var(--surface-raised)] font-bold shadow-md">
+        {rank === 1 ? <Crown className="text-gold" /> : initials(player.nickname)}
       </span>
       <div className={cn("flex w-full flex-col justify-end rounded-t-xl p-3", heights[rank as keyof typeof heights])}>
         <Medal className="mx-auto mb-1 h-5 w-5 text-primary-deep" />
@@ -941,7 +941,7 @@ function Review({
       <section className="space-y-4">
         {reviews.map((review) => (
           <article className="glass-panel overflow-hidden !rounded-2xl" key={review.id}>
-            <header className={cn("flex justify-between p-4 text-sm font-bold", review.isCorrect ? "bg-green-500/15 text-green-300" : "bg-red-500/15 text-red-300")}>
+            <header className={cn("flex justify-between p-4 text-sm font-bold", review.isCorrect ? "bg-green-500/15 text-[var(--success)]" : "bg-red-500/15 text-[var(--danger)]")}>
               <span>{copy.question} {review.position + 1}</span>
               <span className="flex items-center gap-3">
                 {review.timeRemainingMs === null ? (
@@ -966,9 +966,9 @@ function Review({
                       key={option}
                       className={cn(
                         "flex items-center justify-between rounded-xl border p-3 text-sm font-medium",
-                        correctOption && "border-green-500 bg-green-500/15 text-green-200",
-                        selectedWrong && "border-red-500 bg-red-500/15 text-red-200",
-                        !correctOption && !selectedWrong && "border-white/10 bg-slate-900/40 text-muted",
+                        correctOption && "border-green-500 bg-green-500/15 text-[var(--success)]",
+                        selectedWrong && "border-red-500 bg-red-500/15 text-[var(--danger)]",
+                        !correctOption && !selectedWrong && "border-[var(--outline)] bg-[var(--surface-raised)] text-muted",
                       )}
                     >
                       {option}

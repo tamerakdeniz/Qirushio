@@ -25,7 +25,7 @@ export function Modal({
   }
 
   return (
-    <div className="fixed inset-0 z-40 flex items-end justify-center bg-slate-950/70 p-3 backdrop-blur-sm sm:items-center">
+    <div className="modal-backdrop fixed inset-0 z-40 flex items-end justify-center p-3 backdrop-blur-sm sm:items-center">
       <section
         role="dialog"
         aria-modal="true"
@@ -52,7 +52,7 @@ export function ErrorNotice({ message }: { message: string | null }) {
     return null;
   }
   return (
-    <p className="rounded-xl border border-red-400/30 bg-red-500/10 px-4 py-3 text-sm font-medium text-red-200">
+    <p className="rounded-xl border border-red-400/30 bg-red-500/10 px-4 py-3 text-sm font-medium text-[var(--danger)]">
       {message}
     </p>
   );

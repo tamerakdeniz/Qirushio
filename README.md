@@ -15,7 +15,7 @@ Arkadaşlarla link veya kısa oda kodu üzerinden oynanan, her turda AI tarafın
 - Oda oluşturma, kodla katılma ve katılıma açık lobi listesi
 - Türkçe/İngilizce arayüz ve oda bazlı soru dili seçimi
 - Host ayarları: tüm kategorilere yayılan rastgele soru havuzu dahil kategori, zorluk, kapsam, soru sayısı, süre ve açık/gizli oda
-- Koyu tema, responsive arka plan görselleri ve okunabilirliği koruyan karartma katmanı
+- Kalıcı açık/koyu tema seçimi, responsive arka plan görselleri ve koyu temada okunabilirliği koruyan karartma katmanı
 - Lobi hazır durumu, bağlantı paylaşımı ve Presence ile çevrimiçi göstergesi
 - AI hazırlık ekranı, 10 saniyelik oyun başlangıcı ve sorular arası 3 saniyelik geçiş
 - Beş seçenekli kilitlenen cevap akışı ve herkes cevapladığında erken ilerleme
