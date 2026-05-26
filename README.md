@@ -84,10 +84,10 @@ score = isCorrect ? Math.floor(remainingTimeMs / 1000) * 10 : 0;
 1. Repository'yi Vercel'e bağlayın.
 2. `.env.example` içindeki gerekli değerleri Vercel Environment Variables bölümüne girin.
 3. Supabase migration'ını production projesine uygulayın.
-4. `CRON_SECRET` değerini tanımlayın. [vercel.json](./vercel.json) içindeki saatlik cron, dört saatten eski pasif odaları kaldıran korumalı endpoint'i çağırır.
+4. `CRON_SECRET` değerini tanımlayın. [vercel.json](./vercel.json) içindeki günlük cron (03:00 UTC), süresi dolmuş odaları kaldıran korumalı endpoint'i çağırır. Vercel Hobby yalnızca günde bir cron destekler.
 5. Deploy edin.
 
-Vercel planınız saatlik cron çalıştırmayı desteklemiyorsa, aynı `/api/cron/cleanup` endpoint'ini `Authorization: Bearer <CRON_SECRET>` ile çalışan harici bir scheduler üzerinden saatlik tetikleyin.
+Açık lobi listesi (`GET /api/rooms`) her yüklendiğinde de `cleanup_expired_rooms` çalıştırır; cron atlanırsa bile eski odalar ana sayfada temizlenebilir. Daha sık temizlik için `/api/cron/cleanup` endpoint'ini `Authorization: Bearer <CRON_SECRET>` ile harici bir scheduler'dan tetikleyebilirsiniz.
 
 ## Komutlar
 
