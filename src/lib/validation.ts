@@ -13,7 +13,7 @@ export const roomSettingsSchema = z.object({
   difficulty: z.enum(["easy", "medium", "hard"]),
   scope: z.enum(["global", "local"]),
   questionCount: z.number().int().min(5).max(20),
-  questionTimeSeconds: z.number().int().min(10).max(30),
+  questionTimeSeconds: z.number().int().min(5).max(30),
   isPublic: z.boolean(),
 });
 

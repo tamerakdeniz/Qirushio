@@ -165,7 +165,7 @@ export function RoomSettingsForm({
             value={settings.questionTimeSeconds}
             onChange={(event) => update("questionTimeSeconds", Number(event.target.value))}
           >
-            {[10, 15, 20, 30].map((seconds) => (
+            {[5, 10, 15, 20, 30].map((seconds) => (
               <option key={seconds} value={seconds}>
                 {seconds} {copy.second}
               </option>
