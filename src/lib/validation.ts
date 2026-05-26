@@ -26,6 +26,10 @@ export const joinRoomSchema = z.object({
   nickname: nicknameSchema,
 });
 
+export const nicknameUpdateSchema = z.object({
+  nickname: nicknameSchema,
+});
+
 export const readySchema = z.object({
   isReady: z.boolean(),
 });

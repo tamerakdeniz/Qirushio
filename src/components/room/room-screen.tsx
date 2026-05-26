@@ -11,6 +11,7 @@ import {
   Eye,
   Home,
   Medal,
+  Pencil,
   Play,
   RefreshCcw,
   Settings2,
@@ -165,6 +166,32 @@ export function RoomScreen({ code }: { code: string }) {
     });
   }
 
+  async function updateNickname(nickname: string): Promise<boolean> {
+    if (!session) {
+      return false;
+    }
+
+    setWorking("nickname");
+    setError(null);
+    try {
+      const response = await apiRequest<{ nickname: string }>(
+        `/api/rooms/${code}/nickname`,
+        { method: "PATCH", body: JSON.stringify({ nickname }) },
+        session,
+      );
+      const nextSession = { ...session, nickname: response.nickname };
+      saveRoomSession(nextSession);
+      setSession(nextSession);
+      await refresh();
+      return true;
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : "Takma ad güncellenemedi.");
+      return false;
+    } finally {
+      setWorking(null);
+    }
+  }
+
   if (session === undefined) {
     return (
       <main className="flex min-h-screen items-center justify-center">
@@ -212,6 +239,7 @@ export function RoomScreen({ code }: { code: string }) {
             onlinePlayers={onlinePlayers}
             busy={working}
             error={error}
+            onNicknameChange={updateNickname}
             onReady={(isReady) =>
               runAction("ready", async () => {
                 await apiRequest(
@@ -349,6 +377,7 @@ function Lobby({
   onlinePlayers,
   busy,
   error,
+  onNicknameChange,
   onReady,
   onSettings,
   onStart,
@@ -358,12 +387,16 @@ function Lobby({
   onlinePlayers: Set<string>;
   busy: string | null;
   error: string | null;
+  onNicknameChange: (nickname: string) => Promise<boolean>;
   onReady: (ready: boolean) => Promise<void>;
   onSettings: (settings: RoomSettings) => Promise<void>;
   onStart: () => Promise<void>;
 }) {
   const room = snapshot.room;
   const allReady = snapshot.players.every((player) => player.isReady);
+  const [editingNickname, setEditingNickname] = useState(false);
+  const [nicknameDraft, setNicknameDraft] = useState(currentPlayer.nickname);
+  const [nicknameError, setNicknameError] = useState<string | null>(null);
 
   async function shareRoom() {
     const url = window.location.href;
@@ -371,6 +404,27 @@ function Lobby({
       await navigator.share({ title: "Bilgi Yarışı", text: `Oda kodu: ${room.code}`, url });
     } else {
       await navigator.clipboard.writeText(url);
+    }
+  }
+
+  function beginNicknameEdit() {
+    setNicknameDraft(currentPlayer.nickname);
+    setNicknameError(null);
+    setEditingNickname(true);
+  }
+
+  async function submitNickname(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const parsed = nicknameSchema.safeParse(nicknameDraft);
+    if (!parsed.success) {
+      setNicknameError(parsed.error.issues[0]?.message ?? "Geçerli bir takma ad girin.");
+      return;
+    }
+
+    const updated = await onNicknameChange(parsed.data);
+    if (updated) {
+      setNicknameError(null);
+      setEditingNickname(false);
     }
   }
 
@@ -425,24 +479,78 @@ function Lobby({
                       />
                     </span>
                     <div className="min-w-0 flex-1">
-                      <p className="truncate font-bold">{player.nickname}</p>
+                      {player.id === currentPlayer.id && editingNickname ? (
+                        <form className="flex items-center gap-1.5" onSubmit={(event) => void submitNickname(event)}>
+                          <label className="sr-only" htmlFor="lobby-nickname">
+                            Takma adını düzenle
+                          </label>
+                          <input
+                            autoFocus
+                            id="lobby-nickname"
+                            className="min-w-0 flex-1 rounded-lg border-2 border-secondary bg-white px-2 py-1.5 text-sm font-bold outline-none"
+                            maxLength={24}
+                            value={nicknameDraft}
+                            onChange={(event) => setNicknameDraft(event.target.value)}
+                          />
+                          <button
+                            aria-label="Takma adı kaydet"
+                            className="rounded-lg bg-secondary p-2 text-white"
+                            disabled={busy !== null}
+                            type="submit"
+                          >
+                            <Check size={15} />
+                          </button>
+                          <button
+                            aria-label="Düzenlemeyi iptal et"
+                            className="rounded-lg bg-slate-100 p-2 text-muted"
+                            disabled={busy !== null}
+                            onClick={() => setEditingNickname(false)}
+                            type="button"
+                          >
+                            <X size={15} />
+                          </button>
+                        </form>
+                      ) : player.id === currentPlayer.id ? (
+                        <button
+                          aria-label={`Takma adını düzenle: ${player.nickname}`}
+                          className="group flex max-w-full items-center gap-1.5 text-left font-bold hover:text-secondary-deep"
+                          disabled={busy !== null}
+                          onClick={beginNicknameEdit}
+                          type="button"
+                        >
+                          <span className="truncate">{player.nickname}</span>
+                          <Pencil size={13} className="shrink-0 opacity-55 group-hover:opacity-100" />
+                        </button>
+                      ) : (
+                        <p className="truncate font-bold">{player.nickname}</p>
+                      )}
                       {player.isHost && (
                         <p className="flex items-center gap-1 text-xs font-bold text-secondary-deep">
                           <Star size={12} /> Kurucu
                         </p>
                       )}
-                    </div>
-                    <span
-                      className={cn(
-                        "rounded-full px-3 py-1.5 text-xs font-bold",
-                        player.isReady ? "bg-blue-600 text-white" : "bg-slate-100 text-muted",
+                      {player.id === currentPlayer.id && editingNickname && nicknameError && (
+                        <p className="mt-1 text-xs font-medium text-red-700">{nicknameError}</p>
                       )}
-                    >
-                      {player.isReady ? "Hazır" : "Bekliyor"}
-                    </span>
+                    </div>
+                    {!(player.id === currentPlayer.id && editingNickname) && (
+                      <span
+                        className={cn(
+                          "rounded-full px-3 py-1.5 text-xs font-bold",
+                          player.isReady ? "bg-blue-600 text-white" : "bg-slate-100 text-muted",
+                        )}
+                      >
+                        {player.isReady ? "Hazır" : "Bekliyor"}
+                      </span>
+                    )}
                   </div>
                 ))}
               </div>
+              {(room.generationError || error) && (
+                <div className="mt-4">
+                  <ErrorNotice message={room.generationError || error} />
+                </div>
+              )}
             </section>
           </div>
           <aside className="space-y-4">
@@ -462,7 +570,6 @@ function Lobby({
                 <RoomSettingSummary room={room} />
               )}
             </section>
-            <ErrorNotice message={room.generationError || error} />
             {currentPlayer.isHost ? (
               <button
                 className="primary-button w-full"
