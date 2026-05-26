@@ -18,7 +18,7 @@ export const siteConfig = {
     "Qirushio",
   ],
   ogImagePath: "/assets/logo.png",
-  url: "http://qurisho.tamerakdeniz.com",
+  url: "http://qirushio.tamerakdeniz.com",
 } as const;
 
 export function getSiteUrl(): string {
