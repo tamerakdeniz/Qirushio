@@ -51,6 +51,7 @@ npm run dev
 | `ANTHROPIC_MODEL` | Server only | Varsayılan: `claude-haiku-4-5-20251001` |
 | `CRON_SECRET` | Server only | `/api/cron/cleanup` isteğini korur |
 | `ALLOW_DEMO_QUESTIONS` | Server only | Yerel geliştirme fallback'i; production'da `false` kalmalı |
+| `NEXT_PUBLIC_SITE_URL` | Build + metadata | Canonical URL (`http://qurisho.tamerakdeniz.com`); OG, sitemap ve robots için |
 
 AI model varsayılanları sağlayıcıların resmi belgelerindeki kararlı/üretim kimliklerine göre seçildi:
 [Gemini modelleri](https://ai.google.dev/gemini-api/docs/models/gemini-v2) ve
