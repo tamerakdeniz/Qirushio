@@ -24,7 +24,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import { AppHeader } from "@/components/brand";
 import { RoomSettingsForm } from "@/components/room-settings-form";
@@ -33,7 +33,17 @@ import { apiRequest } from "@/lib/client-api";
 import { categoryLabelsByLanguage, difficultyLabelsByLanguage } from "@/lib/constants";
 import { commonCopy, homeCopy, roomCopy } from "@/lib/i18n";
 import { getSupabaseBrowser } from "@/lib/supabase/browser";
-import { readLanguage, readNickname, readRoomSession, removeRoomSession, saveRoomSession } from "@/lib/storage";
+import {
+  clearPendingAnswers,
+  readLanguage,
+  readNickname,
+  readPendingAnswers,
+  readRoomSession,
+  removePendingAnswer,
+  removeRoomSession,
+  saveRoomSession,
+  upsertPendingAnswer,
+} from "@/lib/storage";
 import type {
   AnswerReview,
   PlayerView,
@@ -55,6 +65,8 @@ export function RoomScreen({ code }: { code: string }) {
   const [working, setWorking] = useState<string | null>(null);
   const [selectedPending, setSelectedPending] = useState<number | null>(null);
   const [preferredLocale, setPreferredLocale] = useState<QuizLanguage>("tr");
+  const answerInFlightRef = useRef(false);
+  const [advanceTick, setAdvanceTick] = useState(0);
 
   useEffect(() => {
     queueMicrotask(() => {
@@ -77,7 +89,24 @@ export function RoomScreen({ code }: { code: string }) {
         session,
       );
       setSnapshot(nextSnapshot);
-      setSelectedPending(null);
+      if (nextSnapshot.room.speedrunMode) {
+        const currentQuestionId = nextSnapshot.question?.id;
+        const pending = currentQuestionId
+          ? readPendingAnswers(code).find((item) => item.questionId === currentQuestionId)
+          : null;
+        if (nextSnapshot.myAnswer) {
+          if (currentQuestionId) {
+            removePendingAnswer(code, currentQuestionId);
+          }
+          setSelectedPending(null);
+        } else if (pending) {
+          setSelectedPending(pending.selectedOption);
+        } else {
+          setSelectedPending(null);
+        }
+      } else {
+        setSelectedPending(null);
+      }
       setError(null);
     } catch (reason) {
       const message = reason instanceof Error ? reason.message : "Oda güncellenemedi.";
@@ -130,10 +159,53 @@ export function RoomScreen({ code }: { code: string }) {
     };
   }, [refresh, session, snapshot?.room.id]);
 
+  const syncPendingAnswers = useCallback(
+    async (answers = readPendingAnswers(code)) => {
+      if (!session || answers.length === 0) {
+        return;
+      }
+      const response = await apiRequest<{ synced: string[] }>(
+        `/api/rooms/${encodeURIComponent(code)}/answers/sync`,
+        { method: "POST", body: JSON.stringify({ answers }) },
+        session,
+      );
+      for (const questionId of response.synced) {
+        removePendingAnswer(code, questionId);
+      }
+    },
+    [code, session],
+  );
+
+  useEffect(() => {
+    if (!session || !snapshot?.room.speedrunMode || snapshot.room.phase !== "question" || !snapshot.question) {
+      return;
+    }
+
+    const stale = readPendingAnswers(code).filter((item) => item.questionId !== snapshot.question?.id);
+    if (stale.length === 0) {
+      return;
+    }
+
+    void syncPendingAnswers(stale);
+  }, [code, session, snapshot?.question?.id, snapshot?.room.phase, snapshot?.room.speedrunMode, syncPendingAnswers]);
+
   useEffect(() => {
     if (!session || !snapshot?.room.phaseEndsAt) {
       return;
     }
+
+    const waitingForAnswer =
+      snapshot.room.speedrunMode &&
+      snapshot.room.phase === "question" &&
+      snapshot.question &&
+      !snapshot.myAnswer &&
+      answerInFlightRef.current;
+
+    if (waitingForAnswer) {
+      const retry = window.setTimeout(() => setAdvanceTick((tick) => tick + 1), 250);
+      return () => window.clearTimeout(retry);
+    }
+
     const delay = Math.max(0, new Date(snapshot.room.phaseEndsAt).getTime() - Date.now() + 150);
     const timer = window.setTimeout(async () => {
       try {
@@ -148,7 +220,18 @@ export function RoomScreen({ code }: { code: string }) {
       }
     }, delay);
     return () => window.clearTimeout(timer);
-  }, [code, refresh, session, snapshot?.room.phase, snapshot?.room.phaseEndsAt]);
+  }, [
+    advanceTick,
+    code,
+    refresh,
+    selectedPending,
+    session,
+    snapshot?.myAnswer,
+    snapshot?.question,
+    snapshot?.room.phase,
+    snapshot?.room.phaseEndsAt,
+    snapshot?.room.speedrunMode,
+  ]);
 
   async function runAction(name: string, action: () => Promise<void>) {
     setWorking(name);
@@ -167,14 +250,34 @@ export function RoomScreen({ code }: { code: string }) {
     if (!session || working === "answer") {
       return;
     }
+
+    const timeRemainingMs = captureTimeRemainingMs(
+      snapshot?.room.phaseEndsAt ?? null,
+      snapshot?.room.questionTimeSeconds ?? 5,
+    );
+    upsertPendingAnswer(code, { questionId, selectedOption, timeRemainingMs });
     setSelectedPending(selectedOption);
-    await runAction("answer", async () => {
+    answerInFlightRef.current = true;
+    setWorking("answer");
+    setError(null);
+    try {
       await apiRequest(
         `/api/rooms/${code}/answer`,
-        { method: "POST", body: JSON.stringify({ questionId, selectedOption }) },
+        {
+          method: "POST",
+          body: JSON.stringify({ questionId, selectedOption, timeRemainingMs }),
+        },
         session,
       );
-    });
+      removePendingAnswer(code, questionId);
+      await refresh();
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : "İşlem tamamlanamadı.");
+    } finally {
+      answerInFlightRef.current = false;
+      setWorking(null);
+      setAdvanceTick((tick) => tick + 1);
+    }
   }
 
   const leaveRoom = useCallback(async () => {
@@ -317,6 +420,16 @@ export function RoomScreen({ code }: { code: string }) {
         );
       case "transition":
         return <Countdown room={snapshot.room} title={copy.nextQuestion} subtitle={copy.focus} compact />;
+      case "scoring":
+        return (
+          <ScoringFlush
+            code={code}
+            locale={locale}
+            room={snapshot.room}
+            onSynced={syncPendingAnswers}
+            onRefresh={refresh}
+          />
+        );
       case "finished":
         return (
           <Results
@@ -342,6 +455,67 @@ export function RoomScreen({ code }: { code: string }) {
   })();
 
   return <div className="min-h-screen">{content}</div>;
+}
+
+function captureTimeRemainingMs(phaseEndsAt: string | null, questionTimeSeconds: number): number {
+  const maxMs = questionTimeSeconds * 1000;
+  if (!phaseEndsAt) {
+    return maxMs;
+  }
+  return Math.max(0, Math.min(maxMs, new Date(phaseEndsAt).getTime() - Date.now()));
+}
+
+function ScoringFlush({
+  code,
+  locale,
+  room,
+  onSynced,
+  onRefresh,
+}: {
+  code: string;
+  locale: QuizLanguage;
+  room: RoomView;
+  onSynced: () => Promise<void>;
+  onRefresh: () => Promise<void>;
+}) {
+  const copy = roomCopy[locale];
+  const [status, setStatus] = useState<"syncing" | "ready">("syncing");
+
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      try {
+        await onSynced();
+        if (!cancelled) {
+          setStatus("ready");
+          await onRefresh();
+        }
+      } catch {
+        if (!cancelled) {
+          setStatus("ready");
+          await onRefresh();
+        }
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [onRefresh, onSynced]);
+
+  useEffect(() => {
+    return () => {
+      clearPendingAnswers(code);
+    };
+  }, [code]);
+
+  return (
+    <Countdown
+      room={room}
+      title={status === "syncing" ? copy.syncingAnswers : copy.preparingResults}
+      subtitle={copy.preparingResults}
+      compact
+    />
+  );
 }
 
 function JoinRoomGate({

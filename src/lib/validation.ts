@@ -51,6 +51,20 @@ export const readySchema = z.object({
 export const answerSchema = z.object({
   questionId: z.string().uuid(),
   selectedOption: z.number().int().min(0).max(4),
+  timeRemainingMs: z.number().int().min(0).max(30_000).optional(),
+});
+
+export const answerSyncSchema = z.object({
+  answers: z
+    .array(
+      z.object({
+        questionId: z.string().uuid(),
+        selectedOption: z.number().int().min(0).max(4),
+        timeRemainingMs: z.number().int().min(0).max(30_000),
+      }),
+    )
+    .min(1)
+    .max(25),
 });
 
 export const generatedQuestionSchema = z.object({

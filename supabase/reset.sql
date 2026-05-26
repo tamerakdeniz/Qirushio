@@ -17,6 +17,7 @@ drop table if exists public.rooms cascade;
 drop function if exists public.return_to_lobby(uuid, uuid, text) cascade;
 drop function if exists public.advance_game(uuid) cascade;
 drop function if exists public.submit_answer(uuid, uuid, text, uuid, smallint) cascade;
+drop function if exists public.submit_answer(uuid, uuid, text, uuid, smallint, integer) cascade;
 drop function if exists public.begin_round(uuid, uuid, text) cascade;
 drop function if exists public.cleanup_expired_rooms() cascade;
 drop function if exists public.keep_room_alive() cascade;
@@ -33,6 +34,7 @@ create type public.room_phase as enum (
   'countdown',
   'question',
   'transition',
+  'scoring',
   'finished'
 );
 
@@ -218,7 +220,8 @@ create or replace function public.submit_answer(
   p_player_id uuid,
   p_token_hash text,
   p_question_id uuid,
-  p_selected_option smallint
+  p_selected_option smallint,
+  p_time_remaining_ms integer default null
 )
 returns table (accepted boolean, earned_score integer)
 language plpgsql
@@ -233,6 +236,7 @@ declare
   calculated_score integer;
   correct boolean;
   inserted_score integer;
+  scoring_grace boolean := false;
 begin
   select *
   into room_row
@@ -240,7 +244,11 @@ begin
   where id = p_room_id
   for update;
 
-  if room_row.phase <> 'question'
+  scoring_grace := room_row.speedrun_mode and room_row.phase = 'scoring';
+
+  if scoring_grace then
+    null;
+  elsif room_row.phase <> 'question'
      or room_row.phase_ends_at is null
      or room_row.phase_ends_at <= v_now then
     raise exception 'question_closed';
@@ -257,25 +265,46 @@ begin
     raise exception 'invalid_player';
   end if;
 
-  select *
-  into question_row
-  from public.questions
-  where id = p_question_id
-    and room_id = p_room_id
-    and round_number = room_row.round_number
-    and position = room_row.current_question_index;
+  if scoring_grace then
+    select *
+    into question_row
+    from public.questions
+    where id = p_question_id
+      and room_id = p_room_id
+      and round_number = room_row.round_number;
 
-  if question_row.id is null then
-    raise exception 'invalid_question';
+    if question_row.id is null then
+      raise exception 'invalid_question';
+    end if;
+
+    remaining_ms := least(
+      room_row.question_time_seconds * 1000,
+      greatest(
+        0,
+        coalesce(p_time_remaining_ms, room_row.question_time_seconds * 1000)
+      )
+    );
+  else
+    select *
+    into question_row
+    from public.questions
+    where id = p_question_id
+      and room_id = p_room_id
+      and round_number = room_row.round_number
+      and position = room_row.current_question_index;
+
+    if question_row.id is null then
+      raise exception 'invalid_question';
+    end if;
+
+    remaining_ms := least(
+      room_row.question_time_seconds * 1000,
+      greatest(
+        0,
+        floor(extract(epoch from (room_row.phase_ends_at - v_now)) * 1000)::integer
+      )
+    );
   end if;
-
-  remaining_ms := least(
-    room_row.question_time_seconds * 1000,
-    greatest(
-      0,
-      floor(extract(epoch from (room_row.phase_ends_at - v_now)) * 1000)::integer
-    )
-  );
   correct := question_row.correct_option = p_selected_option;
   calculated_score := case
     when correct then floor(remaining_ms::numeric / 1000)::integer * 10
@@ -373,10 +402,18 @@ begin
 
     if room_row.phase_ends_at <= v_now or answer_count >= player_count then
       if room_row.current_question_index + 1 >= room_row.question_count then
-        update public.rooms
-        set phase = 'finished', phase_ends_at = null
-        where id = p_room_id;
-        return query select true, 'finished'::public.room_phase;
+        if room_row.speedrun_mode then
+          update public.rooms
+          set phase = 'scoring',
+              phase_ends_at = v_now + interval '3 seconds'
+          where id = p_room_id;
+          return query select true, 'scoring'::public.room_phase;
+        else
+          update public.rooms
+          set phase = 'finished', phase_ends_at = null
+          where id = p_room_id;
+          return query select true, 'finished'::public.room_phase;
+        end if;
       elsif room_row.speedrun_mode then
         update public.rooms
         set phase = 'question',
@@ -403,6 +440,15 @@ begin
         phase_ends_at = v_now + make_interval(secs => room_row.question_time_seconds)
     where id = p_room_id;
     return query select true, 'question'::public.room_phase;
+    return;
+  end if;
+
+  if room_row.phase = 'scoring'
+     and room_row.phase_ends_at <= v_now then
+    update public.rooms
+    set phase = 'finished', phase_ends_at = null
+    where id = p_room_id;
+    return query select true, 'finished'::public.room_phase;
     return;
   end if;
 
@@ -457,7 +503,7 @@ revoke all on public.rooms, public.players, public.player_sessions, public.quest
   from anon, authenticated;
 revoke execute on function public.cleanup_expired_rooms() from public, anon, authenticated;
 revoke execute on function public.begin_round(uuid, uuid, text) from public, anon, authenticated;
-revoke execute on function public.submit_answer(uuid, uuid, text, uuid, smallint)
+revoke execute on function public.submit_answer(uuid, uuid, text, uuid, smallint, integer)
   from public, anon, authenticated;
 revoke execute on function public.advance_game(uuid) from public, anon, authenticated;
 revoke execute on function public.return_to_lobby(uuid, uuid, text)

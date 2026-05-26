@@ -23,6 +23,7 @@ export async function POST(
       p_token_hash: authorized.tokenHash,
       p_question_id: input.questionId,
       p_selected_option: input.selectedOption,
+      p_time_remaining_ms: input.timeRemainingMs ?? null,
     });
     if (error) {
       throw new Error(error.message);

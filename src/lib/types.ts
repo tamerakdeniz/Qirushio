@@ -4,7 +4,14 @@ export type RoomPhase =
   | "countdown"
   | "question"
   | "transition"
+  | "scoring"
   | "finished";
+
+export interface PendingAnswer {
+  questionId: string;
+  selectedOption: number;
+  timeRemainingMs: number;
+}
 
 export type QuizLanguage = "tr" | "en";
 export type AppTheme = "dark" | "light";
