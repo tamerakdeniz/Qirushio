@@ -35,7 +35,7 @@ export async function GET(): Promise<NextResponse> {
     const { data, error } = await admin
       .from("rooms")
       .select(
-        "id, code, phase, host_player_id, language, category, difficulty, scope, question_count, question_time_seconds, is_public, max_players, round_number, current_question_index, phase_ends_at, generation_error, players(nickname, is_host)",
+        "id, code, phase, host_player_id, language, category, difficulty, scope, question_count, question_time_seconds, is_public, max_players, round_number, current_question_index, phase_ends_at, generation_error, players!players_room_id_fkey(nickname, is_host)",
       )
       .eq("phase", "lobby")
       .eq("is_public", true)
