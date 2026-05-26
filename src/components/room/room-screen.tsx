@@ -462,7 +462,10 @@ function captureTimeRemainingMs(phaseEndsAt: string | null, questionTimeSeconds:
   if (!phaseEndsAt) {
     return maxMs;
   }
-  return Math.max(0, Math.min(maxMs, new Date(phaseEndsAt).getTime() - Date.now()));
+  const raw = Math.max(0, Math.min(maxMs, new Date(phaseEndsAt).getTime() - Date.now()));
+  // Timer UI uses ceil(seconds); align stored ms so sub-second clicks still earn points.
+  const displayedSeconds = Math.ceil(raw / 1000);
+  return Math.max(raw, displayedSeconds > 0 ? displayedSeconds * 1000 : 0);
 }
 
 function ScoringFlush({

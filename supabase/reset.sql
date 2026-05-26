@@ -236,6 +236,8 @@ declare
   calculated_score integer;
   correct boolean;
   inserted_score integer;
+  existing_score integer;
+  score_delta integer;
   scoring_grace boolean := false;
 begin
   select *
@@ -307,9 +309,19 @@ begin
   end if;
   correct := question_row.correct_option = p_selected_option;
   calculated_score := case
-    when correct then floor(remaining_ms::numeric / 1000)::integer * 10
+    when correct then
+      greatest(
+        10,
+        ceiling(greatest(remaining_ms, 1)::numeric / 1000)::integer * 10
+      )
     else 0
   end;
+
+  select a.score
+  into existing_score
+  from public.answers a
+  where a.question_id = p_question_id
+    and a.player_id = p_player_id;
 
   insert into public.answers (
     room_id,
@@ -332,19 +344,28 @@ begin
     calculated_score,
     correct
   )
-  on conflict (question_id, player_id) do nothing
+  on conflict (question_id, player_id) do update
+  set
+    selected_option = excluded.selected_option,
+    answered_at = excluded.answered_at,
+    time_remaining_ms = excluded.time_remaining_ms,
+    score = excluded.score,
+    is_correct = excluded.is_correct
+  where public.answers.score < excluded.score
   returning score into inserted_score;
 
   if inserted_score is null then
     return query
-    select false, a.score from public.answers a
-    where a.question_id = p_question_id and a.player_id = p_player_id;
+    select false, coalesce(existing_score, 0);
     return;
   end if;
 
-  update public.players
-  set score = score + inserted_score
-  where id = p_player_id;
+  score_delta := inserted_score - coalesce(existing_score, 0);
+  if score_delta > 0 then
+    update public.players
+    set score = score + score_delta
+    where id = p_player_id;
+  end if;
 
   return query select true, inserted_score;
 end;
