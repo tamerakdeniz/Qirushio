@@ -23,6 +23,7 @@ import {
   X,
 } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 
 import { AppHeader } from "@/components/brand";
@@ -46,6 +47,7 @@ import { cn, initials, millisecondsToSeconds } from "@/lib/utils";
 import { nicknameSchema } from "@/lib/validation";
 
 export function RoomScreen({ code }: { code: string }) {
+  const router = useRouter();
   const [session, setSession] = useState<RoomSession | null | undefined>(undefined);
   const [snapshot, setSnapshot] = useState<RoomSnapshot | null>(null);
   const [onlinePlayers, setOnlinePlayers] = useState<Set<string>>(new Set());
@@ -175,6 +177,24 @@ export function RoomScreen({ code }: { code: string }) {
     });
   }
 
+  const leaveRoom = useCallback(async () => {
+    if (!session) {
+      router.push("/");
+      return;
+    }
+    try {
+      await apiRequest(
+        `/api/rooms/${encodeURIComponent(code)}/leave`,
+        { method: "POST", body: "{}" },
+        session,
+      );
+    } catch {
+      // Oturum geçersiz olsa bile yerel kaydı temizleyip ana sayfaya dön.
+    }
+    removeRoomSession(code);
+    router.push("/");
+  }, [code, router, session]);
+
   async function updateNickname(nickname: string): Promise<boolean> {
     if (!session) {
       return false;
@@ -274,6 +294,7 @@ export function RoomScreen({ code }: { code: string }) {
                 await apiRequest(`/api/rooms/${code}/start`, { method: "POST", body: "{}" }, session);
               })
             }
+            onHome={() => leaveRoom()}
           />
         );
       case "generating":
@@ -314,6 +335,7 @@ export function RoomScreen({ code }: { code: string }) {
                 await apiRequest(`/api/rooms/${code}/lobby`, { method: "POST", body: "{}" }, session);
               })
             }
+            onHome={() => leaveRoom()}
           />
         );
     }
@@ -405,6 +427,7 @@ function Lobby({
   onReady,
   onSettings,
   onStart,
+  onHome,
 }: {
   snapshot: RoomSnapshot;
   currentPlayer: PlayerView;
@@ -416,6 +439,7 @@ function Lobby({
   onReady: (ready: boolean) => Promise<void>;
   onSettings: (settings: RoomSettings) => Promise<void>;
   onStart: () => Promise<void>;
+  onHome: () => void | Promise<void>;
 }) {
   const room = snapshot.room;
   const copy = roomCopy[locale];
@@ -459,10 +483,10 @@ function Lobby({
       <AppHeader
         compact
         action={
-          <Link className="ghost-button !min-h-10" href="/">
+          <button type="button" className="ghost-button !min-h-10" onClick={() => void onHome()}>
             <Home size={18} />
             {copy.home}
-          </Link>
+          </button>
         }
       />
       <main className="mx-auto max-w-7xl px-4 py-5 md:px-8">
@@ -801,6 +825,7 @@ function Results({
   locale,
   onReplay,
   onLobby,
+  onHome,
 }: {
   snapshot: RoomSnapshot;
   currentPlayer: PlayerView;
@@ -809,6 +834,7 @@ function Results({
   locale: QuizLanguage;
   onReplay: () => Promise<void>;
   onLobby: () => Promise<void>;
+  onHome: () => void | Promise<void>;
 }) {
   const [showReview, setShowReview] = useState(false);
   const copy = roomCopy[locale];
@@ -859,9 +885,13 @@ function Results({
               <Settings2 size={18} /> {copy.lobbySettings}
             </button>
           )}
-          <Link className="ghost-button w-full bg-[var(--surface-raised)]" href="/">
+          <button
+            type="button"
+            className="ghost-button w-full bg-[var(--surface-raised)]"
+            onClick={() => void onHome()}
+          >
             <Home size={18} /> {copy.home}
-          </Link>
+          </button>
         </div>
         <ErrorNotice message={error} />
         <section className="glass-panel mt-8 overflow-hidden text-left">
