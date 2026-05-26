@@ -5,15 +5,8 @@ export async function notifyRoomChanged(roomId: string): Promise<void> {
   const channel = admin.channel(`room:${roomId}`);
 
   try {
-    await channel.send({
-      type: "broadcast",
-      event: "room_updated",
-      payload: { roomId },
-    });
+    await channel.httpSend("room_updated", { roomId });
   } catch (error) {
     console.error("Realtime broadcast failed", error);
-  } finally {
-    await admin.removeChannel(channel);
   }
 }
-

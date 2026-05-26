@@ -1,12 +1,12 @@
 import { NextResponse } from "next/server";
 
-import { generateQuestions } from "@/lib/server/ai";
+import { generateQuestions, usedPromptsSince } from "@/lib/server/ai";
 import { findRoom, requireHost, routeErrorResponse } from "@/lib/server/http";
 import { notifyRoomChanged } from "@/lib/server/realtime";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 
 export const runtime = "nodejs";
-export const maxDuration = 60;
+export const maxDuration = 120;
 
 export async function POST(
   request: Request,
@@ -19,6 +19,15 @@ export async function POST(
     roomId = room.id;
     const host = await requireHost(request, room.id);
     const admin = getSupabaseAdmin();
+
+    const { data: usedQuestions, error: usedError } = await admin
+      .from("questions")
+      .select("prompt")
+      .gte("created_at", usedPromptsSince());
+    if (usedError) {
+      throw new Error(usedError.message);
+    }
+
     const { data: roundNumber, error: beginError } = await admin.rpc("begin_round", {
       p_room_id: room.id,
       p_host_id: host.player.id,
@@ -29,7 +38,11 @@ export async function POST(
     }
 
     await notifyRoomChanged(room.id);
-    const questions = await generateQuestions(room);
+
+    const questions = await generateQuestions(
+      room,
+      (usedQuestions ?? []).map((row) => row.prompt),
+    );
     const { error: questionsError } = await admin.from("questions").insert(
       questions.map((question, position) => ({
         room_id: room.id,

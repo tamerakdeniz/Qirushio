@@ -3,7 +3,43 @@ import "server-only";
 import { generatedQuestionsSchema } from "@/lib/validation";
 import type { GeneratedQuestion, RoomSettings } from "@/lib/types";
 
-function promptForQuestions(settings: RoomSettings): string {
+const BATCH_SIZE = 8;
+const MAX_USED_PROMPTS_IN_PROMPT = 80;
+const MAX_GENERATION_ATTEMPTS = 4;
+const USED_PROMPT_WINDOW_MS = 24 * 60 * 60 * 1000;
+
+export function normalizeQuestionPrompt(prompt: string): string {
+  return prompt
+    .toLowerCase()
+    .normalize("NFKD")
+    .replace(/\p{M}/gu, "")
+    .replace(/[^\p{L}\p{N}\s]/gu, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function isDuplicate(prompt: string, seen: Set<string>): boolean {
+  const normalized = normalizeQuestionPrompt(prompt);
+  return !normalized || seen.has(normalized);
+}
+
+export function usedPromptsSince(): string {
+  return new Date(Date.now() - USED_PROMPT_WINDOW_MS).toISOString();
+}
+
+function maxOutputTokens(questionCount: number): number {
+  return Math.min(16_384, 700 + questionCount * 520);
+}
+
+interface PromptContext {
+  batchSize: number;
+  batchIndex: number;
+  totalBatches: number;
+  usedPrompts: string[];
+  attempt: number;
+}
+
+function promptForQuestions(settings: RoomSettings, context: PromptContext): string {
   const language = settings.language === "tr" ? "Turkish" : "English";
   const difficulty = { easy: "easy", medium: "medium", hard: "hard" }[settings.difficulty];
   const scope = { global: "global", local: "local context" }[settings.scope];
@@ -17,14 +53,25 @@ function promptForQuestions(settings: RoomSettings): string {
   }[settings.category];
   const categoryInstruction =
     settings.category === "random"
-      ? "Category pool: mix questions across general knowledge, science, sports, arts, and history. Distribute them across multiple categories and do not concentrate the set on a single subject."
+      ? "Category pool: mix questions across general knowledge, science, sports, arts, and history."
       : `Category: ${category}.`;
 
+  const usedInDb = context.usedPrompts.slice(-MAX_USED_PROMPTS_IN_PROMPT);
+  const usedSection =
+    usedInDb.length > 0
+      ? [
+          "These exact prompts were already used in the last 24 hours. Do not repeat any of them:",
+          ...usedInDb.map((prompt) => `- ${prompt}`),
+        ].join("\n")
+      : "No prompts were used in the database during the last 24 hours.";
+
   return [
-    `Generate exactly ${settings.questionCount} multiplayer trivia questions in ${language}.`,
+    `Generate exactly ${context.batchSize} multiplayer trivia questions in ${language}.`,
+    `Batch ${context.batchIndex + 1}/${context.totalBatches}.`,
     `${categoryInstruction} Difficulty: ${difficulty}. Context: ${scope}.`,
     "Each question must have exactly five credible answer options and exactly one correct answer.",
-    "Avoid ambiguous, time-sensitive, political, unsafe, or duplicate questions.",
+    "Every prompt in this batch must be unique and must not match any prompt listed below.",
+    usedSection,
     "Use this JSON shape only, without markdown:",
     '[{"category":"...","prompt":"...","options":["...","...","...","...","..."],"correctOption":0,"explanation":"..."}]',
     "correctOption is a zero-based integer from 0 to 4. Explanations must be concise.",
@@ -39,14 +86,34 @@ function parseQuestions(text: string, expectedCount: number): GeneratedQuestion[
   const parsed: unknown = JSON.parse(normalized);
   const questions = generatedQuestionsSchema.parse(parsed);
 
-  if (questions.length !== expectedCount) {
+  if (questions.length < expectedCount) {
     throw new Error(`AI returned ${questions.length} questions; ${expectedCount} required.`);
   }
 
-  return questions;
+  return questions.slice(0, expectedCount);
 }
 
-async function generateWithGemini(settings: RoomSettings): Promise<GeneratedQuestion[]> {
+function dedupeQuestions(
+  questions: GeneratedQuestion[],
+  seen: Set<string>,
+): GeneratedQuestion[] {
+  const unique: GeneratedQuestion[] = [];
+
+  for (const question of questions) {
+    if (isDuplicate(question.prompt, seen)) {
+      continue;
+    }
+    seen.add(normalizeQuestionPrompt(question.prompt));
+    unique.push(question);
+  }
+
+  return unique;
+}
+
+async function generateWithGemini(
+  settings: RoomSettings,
+  context: PromptContext,
+): Promise<GeneratedQuestion[]> {
   const apiKey = process.env.GEMINI_API_KEY;
   const model = process.env.GEMINI_MODEL ?? "gemini-2.5-flash";
   const response = await fetch(
@@ -55,10 +122,14 @@ async function generateWithGemini(settings: RoomSettings): Promise<GeneratedQues
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        contents: [{ parts: [{ text: promptForQuestions(settings) }] }],
-        generationConfig: { responseMimeType: "application/json", temperature: 0.8 },
+        contents: [{ parts: [{ text: promptForQuestions(settings, context) }] }],
+        generationConfig: {
+          responseMimeType: "application/json",
+          temperature: 0.75 + context.attempt * 0.05,
+          maxOutputTokens: maxOutputTokens(context.batchSize),
+        },
       }),
-      signal: AbortSignal.timeout(45_000),
+      signal: AbortSignal.timeout(50_000),
     },
   );
 
@@ -74,10 +145,13 @@ async function generateWithGemini(settings: RoomSettings): Promise<GeneratedQues
     throw new Error("Gemini returned no question content.");
   }
 
-  return parseQuestions(text, settings.questionCount);
+  return parseQuestions(text, context.batchSize);
 }
 
-async function generateWithAnthropic(settings: RoomSettings): Promise<GeneratedQuestion[]> {
+async function generateWithAnthropic(
+  settings: RoomSettings,
+  context: PromptContext,
+): Promise<GeneratedQuestion[]> {
   const model = process.env.ANTHROPIC_MODEL ?? "claude-haiku-4-5-20251001";
   const response = await fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
@@ -88,11 +162,11 @@ async function generateWithAnthropic(settings: RoomSettings): Promise<GeneratedQ
     },
     body: JSON.stringify({
       model,
-      max_tokens: 6000,
-      temperature: 0.8,
-      messages: [{ role: "user", content: promptForQuestions(settings) }],
+      max_tokens: maxOutputTokens(context.batchSize),
+      temperature: 0.75 + context.attempt * 0.05,
+      messages: [{ role: "user", content: promptForQuestions(settings, context) }],
     }),
-    signal: AbortSignal.timeout(45_000),
+    signal: AbortSignal.timeout(50_000),
   });
 
   if (!response.ok) {
@@ -107,7 +181,67 @@ async function generateWithAnthropic(settings: RoomSettings): Promise<GeneratedQ
     throw new Error("Anthropic returned no question content.");
   }
 
-  return parseQuestions(text, settings.questionCount);
+  return parseQuestions(text, context.batchSize);
+}
+
+async function generateBatch(
+  settings: RoomSettings,
+  context: PromptContext,
+): Promise<GeneratedQuestion[]> {
+  if (process.env.GEMINI_API_KEY) {
+    return generateWithGemini(settings, context);
+  }
+  if (process.env.ANTHROPIC_API_KEY) {
+    return generateWithAnthropic(settings, context);
+  }
+  if (process.env.ALLOW_DEMO_QUESTIONS === "true") {
+    return demoQuestions({ ...settings, questionCount: context.batchSize }, context);
+  }
+
+  throw new Error("Configure GEMINI_API_KEY or ANTHROPIC_API_KEY before starting a game.");
+}
+
+async function generateUniqueQuestions(
+  settings: RoomSettings,
+  usedPrompts: string[],
+): Promise<GeneratedQuestion[]> {
+  const seen = new Set(usedPrompts.map(normalizeQuestionPrompt));
+  const result: GeneratedQuestion[] = [];
+  const target = settings.questionCount;
+  const totalBatches = Math.ceil(target / BATCH_SIZE);
+  let attempts = 0;
+
+  while (result.length < target && attempts < MAX_GENERATION_ATTEMPTS) {
+    const remaining = target - result.length;
+    const requestSize = Math.min(BATCH_SIZE + 2, remaining + 2);
+
+    const context: PromptContext = {
+      batchSize: requestSize,
+      batchIndex: Math.floor(result.length / BATCH_SIZE),
+      totalBatches,
+      usedPrompts: [...usedPrompts, ...result.map((question) => question.prompt)],
+      attempt: attempts,
+    };
+
+    const generated = await generateBatch(settings, context);
+    const unique = dedupeQuestions(generated, seen);
+
+    if (unique.length === 0) {
+      attempts += 1;
+      continue;
+    }
+
+    result.push(...unique.slice(0, remaining));
+    attempts += 1;
+  }
+
+  if (result.length < target) {
+    throw new Error(
+      `Could not produce enough unique questions (${result.length}/${target}).`,
+    );
+  }
+
+  return result.slice(0, target);
 }
 
 const demoBank: GeneratedQuestion[] = [
@@ -186,31 +320,42 @@ const demoBankEn: GeneratedQuestion[] = [
   },
 ];
 
-function demoQuestions(settings: RoomSettings): GeneratedQuestion[] {
-  const bank = settings.language === "en" ? demoBankEn : demoBank;
-  return Array.from({ length: settings.questionCount }, (_, index) => {
-    const source = bank[index % bank.length];
-    return {
-      ...source,
-      prompt:
-        settings.questionCount > bank.length
-          ? `${source.prompt} (${settings.language === "tr" ? "Tur" : "Round"} ${index + 1})`
-          : source.prompt,
-      options: [...source.options] as GeneratedQuestion["options"],
-    };
-  });
+function demoQuestions(settings: RoomSettings, context: PromptContext): GeneratedQuestion[] {
+  const sourceBank = settings.language === "en" ? demoBankEn : demoBank;
+  const seen = new Set(context.usedPrompts.map(normalizeQuestionPrompt));
+  const picked: GeneratedQuestion[] = [];
+
+  for (const question of sourceBank) {
+    if (picked.length >= context.batchSize) {
+      break;
+    }
+    if (isDuplicate(question.prompt, seen)) {
+      continue;
+    }
+    seen.add(normalizeQuestionPrompt(question.prompt));
+    picked.push({
+      ...question,
+      options: [...question.options] as GeneratedQuestion["options"],
+    });
+  }
+
+  return picked;
 }
 
-export async function generateQuestions(settings: RoomSettings): Promise<GeneratedQuestion[]> {
-  if (process.env.GEMINI_API_KEY) {
-    return generateWithGemini(settings);
-  }
-  if (process.env.ANTHROPIC_API_KEY) {
-    return generateWithAnthropic(settings);
-  }
-  if (process.env.ALLOW_DEMO_QUESTIONS === "true") {
-    return demoQuestions(settings);
+export async function generateQuestions(
+  settings: RoomSettings,
+  usedPrompts: string[] = [],
+): Promise<GeneratedQuestion[]> {
+  if (process.env.ALLOW_DEMO_QUESTIONS === "true" && !process.env.GEMINI_API_KEY && !process.env.ANTHROPIC_API_KEY) {
+    const context: PromptContext = {
+      batchSize: settings.questionCount,
+      batchIndex: 0,
+      totalBatches: 1,
+      usedPrompts,
+      attempt: 0,
+    };
+    return demoQuestions(settings, context).slice(0, settings.questionCount);
   }
 
-  throw new Error("Configure GEMINI_API_KEY or ANTHROPIC_API_KEY before starting a game.");
+  return generateUniqueQuestions(settings, usedPrompts);
 }
