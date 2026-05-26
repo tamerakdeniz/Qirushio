@@ -121,7 +121,11 @@ export function HomeScreen() {
       <AppHeader
         action={
           <div className="flex items-center gap-2">
-            <button className="ghost-button !min-h-10 !px-3 text-secondary-deep" onClick={() => setDialog("help")}>
+            <button
+              aria-label="Nasıl Oynanır?"
+              className="ghost-button !min-h-10 !px-3 text-secondary-deep"
+              onClick={() => setDialog("help")}
+            >
               <CircleHelp size={20} />
               <span className="hidden sm:inline">Nasıl Oynanır?</span>
             </button>
@@ -156,7 +160,15 @@ export function HomeScreen() {
             <div className="absolute left-5 top-7 rounded-2xl bg-white p-3 shadow-md">
               <Timer className="text-secondary" />
             </div>
-            <Image src="/assets/logo.png" alt="Bilgi Yarışı" width={174} height={174} className="drop-shadow-xl" />
+            <Image
+              src="/assets/logo.png"
+              alt="Bilgi Yarışı"
+              width={174}
+              height={174}
+              unoptimized
+              loading="eager"
+              className="drop-shadow-xl"
+            />
             <div className="absolute bottom-7 right-5 rounded-2xl bg-white p-3 shadow-md">
               <Trophy className="text-[#ce9a00]" />
             </div>
@@ -272,7 +284,15 @@ function NicknameEntry({ onComplete }: { onComplete: (nickname: string) => void 
   return (
     <main className="flex min-h-screen items-center justify-center px-4 py-8">
       <section className="w-full max-w-md text-center">
-        <Image src="/assets/logo.png" width={100} height={100} alt="" className="mx-auto mb-4 rounded-3xl shadow-lg" />
+        <Image
+          src="/assets/logo.png"
+          width={100}
+          height={100}
+          alt=""
+          unoptimized
+          loading="eager"
+          className="mx-auto mb-4 rounded-3xl shadow-lg"
+        />
         <h1 className="brand-gradient text-3xl font-extrabold">Bilgi Yarışmasına Hoş Geldin!</h1>
         <p className="mb-7 mt-3 font-medium text-muted">Zekanı test etmeye ve eğlenmeye hazır mısın?</p>
         <form

@@ -12,6 +12,8 @@ export function Brand({ compact = false }: { compact?: boolean }) {
         width={compact ? 38 : 48}
         height={compact ? 38 : 48}
         alt=""
+        unoptimized
+        loading="eager"
         className="rounded-xl shadow-sm"
       />
       <span className={cn("brand-gradient font-extrabold tracking-tight", compact ? "text-xl" : "text-2xl")}>
@@ -33,7 +35,11 @@ export function AppHeader({
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 md:px-8">
         <Brand compact={compact} />
         {action ?? (
-          <button className="ghost-button !min-h-10 !rounded-full !px-3 text-secondary-deep" type="button">
+          <button
+            aria-label="Nasıl Oynanır?"
+            className="ghost-button !min-h-10 !rounded-full !px-3 text-secondary-deep"
+            type="button"
+          >
             <CircleHelp size={20} />
             <span className="hidden sm:inline">Nasıl Oynanır?</span>
           </button>
@@ -42,4 +48,3 @@ export function AppHeader({
     </header>
   );
 }
-
