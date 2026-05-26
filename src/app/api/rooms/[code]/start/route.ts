@@ -63,11 +63,14 @@ export async function POST(
     return NextResponse.json({ ok: true });
   } catch (error) {
     if (roomId) {
-      const message =
-        error instanceof Error ? error.message.slice(0, 240) : "Sorular oluşturulamadı.";
+      console.error("Question generation failed", error);
       await getSupabaseAdmin()
         .from("rooms")
-        .update({ phase: "lobby", generation_error: message, phase_ends_at: null })
+        .update({
+          phase: "lobby",
+          generation_error: "Sorular hazırlanamadı. Lütfen tekrar deneyin.",
+          phase_ends_at: null,
+        })
         .eq("id", roomId)
         .eq("phase", "generating");
       await notifyRoomChanged(roomId);
@@ -75,4 +78,3 @@ export async function POST(
     return routeErrorResponse(error);
   }
 }
-

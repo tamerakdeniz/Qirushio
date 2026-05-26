@@ -22,4 +22,6 @@ yarn-debug.log*
 yarn-error.log*
 .vercel
 coverage/
+*.tsbuildinfo
 
+.DS_Store

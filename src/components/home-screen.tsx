@@ -22,7 +22,7 @@ import { ErrorNotice, Modal, Spinner } from "@/components/ui";
 import { apiRequest } from "@/lib/client-api";
 import { categoryLabels } from "@/lib/constants";
 import { readNickname, saveNickname, saveRoomSession } from "@/lib/storage";
-import type { RoomSession, RoomSummary } from "@/lib/types";
+import type { RoomSession, RoomSettings, RoomSummary } from "@/lib/types";
 import { nicknameSchema } from "@/lib/validation";
 
 type Dialog = "create" | "join" | "rooms" | "help" | null;
@@ -44,10 +44,7 @@ export function HomeScreen() {
     });
   }, []);
 
-  async function createRoom(settings: Parameters<typeof RoomSettingsForm>[0]["initial"]) {
-    if (!settings) {
-      return;
-    }
+  async function createRoom(settings: RoomSettings) {
     setBusy(true);
     setError(null);
     try {

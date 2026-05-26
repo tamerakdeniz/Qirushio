@@ -3,9 +3,9 @@ import { z } from "zod";
 export const nicknameSchema = z
   .string()
   .trim()
-  .min(2, "Takma ad en az 2 karakter olmali.")
+  .min(2, "Takma ad en az 2 karakter olmalı.")
   .max(24, "Takma ad en fazla 24 karakter olabilir.")
-  .regex(/^[\p{L}\p{N} ._-]+$/u, "Takma ad gecersiz karakter iceriyor.");
+  .regex(/^[\p{L}\p{N} ._-]+$/u, "Takma ad geçersiz karakter içeriyor.");
 
 export const roomSettingsSchema = z.object({
   language: z.enum(["tr", "en"]),
@@ -47,4 +47,3 @@ export const generatedQuestionSchema = z.object({
 });
 
 export const generatedQuestionsSchema = z.array(generatedQuestionSchema);
-
