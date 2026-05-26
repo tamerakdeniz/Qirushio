@@ -7,7 +7,7 @@ export type RoomPhase =
   | "finished";
 
 export type QuizLanguage = "tr" | "en";
-export type QuizCategory = "general" | "science" | "sports" | "arts" | "history";
+export type QuizCategory = "general" | "science" | "sports" | "arts" | "history" | "random";
 export type QuizDifficulty = "easy" | "medium" | "hard";
 export type QuizScope = "global" | "local";
 
@@ -93,4 +93,3 @@ export interface GeneratedQuestion {
   correctOption: number;
   explanation: string;
 }
-

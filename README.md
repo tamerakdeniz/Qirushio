@@ -1,4 +1,4 @@
-# Bilgi Yarışı
+# Qirushio
 
 Arkadaşlarla link veya kısa oda kodu üzerinden oynanan, her turda AI tarafından yeni sorular üretilen gerçek zamanlı multiplayer quiz MVP'si.
 
@@ -13,7 +13,9 @@ Arkadaşlarla link veya kısa oda kodu üzerinden oynanan, her turda AI tarafın
 
 - Local storage üzerinde saklanan takma ad ve oda bazlı güvenli oyuncu oturumu
 - Oda oluşturma, kodla katılma ve katılıma açık lobi listesi
-- Host ayarları: dil, kategori, zorluk, kapsam, soru sayısı, süre ve açık/gizli oda
+- Türkçe/İngilizce arayüz ve oda bazlı soru dili seçimi
+- Host ayarları: tüm kategorilere yayılan rastgele soru havuzu dahil kategori, zorluk, kapsam, soru sayısı, süre ve açık/gizli oda
+- Koyu tema, responsive arka plan görselleri ve okunabilirliği koruyan karartma katmanı
 - Lobi hazır durumu, bağlantı paylaşımı ve Presence ile çevrimiçi göstergesi
 - AI hazırlık ekranı, 10 saniyelik oyun başlangıcı ve sorular arası 3 saniyelik geçiş
 - Beş seçenekli kilitlenen cevap akışı ve herkes cevapladığında erken ilerleme
@@ -31,7 +33,7 @@ npm run dev
 ```
 
 1. Bir Supabase projesi oluşturun.
-2. [supabase/migrations/0001_quiz_mvp.sql](./supabase/migrations/0001_quiz_mvp.sql) dosyasını SQL Editor ile çalıştırın veya Supabase CLI migration akışınıza ekleyin.
+2. [supabase/migrations](./supabase/migrations) altındaki migration dosyalarını sırasıyla çalıştırın veya Supabase CLI migration akışınıza ekleyin.
 3. `.env.local` içinde Supabase URL, anon key ve service role key değerlerini doldurun.
 4. Gemini veya Anthropic anahtarlarından birini ekleyin. Her ikisi verilirse Gemini kullanılır.
 5. Yalnızca yerel UI/akış kontrolünde AI anahtarı olmadan oynamak için `ALLOW_DEMO_QUESTIONS=true` kullanabilirsiniz.
@@ -105,4 +107,3 @@ Teslim edilen görsellerin kaynak dosyalarında yön adları ters olduğu için 
 - `public/assets/logo.png` ve `public/favicon.ico`: marka asset'leri
 
 Orijinal referans ekranları ve HTML tasarımları `c&c-design/` klasöründe korunur.
-

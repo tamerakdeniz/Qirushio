@@ -9,7 +9,7 @@ export const nicknameSchema = z
 
 export const roomSettingsSchema = z.object({
   language: z.enum(["tr", "en"]),
-  category: z.enum(["general", "science", "sports", "arts", "history"]),
+  category: z.enum(["general", "science", "sports", "arts", "history", "random"]),
   difficulty: z.enum(["easy", "medium", "hard"]),
   scope: z.enum(["global", "local"]),
   questionCount: z.number().int().min(5).max(20),

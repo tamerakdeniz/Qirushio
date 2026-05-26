@@ -29,12 +29,14 @@ import { AppHeader } from "@/components/brand";
 import { RoomSettingsForm } from "@/components/room-settings-form";
 import { ErrorNotice, Spinner } from "@/components/ui";
 import { apiRequest } from "@/lib/client-api";
-import { categoryLabels, difficultyLabels } from "@/lib/constants";
+import { categoryLabelsByLanguage, difficultyLabelsByLanguage } from "@/lib/constants";
+import { commonCopy, homeCopy, roomCopy } from "@/lib/i18n";
 import { getSupabaseBrowser } from "@/lib/supabase/browser";
-import { readNickname, readRoomSession, removeRoomSession, saveRoomSession } from "@/lib/storage";
+import { readLanguage, readNickname, readRoomSession, removeRoomSession, saveRoomSession } from "@/lib/storage";
 import type {
   AnswerReview,
   PlayerView,
+  QuizLanguage,
   RoomSession,
   RoomSettings,
   RoomSnapshot,
@@ -50,10 +52,17 @@ export function RoomScreen({ code }: { code: string }) {
   const [error, setError] = useState<string | null>(null);
   const [working, setWorking] = useState<string | null>(null);
   const [selectedPending, setSelectedPending] = useState<number | null>(null);
+  const [preferredLocale, setPreferredLocale] = useState<QuizLanguage>("tr");
 
   useEffect(() => {
-    queueMicrotask(() => setSession(readRoomSession(code)));
+    queueMicrotask(() => {
+      setSession(readRoomSession(code));
+      setPreferredLocale(readLanguage());
+    });
   }, [code]);
+
+  const locale = snapshot?.room.language ?? preferredLocale;
+  const copy = roomCopy[locale];
 
   const refresh = useCallback(async () => {
     if (!session) {
@@ -204,6 +213,7 @@ export function RoomScreen({ code }: { code: string }) {
     return (
       <JoinRoomGate
         code={code}
+        locale={locale}
         onJoined={(joinedSession) => {
           saveRoomSession(joinedSession);
           setSession(joinedSession);
@@ -216,7 +226,7 @@ export function RoomScreen({ code }: { code: string }) {
     return (
       <main className="flex min-h-screen items-center justify-center px-4">
         <div className="glass-panel w-full max-w-md space-y-4 p-8 text-center">
-          <Spinner label="Oda yükleniyor" />
+          <Spinner label={copy.roomLoading} />
           <ErrorNotice message={error} />
         </div>
       </main>
@@ -226,7 +236,7 @@ export function RoomScreen({ code }: { code: string }) {
   const currentPlayer = snapshot.players.find((player) => player.id === session.playerId);
   if (!currentPlayer) {
     removeRoomSession(code);
-    return <JoinRoomGate code={code} onJoined={setSession} />;
+    return <JoinRoomGate code={code} locale={locale} onJoined={setSession} />;
   }
 
   const content = (() => {
@@ -239,6 +249,7 @@ export function RoomScreen({ code }: { code: string }) {
             onlinePlayers={onlinePlayers}
             busy={working}
             error={error}
+            locale={locale}
             onNicknameChange={updateNickname}
             onReady={(isReady) =>
               runAction("ready", async () => {
@@ -266,15 +277,16 @@ export function RoomScreen({ code }: { code: string }) {
           />
         );
       case "generating":
-        return <Generating snapshot={snapshot} />;
+        return <Generating locale={locale} snapshot={snapshot} />;
       case "countdown":
-        return <Countdown room={snapshot.room} title="Hazır mısın?" subtitle="Oyun başlıyor" />;
+        return <Countdown room={snapshot.room} title={copy.readyQuestion} subtitle={copy.starts} />;
       case "question":
         return (
           <Question
             snapshot={snapshot}
             choice={snapshot.myAnswer?.selectedOption ?? selectedPending}
             disabled={working === "answer" || Boolean(snapshot.myAnswer)}
+            locale={locale}
             onAnswer={(option) => {
               if (snapshot.question) {
                 void answer(snapshot.question.id, option);
@@ -283,7 +295,7 @@ export function RoomScreen({ code }: { code: string }) {
           />
         );
       case "transition":
-        return <Countdown room={snapshot.room} title="Sıradaki soru" subtitle="Odaklan!" compact />;
+        return <Countdown room={snapshot.room} title={copy.nextQuestion} subtitle={copy.focus} compact />;
       case "finished":
         return (
           <Results
@@ -291,6 +303,7 @@ export function RoomScreen({ code }: { code: string }) {
             currentPlayer={currentPlayer}
             busy={working}
             error={error}
+            locale={locale}
             onReplay={() =>
               runAction("start", async () => {
                 await apiRequest(`/api/rooms/${code}/start`, { method: "POST", body: "{}" }, session);
@@ -309,10 +322,20 @@ export function RoomScreen({ code }: { code: string }) {
   return <div className="min-h-screen">{content}</div>;
 }
 
-function JoinRoomGate({ code, onJoined }: { code: string; onJoined: (session: RoomSession) => void }) {
+function JoinRoomGate({
+  code,
+  locale,
+  onJoined,
+}: {
+  code: string;
+  locale: QuizLanguage;
+  onJoined: (session: RoomSession) => void;
+}) {
   const [nickname, setNickname] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const copy = roomCopy[locale];
+  const common = commonCopy[locale];
 
   useEffect(() => {
     queueMicrotask(() => setNickname(readNickname()));
@@ -346,25 +369,25 @@ function JoinRoomGate({ code, onJoined }: { code: string; onJoined: (session: Ro
         }}
       >
         <Link href="/" className="ghost-button !px-0">
-          <ArrowLeft size={18} /> Ana Sayfa
+          <ArrowLeft size={18} /> {copy.home}
         </Link>
         <div>
-          <p className="text-sm font-bold uppercase tracking-widest text-muted">Oda Kodu</p>
+          <p className="text-sm font-bold uppercase tracking-widest text-muted">{copy.roomCode}</p>
           <h1 className="mt-2 text-4xl font-extrabold text-primary-deep">{code}</h1>
-          <p className="mt-3 text-muted">Bu odaya katılmak için yarışmada görünecek ismini doğrula.</p>
+          <p className="mt-3 text-muted">{copy.joinDescription}</p>
         </div>
         <label className="block text-sm font-bold">
-          Takma Ad
+          {common.nickname}
           <input
             className="form-input mt-2"
             value={nickname}
             onChange={(event) => setNickname(event.target.value)}
-            placeholder="Harika bir isim seç..."
+            placeholder={common.nicknamePlaceholder}
           />
         </label>
         <ErrorNotice message={error} />
         <button className="primary-button w-full" disabled={busy}>
-          {busy ? "Katılınıyor..." : "Odaya Katıl"} <ChevronRight size={18} />
+          {busy ? copy.joining : copy.join} <ChevronRight size={18} />
         </button>
       </form>
     </main>
@@ -377,6 +400,7 @@ function Lobby({
   onlinePlayers,
   busy,
   error,
+  locale,
   onNicknameChange,
   onReady,
   onSettings,
@@ -387,12 +411,14 @@ function Lobby({
   onlinePlayers: Set<string>;
   busy: string | null;
   error: string | null;
+  locale: QuizLanguage;
   onNicknameChange: (nickname: string) => Promise<boolean>;
   onReady: (ready: boolean) => Promise<void>;
   onSettings: (settings: RoomSettings) => Promise<void>;
   onStart: () => Promise<void>;
 }) {
   const room = snapshot.room;
+  const copy = roomCopy[locale];
   const allReady = snapshot.players.every((player) => player.isReady);
   const [editingNickname, setEditingNickname] = useState(false);
   const [nicknameDraft, setNicknameDraft] = useState(currentPlayer.nickname);
@@ -401,7 +427,7 @@ function Lobby({
   async function shareRoom() {
     const url = window.location.href;
     if (navigator.share) {
-      await navigator.share({ title: "Bilgi Yarışı", text: `Oda kodu: ${room.code}`, url });
+      await navigator.share({ title: "Qirushio", text: copy.shareCode(room.code), url });
     } else {
       await navigator.clipboard.writeText(url);
     }
@@ -435,7 +461,7 @@ function Lobby({
         action={
           <Link className="ghost-button !min-h-10" href="/">
             <Home size={18} />
-            Ana Sayfa
+            {copy.home}
           </Link>
         }
       />
@@ -444,19 +470,19 @@ function Lobby({
           <div className="space-y-5">
             <section className="glass-panel flex flex-col justify-between gap-5 p-5 sm:flex-row sm:items-center sm:p-7">
               <div>
-                <p className="text-sm font-bold uppercase tracking-[0.18em] text-muted">Oda Kodu</p>
-                <h1 className="mt-2 inline-flex rounded-xl border border-orange-200 bg-orange-50 px-5 py-2 text-4xl font-extrabold tracking-[0.14em] text-primary-deep">
+                <p className="text-sm font-bold uppercase tracking-[0.18em] text-muted">{copy.roomCode}</p>
+                <h1 className="mt-2 inline-flex rounded-xl border border-orange-400/25 bg-orange-500/10 px-5 py-2 text-4xl font-extrabold tracking-[0.14em] text-primary-deep">
                   {room.code}
                 </h1>
               </div>
               <button className="secondary-button" onClick={() => void shareRoom()}>
-                <Share2 size={19} /> Bağlantıyı Paylaş
+                <Share2 size={19} /> {copy.share}
               </button>
             </section>
             <section>
               <div className="mb-3 flex items-center justify-between px-1">
-                <h2 className="text-xl font-bold">Oyuncular</h2>
-                <span className="rounded-full bg-white/70 px-3 py-1 text-sm font-bold text-muted">
+                <h2 className="text-xl font-bold">{copy.players}</h2>
+                <span className="rounded-full bg-slate-900/65 px-3 py-1 text-sm font-bold text-muted">
                   {snapshot.players.length} / {room.maxPlayers}
                 </span>
               </div>
@@ -469,12 +495,12 @@ function Lobby({
                       player.id === currentPlayer.id && "border-secondary/35",
                     )}
                   >
-                    <span className="relative flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-orange-100 to-blue-100 font-bold text-secondary-deep">
+                    <span className="relative flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-orange-500/20 to-blue-500/20 font-bold text-secondary-deep">
                       {initials(player.nickname)}
                       <i
                         className={cn(
-                          "absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-white",
-                          onlinePlayers.has(player.id) ? "bg-green-500" : "bg-slate-300",
+                          "absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-slate-900",
+                          onlinePlayers.has(player.id) ? "bg-green-400" : "bg-slate-500",
                         )}
                       />
                     </span>
@@ -482,18 +508,18 @@ function Lobby({
                       {player.id === currentPlayer.id && editingNickname ? (
                         <form className="flex items-center gap-1.5" onSubmit={(event) => void submitNickname(event)}>
                           <label className="sr-only" htmlFor="lobby-nickname">
-                            Takma adını düzenle
+                            {copy.editNickname}
                           </label>
                           <input
                             autoFocus
                             id="lobby-nickname"
-                            className="min-w-0 flex-1 rounded-lg border-2 border-secondary bg-white px-2 py-1.5 text-sm font-bold outline-none"
+                            className="min-w-0 flex-1 rounded-lg border-2 border-secondary bg-slate-950/70 px-2 py-1.5 text-sm font-bold outline-none"
                             maxLength={24}
                             value={nicknameDraft}
                             onChange={(event) => setNicknameDraft(event.target.value)}
                           />
                           <button
-                            aria-label="Takma adı kaydet"
+                            aria-label={copy.saveNickname}
                             className="rounded-lg bg-secondary p-2 text-white"
                             disabled={busy !== null}
                             type="submit"
@@ -501,8 +527,8 @@ function Lobby({
                             <Check size={15} />
                           </button>
                           <button
-                            aria-label="Düzenlemeyi iptal et"
-                            className="rounded-lg bg-slate-100 p-2 text-muted"
+                            aria-label={copy.cancelEdit}
+                            className="rounded-lg bg-slate-800 p-2 text-muted"
                             disabled={busy !== null}
                             onClick={() => setEditingNickname(false)}
                             type="button"
@@ -512,7 +538,7 @@ function Lobby({
                         </form>
                       ) : player.id === currentPlayer.id ? (
                         <button
-                          aria-label={`Takma adını düzenle: ${player.nickname}`}
+                          aria-label={`${copy.editNickname}: ${player.nickname}`}
                           className="group flex max-w-full items-center gap-1.5 text-left font-bold hover:text-secondary-deep"
                           disabled={busy !== null}
                           onClick={beginNicknameEdit}
@@ -526,21 +552,21 @@ function Lobby({
                       )}
                       {player.isHost && (
                         <p className="flex items-center gap-1 text-xs font-bold text-secondary-deep">
-                          <Star size={12} /> Kurucu
+                          <Star size={12} /> {copy.founder}
                         </p>
                       )}
                       {player.id === currentPlayer.id && editingNickname && nicknameError && (
-                        <p className="mt-1 text-xs font-medium text-red-700">{nicknameError}</p>
+                        <p className="mt-1 text-xs font-medium text-red-300">{nicknameError}</p>
                       )}
                     </div>
                     {!(player.id === currentPlayer.id && editingNickname) && (
                       <span
                         className={cn(
                           "rounded-full px-3 py-1.5 text-xs font-bold",
-                          player.isReady ? "bg-blue-600 text-white" : "bg-slate-100 text-muted",
+                          player.isReady ? "bg-blue-600 text-white" : "bg-slate-800 text-muted",
                         )}
                       >
-                        {player.isReady ? "Hazır" : "Bekliyor"}
+                        {player.isReady ? copy.ready : copy.waiting}
                       </span>
                     )}
                   </div>
@@ -556,18 +582,19 @@ function Lobby({
           <aside className="space-y-4">
             <section className="glass-panel p-5">
               <h2 className="mb-4 flex items-center gap-2 text-lg font-bold">
-                <Settings2 className="text-secondary" /> Oda Ayarları
+                <Settings2 className="text-secondary" /> {copy.settings}
               </h2>
               {currentPlayer.isHost ? (
                 <RoomSettingsForm
                   key={`${room.category}-${room.questionCount}-${room.questionTimeSeconds}-${room.difficulty}`}
                   initial={room}
-                  submitLabel="Ayarları Kaydet"
+                  locale={locale}
+                  submitLabel={copy.saveSettings}
                   busy={busy === "settings"}
                   onSubmit={onSettings}
                 />
               ) : (
-                <RoomSettingSummary room={room} />
+                <RoomSettingSummary locale={locale} room={room} />
               )}
             </section>
             {currentPlayer.isHost ? (
@@ -576,7 +603,7 @@ function Lobby({
                 disabled={!allReady || busy !== null}
                 onClick={() => void onStart()}
               >
-                <Play size={20} /> {busy === "start" ? "Sorular hazırlanıyor..." : "Oyunu Başlat"}
+                <Play size={20} /> {busy === "start" ? copy.preparing : copy.start}
               </button>
             ) : (
               <button
@@ -585,12 +612,12 @@ function Lobby({
                 onClick={() => void onReady(!currentPlayer.isReady)}
               >
                 <Check size={20} />
-                {currentPlayer.isReady ? "Hazır Değilim" : "Hazırım"}
+                {currentPlayer.isReady ? copy.notReady : copy.iAmReady}
               </button>
             )}
             {currentPlayer.isHost && !allReady && (
               <p className="text-center text-sm font-medium text-muted">
-                Başlatmak için tüm oyuncuların hazır olmasını bekleyin.
+                {copy.waitingReady}
               </p>
             )}
           </aside>
@@ -600,14 +627,17 @@ function Lobby({
   );
 }
 
-function RoomSettingSummary({ room }: { room: RoomView }) {
+function RoomSettingSummary({ locale, room }: { locale: QuizLanguage; room: RoomView }) {
+  const copy = roomCopy[locale];
+  const categoryLabels = categoryLabelsByLanguage[locale];
+  const difficultyLabels = difficultyLabelsByLanguage[locale];
   return (
     <dl className="space-y-3 text-sm">
       {[
-        ["Kategori", categoryLabels[room.category]],
-        ["Soru Sayısı", `${room.questionCount} Soru`],
-        ["Süre", `${room.questionTimeSeconds} Saniye`],
-        ["Zorluk", difficultyLabels[room.difficulty]],
+        [copy.category, categoryLabels[room.category]],
+        [copy.questionCount, `${room.questionCount} ${copy.question}`],
+        [copy.duration, `${room.questionTimeSeconds} ${copy.second}`],
+        [copy.difficulty, difficultyLabels[room.difficulty]],
       ].map(([title, value]) => (
         <div key={title} className="soft-panel flex items-center justify-between px-4 py-3">
           <dt className="text-muted">{title}</dt>
@@ -618,23 +648,25 @@ function RoomSettingSummary({ room }: { room: RoomView }) {
   );
 }
 
-function Generating({ snapshot }: { snapshot: RoomSnapshot }) {
+function Generating({ locale, snapshot }: { locale: QuizLanguage; snapshot: RoomSnapshot }) {
+  const copy = roomCopy[locale];
+  const categoryLabels = categoryLabelsByLanguage[locale];
   return (
     <main className="flex min-h-screen items-center justify-center px-4">
       <section className="w-full max-w-md text-center">
         <div className="relative mx-auto mb-8 flex h-40 w-40 items-center justify-center">
           <span className="absolute inset-0 animate-pulse-soft rounded-full bg-primary/20 blur-2xl" />
-          <span className="animate-float relative flex h-28 w-28 items-center justify-center rounded-full bg-white shadow-xl">
+          <span className="animate-float relative flex h-28 w-28 items-center justify-center rounded-full bg-slate-900 shadow-xl">
             <Bot size={57} className="text-primary-deep" />
           </span>
           <Star className="animate-orbit absolute inset-0 m-auto text-secondary" />
         </div>
-        <h1 className="text-3xl font-extrabold">Sorular hazırlanıyor...</h1>
-        <p className="mt-2 font-medium text-muted">AI bu tur için yepyeni sorular seçiyor.</p>
+        <h1 className="text-3xl font-extrabold">{copy.preparing}</h1>
+        <p className="mt-2 font-medium text-muted">{copy.selecting}</p>
         <div className="glass-panel mt-8 space-y-3 p-5 text-left">
           <div className="flex justify-between text-sm font-bold">
             <span className="text-secondary-deep">{categoryLabels[snapshot.room.category]}</span>
-            <span className="text-muted">Hazırlanıyor</span>
+            <span className="text-muted">{copy.preparingStatus}</span>
           </div>
           <div className="progress-track">
             <div className="blue-gradient h-full w-3/4 animate-pulse-soft rounded-full" />
@@ -642,10 +674,10 @@ function Generating({ snapshot }: { snapshot: RoomSnapshot }) {
         </div>
         <div className="mt-5 flex justify-center gap-3 text-sm font-bold text-muted">
           <span className="soft-panel flex items-center gap-2 px-4 py-2">
-            <Users size={16} /> {snapshot.players.length} Oyuncu
+            <Users size={16} /> {snapshot.players.length} {copy.playerUnit}
           </span>
           <span className="soft-panel flex items-center gap-2 px-4 py-2">
-            <Timer size={16} /> {snapshot.room.questionTimeSeconds} sn/Soru
+            <Timer size={16} /> {snapshot.room.questionTimeSeconds} {copy.secondsQuestion}
           </span>
         </div>
       </section>
@@ -696,14 +728,17 @@ function Question({
   snapshot,
   choice,
   disabled,
+  locale,
   onAnswer,
 }: {
   snapshot: RoomSnapshot;
   choice: number | null;
   disabled: boolean;
+  locale: QuizLanguage;
   onAnswer: (option: number) => void;
 }) {
   const remaining = useRemainingSeconds(snapshot.room.phaseEndsAt);
+  const copy = roomCopy[locale];
   const question = snapshot.question;
   if (!question) {
     return null;
@@ -712,14 +747,14 @@ function Question({
   return (
     <main className="mx-auto flex min-h-screen max-w-4xl flex-col px-4 py-5 md:py-8">
       <header className="mb-5 flex items-center justify-between font-bold text-muted">
-        <span className="rounded-full bg-amber-100 px-4 py-2 text-sm text-amber-800">{question.category}</span>
+        <span className="rounded-full bg-amber-400/15 px-4 py-2 text-sm text-amber-200">{question.category}</span>
         <span>
-          Soru {question.position + 1} / {snapshot.room.questionCount}
+          {copy.question} {question.position + 1} / {snapshot.room.questionCount}
         </span>
         <span className="w-16 text-right text-sm">{snapshot.answeredCount}/{snapshot.players.length}</span>
       </header>
       <div className="mb-6 flex justify-center">
-        <div className="flex h-24 w-24 items-center justify-center rounded-full border-[7px] border-orange-400 bg-white text-4xl font-extrabold tabular-nums text-primary">
+        <div className="flex h-24 w-24 items-center justify-center rounded-full border-[7px] border-orange-400 bg-slate-900 text-4xl font-extrabold tabular-nums text-primary">
           {remaining}
         </div>
       </div>
@@ -731,10 +766,10 @@ function Question({
           <button
             key={option}
             className={cn(
-              "flex min-h-16 w-full items-center gap-4 rounded-2xl border-2 bg-white/90 p-4 text-left font-medium shadow-sm",
+              "flex min-h-16 w-full items-center gap-4 rounded-2xl border-2 bg-slate-900/85 p-4 text-left font-medium shadow-sm",
               choice === index
-                ? "border-secondary bg-blue-50 font-bold shadow-[0_5px_18px_rgba(33,112,228,0.17)]"
-                : "border-slate-200 hover:border-secondary/40",
+                ? "border-secondary bg-blue-500/15 font-bold shadow-[0_5px_18px_rgba(33,112,228,0.17)]"
+                : "border-white/10 hover:border-secondary/40",
             )}
             disabled={disabled || remaining === 0}
             onClick={() => onAnswer(index)}
@@ -742,7 +777,7 @@ function Question({
             <span
               className={cn(
                 "flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-sm font-bold",
-                choice === index ? "bg-secondary text-white" : "bg-slate-100 text-muted",
+                choice === index ? "bg-secondary text-white" : "bg-slate-800 text-muted",
               )}
             >
               {String.fromCharCode(65 + index)}
@@ -752,7 +787,7 @@ function Question({
         ))}
       </section>
       <footer className="mt-auto pt-7 text-center text-sm font-medium text-muted">
-        {choice === null ? "Cevaplamak için bir seçeneğe dokun." : "Cevabın kilitlendi. Diğer oyuncular bekleniyor."}
+        {choice === null ? copy.answerPrompt : copy.answerLocked}
       </footer>
     </main>
   );
@@ -763,6 +798,7 @@ function Results({
   currentPlayer,
   busy,
   error,
+  locale,
   onReplay,
   onLobby,
 }: {
@@ -770,10 +806,12 @@ function Results({
   currentPlayer: PlayerView;
   busy: string | null;
   error: string | null;
+  locale: QuizLanguage;
   onReplay: () => Promise<void>;
   onLobby: () => Promise<void>;
 }) {
   const [showReview, setShowReview] = useState(false);
+  const copy = roomCopy[locale];
   const sorted = snapshot.players;
   const topThree = sorted.slice(0, 3);
 
@@ -783,6 +821,7 @@ function Results({
         room={snapshot.room}
         player={currentPlayer}
         reviews={snapshot.reviews ?? []}
+        locale={locale}
         onBack={() => setShowReview(false)}
       />
     );
@@ -790,10 +829,10 @@ function Results({
 
   return (
     <>
-      <AppHeader compact />
+      <AppHeader compact helpLabel={homeCopy[locale].howToPlay} />
       <main className="mx-auto max-w-3xl px-4 py-7 text-center md:py-10">
-        <h1 className="brand-gradient text-4xl font-extrabold">Tebrikler!</h1>
-        <p className="mt-2 font-medium text-muted">İşte bu turdaki sıralamanız.</p>
+        <h1 className="brand-gradient text-4xl font-extrabold">{copy.congratulations}</h1>
+        <p className="mt-2 font-medium text-muted">{copy.ranking}</p>
         <div className="mt-8 flex items-end justify-center gap-2 sm:gap-4">
           {[topThree[1], topThree[0], topThree[2]].map((player, podiumIndex) =>
             player ? (
@@ -801,6 +840,7 @@ function Results({
                 key={player.id}
                 player={player}
                 rank={podiumIndex === 1 ? 1 : podiumIndex === 0 ? 2 : 3}
+                pointsLabel={copy.points}
               />
             ) : null,
           )}
@@ -808,40 +848,40 @@ function Results({
         <div className="mt-7 grid gap-3 sm:grid-cols-2">
           {currentPlayer.isHost && (
             <button className="primary-button w-full" disabled={busy !== null} onClick={() => void onReplay()}>
-              <RefreshCcw size={19} /> Tekrar Oyna
+              <RefreshCcw size={19} /> {copy.replay}
             </button>
           )}
           <button className="secondary-button w-full" onClick={() => setShowReview(true)}>
-            <Eye size={19} /> Cevaplarımı Gör
+            <Eye size={19} /> {copy.viewAnswers}
           </button>
           {currentPlayer.isHost && (
-            <button className="ghost-button w-full bg-white/55" disabled={busy !== null} onClick={() => void onLobby()}>
-              <Settings2 size={18} /> Ayarlar / Odaya Dön
+            <button className="ghost-button w-full bg-slate-900/55" disabled={busy !== null} onClick={() => void onLobby()}>
+              <Settings2 size={18} /> {copy.lobbySettings}
             </button>
           )}
-          <Link className="ghost-button w-full bg-white/55" href="/">
-            <Home size={18} /> Ana Sayfa
+          <Link className="ghost-button w-full bg-slate-900/55" href="/">
+            <Home size={18} /> {copy.home}
           </Link>
         </div>
         <ErrorNotice message={error} />
         <section className="glass-panel mt-8 overflow-hidden text-left">
-          <h2 className="border-b border-orange-100 bg-orange-50/60 px-5 py-4 text-lg font-bold">
-            Tüm Oyuncular
+          <h2 className="border-b border-orange-400/15 bg-orange-500/10 px-5 py-4 text-lg font-bold">
+            {copy.allPlayers}
           </h2>
           {sorted.map((player, index) => (
             <div
               key={player.id}
               className={cn(
-                "flex items-center gap-4 border-b border-slate-100 px-5 py-4 last:border-0",
-                player.id === currentPlayer.id && "bg-orange-50/55",
+                "flex items-center gap-4 border-b border-white/10 px-5 py-4 last:border-0",
+                player.id === currentPlayer.id && "bg-orange-500/10",
               )}
             >
               <span className="w-7 font-extrabold text-muted">{index + 1}</span>
-              <span className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-50 font-bold text-secondary-deep">
+              <span className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-500/15 font-bold text-secondary-deep">
                 {initials(player.nickname)}
               </span>
-              <strong className="flex-1">{player.id === currentPlayer.id ? `${player.nickname} (Sen)` : player.nickname}</strong>
-              <span className="rounded-full bg-slate-100 px-3 py-1 text-sm font-bold">{player.score} Puan</span>
+              <strong className="flex-1">{player.id === currentPlayer.id ? `${player.nickname} (${copy.you})` : player.nickname}</strong>
+              <span className="rounded-full bg-slate-800 px-3 py-1 text-sm font-bold">{player.score} {copy.points}</span>
             </div>
           ))}
         </section>
@@ -850,17 +890,17 @@ function Results({
   );
 }
 
-function PodiumPlayer({ player, rank }: { player: PlayerView; rank: number }) {
-  const heights = { 1: "h-36 bg-gradient-to-t from-yellow-400 to-yellow-100", 2: "h-28 bg-slate-100", 3: "h-24 bg-orange-100" };
+function PodiumPlayer({ player, rank, pointsLabel }: { player: PlayerView; rank: number; pointsLabel: string }) {
+  const heights = { 1: "h-36 bg-gradient-to-t from-yellow-500/80 to-yellow-300/25", 2: "h-28 bg-slate-800", 3: "h-24 bg-orange-500/20" };
   return (
     <div className={cn("flex w-28 flex-col items-center sm:w-36", rank === 1 && "-translate-y-4")}>
-      <span className="mb-2 flex h-14 w-14 items-center justify-center rounded-full border-4 border-white bg-white font-bold shadow-md">
+      <span className="mb-2 flex h-14 w-14 items-center justify-center rounded-full border-4 border-slate-700 bg-slate-900 font-bold shadow-md">
         {rank === 1 ? <Crown className="text-[#ce9a00]" /> : initials(player.nickname)}
       </span>
       <div className={cn("flex w-full flex-col justify-end rounded-t-xl p-3", heights[rank as keyof typeof heights])}>
         <Medal className="mx-auto mb-1 h-5 w-5 text-primary-deep" />
         <strong className="truncate">{player.nickname}</strong>
-        <small className="font-bold text-primary-deep">{player.score} Puan</small>
+        <small className="font-bold text-primary-deep">{player.score} {pointsLabel}</small>
       </div>
     </div>
   );
@@ -870,39 +910,42 @@ function Review({
   room,
   player,
   reviews,
+  locale,
   onBack,
 }: {
   room: RoomView;
   player: PlayerView;
   reviews: AnswerReview[];
+  locale: QuizLanguage;
   onBack: () => void;
 }) {
   const correct = reviews.filter((review) => review.isCorrect).length;
+  const copy = roomCopy[locale];
   return (
     <main className="mx-auto max-w-4xl px-4 py-5 md:py-8">
       <button className="ghost-button mb-5 !px-0" onClick={onBack}>
-        <ArrowLeft size={18} /> Liderlik Tablosuna Dön
+        <ArrowLeft size={18} /> {copy.backLeaderboard}
       </button>
       <header className="mb-8 text-center">
-        <h1 className="text-3xl font-extrabold">Sonuç İncelemesi</h1>
-        <p className="mt-2 font-medium text-muted">Doğru cevapları ve bu turdaki performansını incele.</p>
+        <h1 className="text-3xl font-extrabold">{copy.review}</h1>
+        <p className="mt-2 font-medium text-muted">{copy.reviewDescription}</p>
         <div className="mt-5 inline-flex gap-3">
           <span className="soft-panel px-5 py-3 font-bold text-secondary-deep">
-            Doğru <strong className="block text-3xl">{correct}/{reviews.length}</strong>
+            {copy.correct} <strong className="block text-3xl">{correct}/{reviews.length}</strong>
           </span>
           <span className="soft-panel px-5 py-3 font-bold text-primary-deep">
-            Puan <strong className="block text-3xl">{player.score}</strong>
+            {copy.points} <strong className="block text-3xl">{player.score}</strong>
           </span>
         </div>
       </header>
       <section className="space-y-4">
         {reviews.map((review) => (
           <article className="glass-panel overflow-hidden !rounded-2xl" key={review.id}>
-            <header className={cn("flex justify-between p-4 text-sm font-bold", review.isCorrect ? "bg-green-50 text-green-700" : "bg-red-50 text-red-700")}>
-              <span>Soru {review.position + 1}</span>
+            <header className={cn("flex justify-between p-4 text-sm font-bold", review.isCorrect ? "bg-green-500/15 text-green-300" : "bg-red-500/15 text-red-300")}>
+              <span>{copy.question} {review.position + 1}</span>
               <span className="flex items-center gap-3">
                 {review.timeRemainingMs === null ? (
-                  "Cevap yok"
+                  copy.noAnswer
                 ) : (
                   <>
                     <Clock3 size={15} />
@@ -923,9 +966,9 @@ function Review({
                       key={option}
                       className={cn(
                         "flex items-center justify-between rounded-xl border p-3 text-sm font-medium",
-                        correctOption && "border-green-500 bg-green-50 text-green-800",
-                        selectedWrong && "border-red-500 bg-red-50 text-red-800",
-                        !correctOption && !selectedWrong && "border-slate-100 bg-white/50 text-muted",
+                        correctOption && "border-green-500 bg-green-500/15 text-green-200",
+                        selectedWrong && "border-red-500 bg-red-500/15 text-red-200",
+                        !correctOption && !selectedWrong && "border-white/10 bg-slate-900/40 text-muted",
                       )}
                     >
                       {option}
@@ -936,7 +979,7 @@ function Review({
                 })}
               </div>
               {!review.isCorrect && (
-                <p className="flex gap-2 rounded-xl bg-blue-50 p-3 text-sm text-secondary-deep">
+                <p className="flex gap-2 rounded-xl bg-blue-500/15 p-3 text-sm text-secondary-deep">
                   <CircleAlert size={18} className="shrink-0" />
                   {review.explanation}
                 </p>

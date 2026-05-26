@@ -16,7 +16,7 @@ create table public.rooms (
   phase public.room_phase not null default 'lobby',
   language text not null default 'tr' check (language in ('tr', 'en')),
   category text not null default 'general'
-    check (category in ('general', 'science', 'sports', 'arts', 'history')),
+    check (category in ('general', 'science', 'sports', 'arts', 'history', 'random')),
   difficulty text not null default 'medium'
     check (difficulty in ('easy', 'medium', 'hard')),
   scope text not null default 'global' check (scope in ('global', 'local')),

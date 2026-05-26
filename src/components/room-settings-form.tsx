@@ -1,16 +1,17 @@
 "use client";
 
-import { BookOpen, FlaskConical, Globe2, Palette, Trophy } from "lucide-react";
+import { BookOpen, FlaskConical, Globe2, Palette, Shuffle, Trophy } from "lucide-react";
 import { useState } from "react";
 
 import {
-  categoryLabels,
+  categoryLabelsByLanguage,
   defaultRoomSettings,
-  difficultyLabels,
+  difficultyLabelsByLanguage,
   languageLabels,
-  scopeLabels,
+  scopeLabelsByLanguage,
 } from "@/lib/constants";
-import type { QuizCategory, RoomSettings } from "@/lib/types";
+import { settingsCopy } from "@/lib/i18n";
+import type { QuizCategory, QuizLanguage, RoomSettings } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 const categoryIcons = {
@@ -19,20 +20,27 @@ const categoryIcons = {
   sports: Trophy,
   arts: Palette,
   history: BookOpen,
+  random: Shuffle,
 };
 
 export function RoomSettingsForm({
   initial = defaultRoomSettings,
   submitLabel,
+  locale = "tr",
   busy = false,
   onSubmit,
 }: {
   initial?: RoomSettings;
   submitLabel: string;
+  locale?: QuizLanguage;
   busy?: boolean;
   onSubmit: (settings: RoomSettings) => Promise<void> | void;
 }) {
   const [settings, setSettings] = useState(initial);
+  const copy = settingsCopy[locale];
+  const categoryLabels = categoryLabelsByLanguage[locale];
+  const difficultyLabels = difficultyLabelsByLanguage[locale];
+  const scopeLabels = scopeLabelsByLanguage[locale];
 
   function update<K extends keyof RoomSettings>(key: K, value: RoomSettings[K]) {
     setSettings((previous) => ({ ...previous, [key]: value }));
@@ -47,7 +55,7 @@ export function RoomSettingsForm({
       }}
     >
       <div>
-        <p className="mb-2 text-sm font-bold">Dil Seçimi</p>
+        <p className="mb-2 text-sm font-bold">{copy.language}</p>
         <div className="flex gap-2">
           {(Object.keys(languageLabels) as RoomSettings["language"][]).map((language) => (
             <button
@@ -57,7 +65,7 @@ export function RoomSettingsForm({
                 "rounded-full border-2 px-5 py-2.5 text-sm font-bold",
                 settings.language === language
                   ? "border-primary bg-primary text-white"
-                  : "border-slate-200 bg-white/60 text-muted",
+                  : "border-white/10 bg-slate-900/55 text-muted",
               )}
               onClick={() => update("language", language)}
             >
@@ -68,8 +76,8 @@ export function RoomSettingsForm({
       </div>
 
       <div>
-        <p className="mb-2 text-sm font-bold">Kategori</p>
-        <div className="grid grid-cols-2 gap-2 sm:grid-cols-5">
+        <p className="mb-2 text-sm font-bold">{copy.category}</p>
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
           {(Object.keys(categoryLabels) as QuizCategory[]).map((category) => {
             const Icon = categoryIcons[category];
             return (
@@ -80,7 +88,7 @@ export function RoomSettingsForm({
                   "flex min-h-20 flex-col items-center justify-center gap-1 rounded-xl border-2 p-2 text-xs font-bold",
                   settings.category === category
                     ? "border-primary bg-primary text-white shadow-md"
-                    : "border-slate-200 bg-white/60 text-muted",
+                    : "border-white/10 bg-slate-900/55 text-muted",
                 )}
                 onClick={() => update("category", category)}
               >
@@ -94,8 +102,8 @@ export function RoomSettingsForm({
 
       <div className="grid gap-4 sm:grid-cols-2">
         <div>
-          <p className="mb-2 text-sm font-bold">Zorluk Seviyesi</p>
-          <div className="flex rounded-xl bg-slate-100 p-1">
+          <p className="mb-2 text-sm font-bold">{copy.difficulty}</p>
+          <div className="flex rounded-xl bg-slate-950/60 p-1">
             {(Object.keys(difficultyLabels) as RoomSettings["difficulty"][]).map((difficulty) => (
               <button
                 key={difficulty}
@@ -103,7 +111,7 @@ export function RoomSettingsForm({
                 className={cn(
                   "flex-1 rounded-lg px-2 py-2 text-sm font-bold",
                   settings.difficulty === difficulty
-                    ? "bg-white text-primary shadow-sm"
+                    ? "bg-slate-800 text-primary shadow-sm"
                     : "text-muted",
                 )}
                 onClick={() => update("difficulty", difficulty)}
@@ -114,8 +122,8 @@ export function RoomSettingsForm({
           </div>
         </div>
         <div>
-          <p className="mb-2 text-sm font-bold">Kapsam</p>
-          <div className="flex rounded-xl bg-slate-100 p-1">
+          <p className="mb-2 text-sm font-bold">{copy.scope}</p>
+          <div className="flex rounded-xl bg-slate-950/60 p-1">
             {(Object.keys(scopeLabels) as RoomSettings["scope"][]).map((scope) => (
               <button
                 key={scope}
@@ -123,7 +131,7 @@ export function RoomSettingsForm({
                 className={cn(
                   "flex-1 rounded-lg px-2 py-2 text-sm font-bold",
                   settings.scope === scope
-                    ? "bg-white text-secondary shadow-sm"
+                    ? "bg-slate-800 text-secondary shadow-sm"
                     : "text-muted",
                 )}
                 onClick={() => update("scope", scope)}
@@ -137,7 +145,7 @@ export function RoomSettingsForm({
 
       <div className="grid gap-4 sm:grid-cols-2">
         <label className="text-sm font-bold">
-          Soru Sayısı
+          {copy.questions}
           <select
             className="form-input mt-2"
             value={settings.questionCount}
@@ -145,13 +153,13 @@ export function RoomSettingsForm({
           >
             {[5, 10, 15, 20].map((count) => (
               <option key={count} value={count}>
-                {count} Soru
+                {count} {copy.question}
               </option>
             ))}
           </select>
         </label>
         <label className="text-sm font-bold">
-          Soru Başına Süre
+          {copy.secondsPerQuestion}
           <select
             className="form-input mt-2"
             value={settings.questionTimeSeconds}
@@ -159,27 +167,26 @@ export function RoomSettingsForm({
           >
             {[10, 15, 20, 30].map((seconds) => (
               <option key={seconds} value={seconds}>
-                {seconds} Saniye
+                {seconds} {copy.second}
               </option>
             ))}
           </select>
         </label>
       </div>
 
-      <label className="flex items-center gap-3 rounded-xl bg-slate-50 p-3 text-sm font-medium">
+      <label className="flex items-center gap-3 rounded-xl bg-slate-900/60 p-3 text-sm font-medium">
         <input
           type="checkbox"
           className="h-5 w-5 accent-[#2170e4]"
           checked={settings.isPublic}
           onChange={(event) => update("isPublic", event.target.checked)}
         />
-        Oda, açık odalar listesinde görünsün
+        {copy.publicRoom}
       </label>
 
       <button disabled={busy} className="primary-button w-full" type="submit">
-        {busy ? "İşleniyor..." : submitLabel}
+        {busy ? copy.processing : submitLabel}
       </button>
     </form>
   );
 }
-

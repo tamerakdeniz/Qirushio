@@ -5,6 +5,7 @@ import {
   CircleHelp,
   DoorOpen,
   Gamepad2,
+  Languages,
   LogIn,
   PlusCircle,
   Sparkles,
@@ -20,9 +21,10 @@ import { AppHeader } from "@/components/brand";
 import { RoomSettingsForm } from "@/components/room-settings-form";
 import { ErrorNotice, Modal, Spinner } from "@/components/ui";
 import { apiRequest } from "@/lib/client-api";
-import { categoryLabels } from "@/lib/constants";
-import { readNickname, saveNickname, saveRoomSession } from "@/lib/storage";
-import type { RoomSession, RoomSettings, RoomSummary } from "@/lib/types";
+import { categoryLabelsByLanguage, defaultRoomSettings } from "@/lib/constants";
+import { commonCopy, homeCopy } from "@/lib/i18n";
+import { readLanguage, readNickname, saveLanguage, saveNickname, saveRoomSession } from "@/lib/storage";
+import type { QuizLanguage, RoomSession, RoomSettings, RoomSummary } from "@/lib/types";
 import { nicknameSchema } from "@/lib/validation";
 
 type Dialog = "create" | "join" | "rooms" | "help" | null;
@@ -31,6 +33,7 @@ export function HomeScreen() {
   const router = useRouter();
   const [hydrated, setHydrated] = useState(false);
   const [nickname, setNickname] = useState("");
+  const [locale, setLocale] = useState<QuizLanguage>("tr");
   const [dialog, setDialog] = useState<Dialog>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -40,6 +43,7 @@ export function HomeScreen() {
   useEffect(() => {
     queueMicrotask(() => {
       setNickname(readNickname());
+      setLocale(readLanguage());
       setHydrated(true);
     });
   }, []);
@@ -101,6 +105,16 @@ export function HomeScreen() {
     setError(null);
   }
 
+  function toggleLanguage() {
+    const nextLocale = locale === "tr" ? "en" : "tr";
+    saveLanguage(nextLocale);
+    setLocale(nextLocale);
+  }
+
+  const copy = homeCopy[locale];
+  const common = commonCopy[locale];
+  const categoryLabels = categoryLabelsByLanguage[locale];
+
   if (!hydrated) {
     return (
       <main className="flex min-h-screen items-center justify-center">
@@ -110,7 +124,7 @@ export function HomeScreen() {
   }
 
   if (!nickname) {
-    return <NicknameEntry onComplete={setNickname} />;
+    return <NicknameEntry locale={locale} onLanguageChange={toggleLanguage} onComplete={setNickname} />;
   }
 
   return (
@@ -119,15 +133,24 @@ export function HomeScreen() {
         action={
           <div className="flex items-center gap-2">
             <button
-              aria-label="Nasıl Oynanır?"
+              aria-label={copy.howToPlay}
               className="ghost-button !min-h-10 !px-3 text-secondary-deep"
               onClick={() => setDialog("help")}
             >
               <CircleHelp size={20} />
-              <span className="hidden sm:inline">Nasıl Oynanır?</span>
+              <span className="hidden sm:inline">{copy.howToPlay}</span>
             </button>
             <button
-              className="hidden rounded-full bg-white/65 px-4 py-2 text-sm font-bold text-muted sm:block"
+              aria-label={copy.switchLanguage}
+              className="ghost-button !min-h-10 !px-3 text-secondary-deep"
+              onClick={toggleLanguage}
+              type="button"
+            >
+              <Languages size={20} />
+              <span className="text-xs font-extrabold uppercase">{locale === "tr" ? "EN" : "TR"}</span>
+            </button>
+            <button
+              className="hidden rounded-full bg-slate-900/65 px-4 py-2 text-sm font-bold text-muted sm:block"
               onClick={() => {
                 saveNickname("");
                 setNickname("");
@@ -141,32 +164,32 @@ export function HomeScreen() {
       <main className="mx-auto min-h-[calc(100vh-4rem)] max-w-7xl px-4 py-5 md:px-8 md:py-8">
         <section className="glass-panel grid items-center gap-7 overflow-hidden p-6 md:grid-cols-[1fr_330px] md:p-10">
           <div>
-            <span className="mb-4 inline-flex items-center gap-2 rounded-full border border-secondary/15 bg-blue-50 px-4 py-2 text-sm font-bold text-secondary-deep">
+            <span className="mb-4 inline-flex items-center gap-2 rounded-full border border-secondary/15 bg-blue-500/15 px-4 py-2 text-sm font-bold text-secondary-deep">
               <Sparkles size={16} />
-              Her tur yeni AI soruları
+              {copy.aiBadge}
             </span>
             <h1 className="max-w-xl text-4xl font-extrabold tracking-tight sm:text-5xl">
-              Bilgini <span className="text-primary-deep">Yarıştır</span>, arkadaşlarını{" "}
-              <span className="text-secondary-deep">Yen!</span>
+              {copy.heroLead} <span className="text-primary-deep">{copy.heroAccent}</span>, {copy.heroTail}{" "}
+              <span className="text-secondary-deep">{copy.heroWin}</span>
             </h1>
             <p className="mt-4 max-w-xl text-base font-medium leading-7 text-muted sm:text-lg">
-              Bir oda kur veya davet koduyla katıl. Hızlı cevapla, canlı sıralamada zirveye çık.
+              {copy.heroDescription}
             </p>
           </div>
-          <div className="relative mx-auto flex h-56 w-full max-w-[300px] items-center justify-center rounded-3xl bg-gradient-to-br from-orange-50/90 to-blue-100/80">
-            <div className="absolute left-5 top-7 rounded-2xl bg-white p-3 shadow-md">
+          <div className="relative mx-auto flex h-56 w-full max-w-[300px] items-center justify-center rounded-3xl bg-gradient-to-br from-orange-500/15 to-blue-500/18">
+            <div className="absolute left-5 top-7 rounded-2xl bg-slate-900/85 p-3 shadow-md">
               <Timer className="text-secondary" />
             </div>
             <Image
               src="/assets/logo.png"
-              alt="Bilgi Yarışı"
+              alt="Qirushio"
               width={174}
               height={174}
               unoptimized
               loading="eager"
               className="drop-shadow-xl"
             />
-            <div className="absolute bottom-7 right-5 rounded-2xl bg-white p-3 shadow-md">
+            <div className="absolute bottom-7 right-5 rounded-2xl bg-slate-900/85 p-3 shadow-md">
               <Trophy className="text-[#ce9a00]" />
             </div>
           </div>
@@ -174,22 +197,22 @@ export function HomeScreen() {
 
         <section className="mt-5 grid gap-4 md:grid-cols-3">
           <ActionCard
-            title="Oda Kur"
-            description="Ayarlarını seç, bağlantıyı arkadaşlarınla paylaş."
+            title={copy.createRoom}
+            description={copy.createDescription}
             icon={PlusCircle}
             tone="orange"
             onClick={() => setDialog("create")}
           />
           <ActionCard
-            title="Odaya Katıl"
-            description="Kısa davet kodunu gir ve hemen yarışmaya başla."
+            title={copy.joinRoom}
+            description={copy.joinDescription}
             icon={LogIn}
             tone="blue"
             onClick={() => setDialog("join")}
           />
           <ActionCard
-            title="Odaları Gör"
-            description="Katılıma açık lobileri keşfet."
+            title={copy.browseRooms}
+            description={copy.browseDescription}
             icon={DoorOpen}
             tone="neutral"
             onClick={() => void browseRooms()}
@@ -197,15 +220,21 @@ export function HomeScreen() {
         </section>
       </main>
 
-      <Modal open={dialog === "create"} onClose={closeDialog} title="Yeni Oda Kur" wide>
-        <p className="mb-5 text-sm text-muted">Yarışma ayarlarını belirleyip arkadaşlarını lobiye davet et.</p>
+      <Modal open={dialog === "create"} onClose={closeDialog} title={copy.createTitle} closeLabel={common.close} wide>
+        <p className="mb-5 text-sm text-muted">{copy.createHelp}</p>
         <ErrorNotice message={error} />
         <div className={error ? "mt-5" : ""}>
-          <RoomSettingsForm submitLabel="Oda Kur" busy={busy} onSubmit={createRoom} />
+          <RoomSettingsForm
+            initial={{ ...defaultRoomSettings, language: locale }}
+            locale={locale}
+            submitLabel={copy.createRoom}
+            busy={busy}
+            onSubmit={createRoom}
+          />
         </div>
       </Modal>
 
-      <Modal open={dialog === "join"} onClose={closeDialog} title="Odaya Katıl">
+      <Modal open={dialog === "join"} onClose={closeDialog} title={copy.joinRoom} closeLabel={common.close}>
         <form
           className="space-y-4"
           onSubmit={(event) => {
@@ -214,10 +243,10 @@ export function HomeScreen() {
           }}
         >
           <p className="text-sm text-muted">
-            <strong>{nickname}</strong> olarak yarışmaya katılacaksın.
+            <strong>{nickname}</strong> {copy.joiningAs}
           </p>
           <label className="block text-sm font-bold">
-            Oda Kodu
+            {copy.roomCode}
             <input
               className="form-input mt-2 uppercase tracking-[0.25em]"
               maxLength={6}
@@ -228,21 +257,21 @@ export function HomeScreen() {
           </label>
           <ErrorNotice message={error} />
           <button className="primary-button w-full" disabled={busy}>
-            {busy ? "Katılınıyor..." : "Katıl"}
+            {busy ? copy.joining : copy.join}
             <ArrowRight size={18} />
           </button>
         </form>
       </Modal>
 
-      <Modal open={dialog === "rooms"} onClose={closeDialog} title="Açık Odalar">
+      <Modal open={dialog === "rooms"} onClose={closeDialog} title={copy.openRooms} closeLabel={common.close}>
         <ErrorNotice message={error} />
         {rooms === null ? (
-          <Spinner label="Odalar aranıyor" />
+          <Spinner label={copy.searchingRooms} />
         ) : rooms.length === 0 ? (
-          <div className="rounded-2xl bg-slate-50 p-8 text-center">
+          <div className="rounded-2xl bg-slate-900/60 p-8 text-center">
             <Gamepad2 className="mx-auto mb-3 text-secondary" />
-            <p className="font-bold">Şu an açık oda yok.</p>
-            <p className="mt-1 text-sm text-muted">Yeni bir oda kurarak ilk oyunu başlatabilirsin.</p>
+            <p className="font-bold">{copy.noRooms}</p>
+            <p className="mt-1 text-sm text-muted">{copy.noRoomsHelp}</p>
           </div>
         ) : (
           <div className="space-y-3">
@@ -256,10 +285,10 @@ export function HomeScreen() {
                 <div>
                   <p className="font-extrabold text-primary-deep">{room.code}</p>
                   <p className="text-sm text-muted">
-                    {categoryLabels[room.category]} · {room.questionCount} soru · {room.hostNickname}
+                    {categoryLabels[room.category]} · {room.questionCount} {copy.questionUnit} · {room.hostNickname}
                   </p>
                 </div>
-                <span className="flex items-center gap-1 rounded-full bg-blue-50 px-3 py-2 text-sm font-bold text-secondary-deep">
+                <span className="flex items-center gap-1 rounded-full bg-blue-500/15 px-3 py-2 text-sm font-bold text-secondary-deep">
                   <Users size={16} />
                   {room.playerCount}/{room.maxPlayers}
                 </span>
@@ -269,18 +298,32 @@ export function HomeScreen() {
         )}
       </Modal>
 
-      <HowToPlay open={dialog === "help"} onClose={closeDialog} />
+      <HowToPlay locale={locale} open={dialog === "help"} onClose={closeDialog} />
     </>
   );
 }
 
-function NicknameEntry({ onComplete }: { onComplete: (nickname: string) => void }) {
+function NicknameEntry({
+  locale,
+  onLanguageChange,
+  onComplete,
+}: {
+  locale: QuizLanguage;
+  onLanguageChange: () => void;
+  onComplete: (nickname: string) => void;
+}) {
   const [value, setValue] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const copy = homeCopy[locale];
+  const common = commonCopy[locale];
 
   return (
     <main className="flex min-h-screen items-center justify-center px-4 py-8">
       <section className="w-full max-w-md text-center">
+        <button className="ghost-button mb-4 ml-auto !min-h-10 !px-3 text-secondary-deep" onClick={onLanguageChange} type="button">
+          <Languages size={19} />
+          {locale === "tr" ? "EN" : "TR"}
+        </button>
         <Image
           src="/assets/logo.png"
           width={100}
@@ -290,8 +333,8 @@ function NicknameEntry({ onComplete }: { onComplete: (nickname: string) => void 
           loading="eager"
           className="mx-auto mb-4 rounded-3xl shadow-lg"
         />
-        <h1 className="brand-gradient text-3xl font-extrabold">Bilgi Yarışmasına Hoş Geldin!</h1>
-        <p className="mb-7 mt-3 font-medium text-muted">Zekanı test etmeye ve eğlenmeye hazır mısın?</p>
+        <h1 className="brand-gradient text-3xl font-extrabold">{copy.welcome}</h1>
+        <p className="mb-7 mt-3 font-medium text-muted">{copy.welcomeDescription}</p>
         <form
           className="glass-panel space-y-4 p-6 text-left"
           onSubmit={(event) => {
@@ -306,19 +349,19 @@ function NicknameEntry({ onComplete }: { onComplete: (nickname: string) => void 
           }}
         >
           <label className="block text-sm font-bold">
-            Takma Ad
+            {common.nickname}
             <input
               autoFocus
               className="form-input mt-2"
               value={value}
               onChange={(event) => setValue(event.target.value)}
-              placeholder="Harika bir isim seç..."
+              placeholder={common.nicknamePlaceholder}
             />
           </label>
-          <p className="text-xs text-muted">Bu isim bu odanın liderlik tablosunda görünecek.</p>
+          <p className="text-xs text-muted">{copy.nicknameHelp}</p>
           <ErrorNotice message={error} />
           <button className="primary-button w-full">
-            Devam Et
+            {copy.continue}
             <ArrowRight size={18} />
           </button>
         </form>
@@ -341,9 +384,9 @@ function ActionCard({
   onClick: () => void;
 }) {
   const tones = {
-    orange: "border-orange-100 hover:shadow-[0_12px_28px_rgba(255,126,51,0.22)] text-primary",
-    blue: "border-blue-100 hover:shadow-[0_12px_28px_rgba(33,112,228,0.2)] text-secondary",
-    neutral: "border-slate-200 text-muted",
+    orange: "border-orange-400/15 hover:shadow-[0_12px_28px_rgba(255,126,51,0.22)] text-primary",
+    blue: "border-blue-400/15 hover:shadow-[0_12px_28px_rgba(33,112,228,0.2)] text-secondary",
+    neutral: "border-slate-700/70 text-muted",
   };
   return (
     <button
@@ -359,14 +402,15 @@ function ActionCard({
   );
 }
 
-function HowToPlay({ open, onClose }: { open: boolean; onClose: () => void }) {
+function HowToPlay({ locale, open, onClose }: { locale: QuizLanguage; open: boolean; onClose: () => void }) {
+  const copy = homeCopy[locale];
   return (
-    <Modal open={open} onClose={onClose} title="Nasıl Oynanır?">
+    <Modal open={open} onClose={onClose} title={copy.howToPlay} closeLabel={commonCopy[locale].close}>
       <ol className="space-y-4 text-sm text-muted">
-        <Rule icon={Users} text="Takma adını seç, oda kur veya paylaşılan kodla lobiye katıl." />
-        <Rule icon={Sparkles} text="Host oyunu başlatınca AI her tur için yeni sorular hazırlar." />
-        <Rule icon={Timer} text="Beş seçenekten birine süre bitmeden dokun; seçimin kilitlenir." />
-        <Rule icon={Trophy} text="Doğru ve hızlı cevap daha fazla puan kazandırır. Finalde cevaplarını inceleyebilirsin." />
+        <Rule icon={Users} text={copy.rules[0]} />
+        <Rule icon={Sparkles} text={copy.rules[1]} />
+        <Rule icon={Timer} text={copy.rules[2]} />
+        <Rule icon={Trophy} text={copy.rules[3]} />
       </ol>
     </Modal>
   );
@@ -374,8 +418,8 @@ function HowToPlay({ open, onClose }: { open: boolean; onClose: () => void }) {
 
 function Rule({ icon: Icon, text }: { icon: typeof Users; text: string }) {
   return (
-    <li className="flex items-start gap-3 rounded-xl bg-white/60 p-3">
-      <span className="rounded-xl bg-blue-50 p-2 text-secondary">
+    <li className="flex items-start gap-3 rounded-xl bg-slate-900/55 p-3">
+      <span className="rounded-xl bg-blue-500/15 p-2 text-secondary">
         <Icon size={20} />
       </span>
       <span className="pt-2 font-medium">{text}</span>

@@ -1,14 +1,28 @@
 import "server-only";
 
-import { categoryLabels, difficultyLabels, scopeLabels } from "@/lib/constants";
 import { generatedQuestionsSchema } from "@/lib/validation";
 import type { GeneratedQuestion, RoomSettings } from "@/lib/types";
 
 function promptForQuestions(settings: RoomSettings): string {
   const language = settings.language === "tr" ? "Turkish" : "English";
+  const difficulty = { easy: "easy", medium: "medium", hard: "hard" }[settings.difficulty];
+  const scope = { global: "global", local: "local context" }[settings.scope];
+  const category = {
+    general: "general knowledge",
+    science: "science",
+    sports: "sports",
+    arts: "arts",
+    history: "history",
+    random: "mixed",
+  }[settings.category];
+  const categoryInstruction =
+    settings.category === "random"
+      ? "Category pool: mix questions across general knowledge, science, sports, arts, and history. Distribute them across multiple categories and do not concentrate the set on a single subject."
+      : `Category: ${category}.`;
+
   return [
     `Generate exactly ${settings.questionCount} multiplayer trivia questions in ${language}.`,
-    `Category: ${categoryLabels[settings.category]}. Difficulty: ${difficultyLabels[settings.difficulty]}. Context: ${scopeLabels[settings.scope]}.`,
+    `${categoryInstruction} Difficulty: ${difficulty}. Context: ${scope}.`,
     "Each question must have exactly five credible answer options and exactly one correct answer.",
     "Avoid ambiguous, time-sensitive, political, unsafe, or duplicate questions.",
     "Use this JSON shape only, without markdown:",
@@ -134,12 +148,54 @@ const demoBank: GeneratedQuestion[] = [
   },
 ];
 
-function demoQuestions(count: number): GeneratedQuestion[] {
-  return Array.from({ length: count }, (_, index) => {
-    const source = demoBank[index % demoBank.length];
+const demoBankEn: GeneratedQuestion[] = [
+  {
+    category: "General Knowledge",
+    prompt: "What is the capital of Japan?",
+    options: ["Seoul", "Tokyo", "Beijing", "Bangkok", "Kyoto"],
+    correctOption: 1,
+    explanation: "Tokyo is Japan's capital and its most populous metropolitan area.",
+  },
+  {
+    category: "Science",
+    prompt: "Which element is represented by the symbol O?",
+    options: ["Gold", "Osmium", "Oxygen", "Silver", "Carbon"],
+    correctOption: 2,
+    explanation: "O is the chemical symbol for oxygen.",
+  },
+  {
+    category: "Arts",
+    prompt: "Who painted The Starry Night?",
+    options: ["Pablo Picasso", "Claude Monet", "Vincent van Gogh", "Salvador Dali", "Edvard Munch"],
+    correctOption: 2,
+    explanation: "Vincent van Gogh painted The Starry Night in 1889.",
+  },
+  {
+    category: "History",
+    prompt: "In which year did humans first land on the Moon?",
+    options: ["1959", "1965", "1969", "1972", "1981"],
+    correctOption: 2,
+    explanation: "Apollo 11 landed on the Moon in 1969.",
+  },
+  {
+    category: "Sports",
+    prompt: "How many players does one football team field at the start of a match?",
+    options: ["9", "10", "11", "12", "13"],
+    correctOption: 2,
+    explanation: "A football team fields eleven players, including its goalkeeper.",
+  },
+];
+
+function demoQuestions(settings: RoomSettings): GeneratedQuestion[] {
+  const bank = settings.language === "en" ? demoBankEn : demoBank;
+  return Array.from({ length: settings.questionCount }, (_, index) => {
+    const source = bank[index % bank.length];
     return {
       ...source,
-      prompt: count > demoBank.length ? `${source.prompt} (Tur ${index + 1})` : source.prompt,
+      prompt:
+        settings.questionCount > bank.length
+          ? `${source.prompt} (${settings.language === "tr" ? "Tur" : "Round"} ${index + 1})`
+          : source.prompt,
       options: [...source.options] as GeneratedQuestion["options"],
     };
   });
@@ -153,7 +209,7 @@ export async function generateQuestions(settings: RoomSettings): Promise<Generat
     return generateWithAnthropic(settings);
   }
   if (process.env.ALLOW_DEMO_QUESTIONS === "true") {
-    return demoQuestions(settings.questionCount);
+    return demoQuestions(settings);
   }
 
   throw new Error("Configure GEMINI_API_KEY or ANTHROPIC_API_KEY before starting a game.");
