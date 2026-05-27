@@ -17,8 +17,11 @@ export const siteConfig = {
     "online oyun",
     "Qirushio",
   ],
-  ogImagePath: "/assets/logo.png",
-  url: "http://qirushio.tamerakdeniz.com",
+  ogImagePath: "/og-image.png",
+  appleTouchIconPath: "/apple-touch-icon.png",
+  icon192Path: "/icon-192.png",
+  icon512Path: "/icon-512.png",
+  url: "https://qirushio.tamerakdeniz.com",
 } as const;
 
 export function getSiteUrl(): string {
@@ -72,10 +75,12 @@ export function createBaseMetadata(overrides?: Metadata): Metadata {
       description: siteConfig.description,
       images: [
         {
-          url: siteConfig.ogImagePath,
-          width: 512,
-          height: 512,
-          alt: `${siteConfig.name} logosu`,
+          url: absoluteUrl(siteConfig.ogImagePath),
+          secureUrl: absoluteUrl(siteConfig.ogImagePath),
+          width: 1200,
+          height: 630,
+          type: "image/png",
+          alt: `${siteConfig.name} — ${siteConfig.tagline}`,
         },
       ],
     },
@@ -83,7 +88,7 @@ export function createBaseMetadata(overrides?: Metadata): Metadata {
       card: "summary_large_image",
       title: `${siteConfig.name} | ${siteConfig.tagline}`,
       description: siteConfig.description,
-      images: [siteConfig.ogImagePath],
+      images: [absoluteUrl(siteConfig.ogImagePath)],
     },
     robots: {
       index: true,
@@ -97,8 +102,22 @@ export function createBaseMetadata(overrides?: Metadata): Metadata {
       },
     },
     icons: {
-      icon: "/favicon.ico",
-      apple: "/assets/logo.png",
+      icon: [
+        { url: "/favicon.ico", sizes: "any" },
+        { url: siteConfig.icon192Path, sizes: "192x192", type: "image/png" },
+        { url: siteConfig.icon512Path, sizes: "512x512", type: "image/png" },
+      ],
+      apple: [
+        {
+          url: siteConfig.appleTouchIconPath,
+          sizes: "180x180",
+          type: "image/png",
+        },
+      ],
+    },
+    other: {
+      "og:image:width": "1200",
+      "og:image:height": "630",
     },
     category: "games",
     ...overrides,

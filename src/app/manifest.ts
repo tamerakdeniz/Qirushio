@@ -1,6 +1,6 @@
 import type { MetadataRoute } from "next";
 
-import { siteConfig } from "@/lib/site";
+import { absoluteUrl, siteConfig } from "@/lib/site";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
@@ -14,15 +14,27 @@ export default function manifest(): MetadataRoute.Manifest {
     lang: siteConfig.language,
     icons: [
       {
-        src: "/favicon.ico",
-        sizes: "any",
-        type: "image/x-icon",
+        src: absoluteUrl(siteConfig.icon192Path),
+        sizes: "192x192",
+        type: "image/png",
+        purpose: "any",
       },
       {
-        src: "/assets/logo.png",
+        src: absoluteUrl(siteConfig.icon512Path),
         sizes: "512x512",
         type: "image/png",
         purpose: "any",
+      },
+      {
+        src: absoluteUrl(siteConfig.icon512Path),
+        sizes: "512x512",
+        type: "image/png",
+        purpose: "maskable",
+      },
+      {
+        src: absoluteUrl(siteConfig.appleTouchIconPath),
+        sizes: "180x180",
+        type: "image/png",
       },
     ],
   };
