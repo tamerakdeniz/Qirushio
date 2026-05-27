@@ -29,18 +29,21 @@ function invalidBody(error: ZodError): NextResponse {
   return NextResponse.json({ error: error.issues[0]?.message ?? "Geçersiz istek." }, { status: 400 });
 }
 
+const roomListingInactiveMs = 10 * 60 * 1000;
+
 export async function GET(): Promise<NextResponse> {
   try {
     const admin = getSupabaseAdmin();
-    await admin.rpc("cleanup_expired_rooms");
+    const activeSince = new Date(Date.now() - roomListingInactiveMs).toISOString();
     const { data, error } = await admin
       .from("rooms")
       .select(
-        "id, code, phase, host_player_id, language, category, difficulty, scope, question_count, question_time_seconds, speedrun_mode, question_pause_ms, is_public, max_players, round_number, current_question_index, phase_ends_at, generation_error, players!players_room_id_fkey(nickname, is_host)",
+        "id, code, phase, host_player_id, language, category, difficulty, scope, question_count, question_time_seconds, speedrun_mode, question_pause_ms, is_public, max_players, round_number, current_question_index, phase_ends_at, generation_error, last_active_at, players!inner(nickname, is_host)",
       )
       .eq("phase", "lobby")
       .eq("is_public", true)
-      .order("created_at", { ascending: false })
+      .gte("last_active_at", activeSince)
+      .order("last_active_at", { ascending: false })
       .limit(20);
 
     if (error) {

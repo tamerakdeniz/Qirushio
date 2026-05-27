@@ -21,6 +21,7 @@ drop function if exists public.submit_answer(uuid, uuid, text, uuid, smallint, i
 drop function if exists public.begin_round(uuid, uuid, text) cascade;
 drop function if exists public.cleanup_expired_rooms() cascade;
 drop function if exists public.keep_room_alive() cascade;
+drop function if exists public.touch_room_from_players() cascade;
 
 drop type if exists public.room_phase cascade;
 
@@ -62,7 +63,8 @@ create table public.rooms (
   generation_error text,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
-  expires_at timestamptz not null default (now() + interval '4 hours')
+  last_active_at timestamptz not null default now(),
+  expires_at timestamptz not null default (now() + interval '1 day')
 );
 
 create table public.players (
@@ -118,6 +120,7 @@ create table public.answers (
 );
 
 create index rooms_open_index on public.rooms (phase, is_public, created_at desc);
+create index rooms_listing_index on public.rooms (phase, is_public, last_active_at desc);
 create index players_room_index on public.players (room_id, joined_at);
 create index questions_round_index on public.questions (room_id, round_number, position);
 create index answers_question_index on public.answers (question_id);
@@ -130,7 +133,8 @@ set search_path = ''
 as $$
 begin
   new.updated_at := now();
-  new.expires_at := now() + interval '4 hours';
+  new.last_active_at := now();
+  new.expires_at := now() + interval '1 day';
   return new;
 end;
 $$;
@@ -138,6 +142,29 @@ $$;
 create trigger rooms_keep_alive
 before update on public.rooms
 for each row execute procedure public.keep_room_alive();
+
+create or replace function public.touch_room_from_players()
+returns trigger
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  target_room_id uuid;
+begin
+  target_room_id := coalesce(new.room_id, old.room_id);
+  update public.rooms
+  set last_active_at = now(),
+      expires_at = now() + interval '1 day',
+      updated_at = now()
+  where id = target_room_id;
+  return coalesce(new, old);
+end;
+$$;
+
+create trigger players_touch_room
+after insert or update or delete on public.players
+for each row execute procedure public.touch_room_from_players();
 
 create or replace function public.cleanup_expired_rooms()
 returns bigint

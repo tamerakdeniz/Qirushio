@@ -41,11 +41,6 @@ export async function POST(
       throw new Error(deleteError.message);
     }
 
-    if (remaining.length === 0) {
-      await admin.from("rooms").delete().eq("id", room.id);
-      return NextResponse.json({ ok: true, roomDeleted: true });
-    }
-
     if (player.isHost) {
       const nextHost = remaining[0];
       const [{ error: hostPlayerError }, { error: hostRoomError }] = await Promise.all([
