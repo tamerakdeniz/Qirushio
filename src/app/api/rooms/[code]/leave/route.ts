@@ -41,7 +41,7 @@ export async function POST(
       throw new Error(deleteError.message);
     }
 
-    if (player.isHost) {
+    if (remaining.length > 0 && player.isHost) {
       const nextHost = remaining[0];
       const [{ error: hostPlayerError }, { error: hostRoomError }] = await Promise.all([
         admin.from("players").update({ is_host: false }).eq("room_id", room.id),
@@ -58,10 +58,12 @@ export async function POST(
       if (promoteError) {
         throw new Error(promoteError.message);
       }
+    } else if (remaining.length === 0) {
+      await admin.from("rooms").update({ host_player_id: null }).eq("id", room.id);
     }
 
     await notifyRoomChanged(room.id);
-    return NextResponse.json({ ok: true, roomDeleted: false });
+    return NextResponse.json({ ok: true });
   } catch (error) {
     return routeErrorResponse(error);
   }
