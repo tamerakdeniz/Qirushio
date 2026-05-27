@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { ZodError } from "zod";
 
+import { questionPauseMs } from "@/lib/constants";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { ApiError, findRoom, requireHost, routeErrorResponse } from "@/lib/server/http";
 import { notifyRoomChanged } from "@/lib/server/realtime";
@@ -28,6 +29,7 @@ export async function PATCH(
         question_count: settings.questionCount,
         question_time_seconds: settings.questionTimeSeconds,
         speedrun_mode: settings.speedrunMode,
+        question_pause_ms: questionPauseMs(settings.questionPauseSeconds),
         is_public: settings.isPublic,
       })
       .eq("id", room.id);

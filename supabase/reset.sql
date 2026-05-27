@@ -53,6 +53,7 @@ create table public.rooms (
   question_time_seconds integer not null default 20
     check (question_time_seconds between 3 and 30),
   speedrun_mode boolean not null default false,
+  question_pause_ms integer not null default 1500 check (question_pause_ms in (0, 1500, 3000)),
   is_public boolean not null default true,
   max_players integer not null default 10 check (max_players between 2 and 20),
   round_number integer not null default 0,
@@ -383,6 +384,7 @@ declare
   v_question_id uuid;
   player_count integer;
   answer_count integer;
+  v_scoring_ms integer;
 begin
   select *
   into room_row
@@ -424,9 +426,13 @@ begin
     if room_row.phase_ends_at <= v_now or answer_count >= player_count then
       if room_row.current_question_index + 1 >= room_row.question_count then
         if room_row.speedrun_mode then
+          v_scoring_ms := case
+            when room_row.question_pause_ms > 0 then room_row.question_pause_ms
+            else 1500
+          end;
           update public.rooms
           set phase = 'scoring',
-              phase_ends_at = v_now + interval '3 seconds'
+              phase_ends_at = v_now + (v_scoring_ms * interval '1 millisecond')
           where id = p_room_id;
           return query select true, 'scoring'::public.room_phase;
         else
@@ -435,19 +441,19 @@ begin
           where id = p_room_id;
           return query select true, 'finished'::public.room_phase;
         end if;
-      elsif room_row.speedrun_mode then
+      elsif room_row.question_pause_ms > 0 then
+        update public.rooms
+        set phase = 'transition',
+            phase_ends_at = v_now + (room_row.question_pause_ms * interval '1 millisecond')
+        where id = p_room_id;
+        return query select true, 'transition'::public.room_phase;
+      else
         update public.rooms
         set phase = 'question',
             current_question_index = current_question_index + 1,
             phase_ends_at = v_now + make_interval(secs => room_row.question_time_seconds)
         where id = p_room_id;
         return query select true, 'question'::public.room_phase;
-      else
-        update public.rooms
-        set phase = 'transition',
-            phase_ends_at = v_now + interval '3 seconds'
-        where id = p_room_id;
-        return query select true, 'transition'::public.room_phase;
       end if;
       return;
     end if;

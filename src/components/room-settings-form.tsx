@@ -5,15 +5,17 @@ import { useState } from "react";
 
 import {
   categoryLabelsByLanguage,
+  defaultQuestionPauseSeconds,
   defaultRoomSettings,
   difficultyLabelsByLanguage,
   languageLabels,
   normalQuestionTimeOptions,
+  questionPauseOptions,
   scopeLabelsByLanguage,
   speedrunQuestionTimeOptions,
 } from "@/lib/constants";
 import { settingsCopy } from "@/lib/i18n";
-import type { QuizCategory, QuizLanguage, RoomSettings } from "@/lib/types";
+import type { QuestionPauseSeconds, QuizCategory, QuizLanguage, RoomSettings } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 const categoryIcons = {
@@ -37,6 +39,19 @@ function normalizeQuestionTime(speedrunMode: boolean, seconds: number): number {
   return options[0];
 }
 
+function questionPauseLabel(
+  copy: (typeof settingsCopy)[QuizLanguage],
+  pauseSeconds: QuestionPauseSeconds,
+): string {
+  if (pauseSeconds === 0) {
+    return copy.questionPauseNone;
+  }
+  if (pauseSeconds === 1.5) {
+    return copy.questionPauseShort;
+  }
+  return copy.questionPauseLong;
+}
+
 export function RoomSettingsForm({
   initial = defaultRoomSettings,
   submitLabel,
@@ -53,6 +68,7 @@ export function RoomSettingsForm({
   const [settings, setSettings] = useState({
     ...initial,
     questionTimeSeconds: normalizeQuestionTime(initial.speedrunMode, initial.questionTimeSeconds),
+    questionPauseSeconds: initial.questionPauseSeconds ?? defaultQuestionPauseSeconds,
   });
   const copy = settingsCopy[locale];
   const categoryLabels = categoryLabelsByLanguage[locale];
@@ -198,6 +214,27 @@ export function RoomSettingsForm({
             ))}
           </select>
         </label>
+      </div>
+
+      <div>
+        <p className="mb-2 text-sm font-bold">{copy.questionPause}</p>
+        <div className="flex flex-wrap gap-2">
+          {questionPauseOptions.map((pauseSeconds) => (
+            <button
+              key={pauseSeconds}
+              type="button"
+              className={cn(
+                "rounded-full border-2 px-5 py-2.5 text-sm font-bold",
+                settings.questionPauseSeconds === pauseSeconds
+                  ? "border-secondary bg-secondary text-white"
+                  : "border-[var(--outline)] bg-[var(--surface-raised)] text-muted",
+              )}
+              onClick={() => update("questionPauseSeconds", pauseSeconds)}
+            >
+              {questionPauseLabel(copy, pauseSeconds)}
+            </button>
+          ))}
+        </div>
       </div>
 
       <label className="flex items-start gap-3 rounded-xl border-2 border-[var(--outline)] bg-[var(--surface-raised)] p-3 text-sm">

@@ -3,6 +3,7 @@ import { randomBytes } from "node:crypto";
 import { NextResponse } from "next/server";
 import { ZodError } from "zod";
 
+import { questionPauseMs } from "@/lib/constants";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { createRoomSchema } from "@/lib/validation";
 import {
@@ -35,7 +36,7 @@ export async function GET(): Promise<NextResponse> {
     const { data, error } = await admin
       .from("rooms")
       .select(
-        "id, code, phase, host_player_id, language, category, difficulty, scope, question_count, question_time_seconds, speedrun_mode, is_public, max_players, round_number, current_question_index, phase_ends_at, generation_error, players!players_room_id_fkey(nickname, is_host)",
+        "id, code, phase, host_player_id, language, category, difficulty, scope, question_count, question_time_seconds, speedrun_mode, question_pause_ms, is_public, max_players, round_number, current_question_index, phase_ends_at, generation_error, players!players_room_id_fkey(nickname, is_host)",
       )
       .eq("phase", "lobby")
       .eq("is_public", true)
@@ -60,6 +61,7 @@ export async function GET(): Promise<NextResponse> {
         questionCount: room.questionCount,
         questionTimeSeconds: room.questionTimeSeconds,
         speedrunMode: room.speedrunMode,
+        questionPauseSeconds: room.questionPauseSeconds,
         isPublic: room.isPublic,
         maxPlayers: room.maxPlayers,
         playerCount: row.players.length,
@@ -93,6 +95,7 @@ export async function POST(request: Request): Promise<NextResponse> {
           question_count: input.settings.questionCount,
           question_time_seconds: input.settings.questionTimeSeconds,
           speedrun_mode: input.settings.speedrunMode,
+          question_pause_ms: questionPauseMs(input.settings.questionPauseSeconds),
           is_public: input.settings.isPublic,
         })
         .select("id, code")

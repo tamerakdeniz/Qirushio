@@ -1,9 +1,35 @@
-import type { QuizCategory, QuizDifficulty, QuizLanguage, QuizScope, RoomSettings } from "@/lib/types";
+import type {
+  QuestionPauseSeconds,
+  QuizCategory,
+  QuizDifficulty,
+  QuizLanguage,
+  QuizScope,
+  RoomSettings,
+} from "@/lib/types";
 
 export const normalQuestionTimeOptions = [5, 10, 15, 20, 30] as const;
 export const speedrunQuestionTimeOptions = [3, 5] as const;
+export const questionPauseOptions = [0, 1.5, 3] as const satisfies readonly QuestionPauseSeconds[];
 export const preGameCountdownSeconds = 3;
-export const betweenQuestionsPauseSeconds = 3;
+export const defaultQuestionPauseSeconds: QuestionPauseSeconds = 1.5;
+
+export function questionPauseMs(seconds: QuestionPauseSeconds): number {
+  return seconds === 0 ? 0 : seconds * 1000;
+}
+
+export function questionPauseFromMs(ms: number): QuestionPauseSeconds {
+  if (ms === 3000) {
+    return 3;
+  }
+  if (ms === 1500) {
+    return 1.5;
+  }
+  return 0;
+}
+
+export function scoringPauseSeconds(pauseSeconds: QuestionPauseSeconds): QuestionPauseSeconds {
+  return pauseSeconds > 0 ? pauseSeconds : 1.5;
+}
 
 export const defaultRoomSettings: RoomSettings = {
   language: "tr",
@@ -12,6 +38,7 @@ export const defaultRoomSettings: RoomSettings = {
   scope: "global",
   questionCount: 10,
   questionTimeSeconds: 20,
+  questionPauseSeconds: defaultQuestionPauseSeconds,
   speedrunMode: false,
   isPublic: true,
 };

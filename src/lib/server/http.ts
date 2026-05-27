@@ -3,6 +3,7 @@ import { createHash, randomBytes } from "node:crypto";
 import { NextResponse } from "next/server";
 
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
+import { questionPauseFromMs } from "@/lib/constants";
 import type { PlayerView, RoomView } from "@/lib/types";
 
 interface RoomRow {
@@ -17,6 +18,7 @@ interface RoomRow {
   question_count: number;
   question_time_seconds: number;
   speedrun_mode: boolean;
+  question_pause_ms: number;
   is_public: boolean;
   max_players: number;
   round_number: number;
@@ -64,6 +66,7 @@ export function mapRoom(row: RoomRow): RoomView {
     questionCount: row.question_count,
     questionTimeSeconds: row.question_time_seconds,
     speedrunMode: row.speedrun_mode,
+    questionPauseSeconds: questionPauseFromMs(row.question_pause_ms ?? 1500),
     isPublic: row.is_public,
     maxPlayers: row.max_players,
     roundNumber: row.round_number,
@@ -87,7 +90,7 @@ export async function findRoom(code: string): Promise<RoomView> {
   const { data, error } = await getSupabaseAdmin()
     .from("rooms")
     .select(
-      "id, code, phase, host_player_id, language, category, difficulty, scope, question_count, question_time_seconds, speedrun_mode, is_public, max_players, round_number, current_question_index, phase_ends_at, generation_error",
+      "id, code, phase, host_player_id, language, category, difficulty, scope, question_count, question_time_seconds, speedrun_mode, question_pause_ms, is_public, max_players, round_number, current_question_index, phase_ends_at, generation_error",
     )
     .eq("code", code.toUpperCase())
     .maybeSingle<RoomRow>();

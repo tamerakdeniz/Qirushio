@@ -31,9 +31,9 @@ import { RoomSettingsForm } from "@/components/room-settings-form";
 import { ErrorNotice, Spinner } from "@/components/ui";
 import { apiRequest } from "@/lib/client-api";
 import {
-  betweenQuestionsPauseSeconds,
   categoryLabelsByLanguage,
   difficultyLabelsByLanguage,
+  scoringPauseSeconds,
 } from "@/lib/constants";
 import { commonCopy, homeCopy, roomCopy } from "@/lib/i18n";
 import { getSupabaseBrowser } from "@/lib/supabase/browser";
@@ -51,6 +51,7 @@ import {
 import type {
   AnswerReview,
   PlayerView,
+  QuestionPauseSeconds,
   QuizLanguage,
   RoomSession,
   RoomSettings,
@@ -520,6 +521,7 @@ function ScoringFlush({
       room={room}
       title={status === "syncing" ? copy.syncingAnswers : copy.preparingResults}
       subtitle={copy.preparingResults}
+      durationSeconds={scoringPauseSeconds(room.questionPauseSeconds)}
     />
   );
 }
@@ -790,7 +792,7 @@ function Lobby({
               </h2>
               {currentPlayer.isHost ? (
                 <RoomSettingsForm
-                  key={`${room.category}-${room.questionCount}-${room.questionTimeSeconds}-${room.speedrunMode}-${room.difficulty}`}
+                  key={`${room.category}-${room.questionCount}-${room.questionTimeSeconds}-${room.questionPauseSeconds}-${room.speedrunMode}-${room.difficulty}`}
                   initial={room}
                   locale={locale}
                   submitLabel={copy.saveSettings}
@@ -831,6 +833,19 @@ function Lobby({
   );
 }
 
+function questionPauseSummaryLabel(
+  copy: (typeof roomCopy)[QuizLanguage],
+  pauseSeconds: QuestionPauseSeconds,
+): string {
+  if (pauseSeconds === 0) {
+    return copy.questionPauseNone;
+  }
+  if (pauseSeconds === 1.5) {
+    return copy.questionPauseShort;
+  }
+  return copy.questionPauseLong;
+}
+
 function RoomSettingSummary({ locale, room }: { locale: QuizLanguage; room: RoomView }) {
   const copy = roomCopy[locale];
   const categoryLabels = categoryLabelsByLanguage[locale];
@@ -841,6 +856,7 @@ function RoomSettingSummary({ locale, room }: { locale: QuizLanguage; room: Room
         [copy.category, categoryLabels[room.category]],
         [copy.questionCount, `${room.questionCount} ${copy.question}`],
         [copy.duration, `${room.questionTimeSeconds} ${copy.second}`],
+        [copy.questionPause, questionPauseSummaryLabel(copy, room.questionPauseSeconds)],
         ...(room.speedrunMode ? [[copy.speedrun, copy.speedrunOn] as const] : []),
         [copy.difficulty, difficultyLabels[room.difficulty]],
       ].map(([title, value]) => (
@@ -959,7 +975,7 @@ function CircularPauseCountdown({
   room,
   title,
   subtitle,
-  durationSeconds = betweenQuestionsPauseSeconds,
+  durationSeconds = room.questionPauseSeconds,
 }: {
   room: RoomView;
   title: string;

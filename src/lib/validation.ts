@@ -15,6 +15,7 @@ export const roomSettingsSchema = z
     scope: z.enum(["global", "local"]),
     questionCount: z.number().int().min(5).max(20),
     questionTimeSeconds: z.number().int().min(3).max(30),
+    questionPauseSeconds: z.union([z.literal(0), z.literal(1.5), z.literal(3)]),
     speedrunMode: z.boolean(),
     isPublic: z.boolean(),
   })

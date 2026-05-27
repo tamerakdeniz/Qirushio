@@ -18,6 +18,7 @@ export type AppTheme = "dark" | "light";
 export type QuizCategory = "general" | "science" | "sports" | "arts" | "history" | "random";
 export type QuizDifficulty = "easy" | "medium" | "hard";
 export type QuizScope = "global" | "local";
+export type QuestionPauseSeconds = 0 | 1.5 | 3;
 
 export interface RoomSettings {
   language: QuizLanguage;
@@ -26,6 +27,7 @@ export interface RoomSettings {
   scope: QuizScope;
   questionCount: number;
   questionTimeSeconds: number;
+  questionPauseSeconds: QuestionPauseSeconds;
   speedrunMode: boolean;
   isPublic: boolean;
 }
