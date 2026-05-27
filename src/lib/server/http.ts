@@ -10,7 +10,7 @@ interface RoomRow {
   id: string;
   code: string;
   phase: RoomView["phase"];
-  host_player_id: string;
+  host_player_id: string | null;
   language: RoomView["language"];
   category: RoomView["category"];
   difficulty: RoomView["difficulty"];
@@ -18,7 +18,7 @@ interface RoomRow {
   question_count: number;
   question_time_seconds: number;
   speedrun_mode: boolean;
-  question_pause_ms: number;
+  question_pause_ms?: number | null;
   is_public: boolean;
   max_players: number;
   round_number: number;
@@ -58,7 +58,7 @@ export function mapRoom(row: RoomRow): RoomView {
     id: row.id,
     code: row.code,
     phase: row.phase,
-    hostPlayerId: row.host_player_id,
+    hostPlayerId: row.host_player_id ?? "",
     language: row.language,
     category: row.category,
     difficulty: row.difficulty,
