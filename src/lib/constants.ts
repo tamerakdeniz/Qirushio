@@ -2,6 +2,7 @@ import type { QuizCategory, QuizDifficulty, QuizLanguage, QuizScope, RoomSetting
 
 export const normalQuestionTimeOptions = [5, 10, 15, 20, 30] as const;
 export const speedrunQuestionTimeOptions = [3, 5] as const;
+export const preGameCountdownSeconds = 3;
 
 export const defaultRoomSettings: RoomSettings = {
   language: "tr",

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 
+import { preGameCountdownSeconds } from "@/lib/constants";
 import { generateQuestions, usedPromptsSince } from "@/lib/server/ai";
 import { findRoom, requireHost, routeErrorResponse } from "@/lib/server/http";
 import { notifyRoomChanged } from "@/lib/server/realtime";
@@ -64,7 +65,7 @@ export async function POST(
       .update({
         phase: "countdown",
         current_question_index: -1,
-        phase_ends_at: new Date(Date.now() + 10_000).toISOString(),
+        phase_ends_at: new Date(Date.now() + preGameCountdownSeconds * 1000).toISOString(),
       })
       .eq("id", room.id)
       .eq("round_number", roundNumber as number);

@@ -403,7 +403,7 @@ export function RoomScreen({ code }: { code: string }) {
       case "generating":
         return <Generating locale={locale} snapshot={snapshot} />;
       case "countdown":
-        return <Countdown room={snapshot.room} title={copy.readyQuestion} subtitle={copy.starts} />;
+        return <StartCountdown room={snapshot.room} title={copy.readyQuestion} subtitle={copy.starts} />;
       case "question":
         return (
           <Question
@@ -898,6 +898,39 @@ function useRemainingSeconds(endsAt: string | null): number {
     return () => window.clearInterval(interval);
   }, [endsAt]);
   return remaining;
+}
+
+function StartCountdown({
+  room,
+  title,
+  subtitle,
+}: {
+  room: RoomView;
+  title: string;
+  subtitle: string;
+}) {
+  const remaining = useRemainingSeconds(room.phaseEndsAt);
+  const display = remaining > 0 ? remaining : 1;
+
+  return (
+    <main className="flex min-h-screen items-center justify-center px-4 text-center">
+      <section className="w-full max-w-lg">
+        <Sparkles className="mx-auto mb-4 text-secondary" size={36} />
+        <p className="text-lg font-bold uppercase tracking-[0.2em] text-secondary-deep">{subtitle}</p>
+        <h1 className="mt-2 text-2xl font-extrabold text-muted sm:text-3xl">{title}</h1>
+        <div className="relative mx-auto mt-14 flex h-52 w-52 items-center justify-center sm:h-60 sm:w-60">
+          <span className="absolute inset-0 animate-pulse-soft rounded-full bg-primary/30 blur-3xl" />
+          <span
+            key={display}
+            aria-live="assertive"
+            className="brand-gradient animate-countdown-pop relative text-[7.5rem] font-black leading-none tabular-nums drop-shadow-[0_8px_32px_rgba(255,120,40,0.35)] sm:text-[9.5rem]"
+          >
+            {display}
+          </span>
+        </div>
+      </section>
+    </main>
+  );
 }
 
 function Countdown({
