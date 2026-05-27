@@ -94,21 +94,17 @@ export function RoomScreen({ code }: { code: string }) {
         session,
       );
       setSnapshot(nextSnapshot);
-      if (nextSnapshot.room.speedrunMode) {
-        const currentQuestionId = nextSnapshot.question?.id;
-        const pending = currentQuestionId
-          ? readPendingAnswers(code).find((item) => item.questionId === currentQuestionId)
-          : null;
-        if (nextSnapshot.myAnswer) {
-          if (currentQuestionId) {
-            removePendingAnswer(code, currentQuestionId);
-          }
-          setSelectedPending(null);
-        } else if (pending) {
-          setSelectedPending(pending.selectedOption);
-        } else {
-          setSelectedPending(null);
+      const currentQuestionId = nextSnapshot.question?.id;
+      const pending = currentQuestionId
+        ? readPendingAnswers(code).find((item) => item.questionId === currentQuestionId)
+        : null;
+      if (nextSnapshot.myAnswer) {
+        if (currentQuestionId) {
+          removePendingAnswer(code, currentQuestionId);
         }
+        setSelectedPending(null);
+      } else if (pending) {
+        setSelectedPending(pending.selectedOption);
       } else {
         setSelectedPending(null);
       }
@@ -182,17 +178,18 @@ export function RoomScreen({ code }: { code: string }) {
   );
 
   useEffect(() => {
-    if (!session || !snapshot?.room.speedrunMode || snapshot.room.phase !== "question" || !snapshot.question) {
+    if (!session || !snapshot || snapshot.room.phase !== "question" || !snapshot.question) {
       return;
     }
 
-    const stale = readPendingAnswers(code).filter((item) => item.questionId !== snapshot.question?.id);
+    const questionId = snapshot.question.id;
+    const stale = readPendingAnswers(code).filter((item) => item.questionId !== questionId);
     if (stale.length === 0) {
       return;
     }
 
     void syncPendingAnswers(stale);
-  }, [code, session, snapshot?.question?.id, snapshot?.room.phase, snapshot?.room.speedrunMode, syncPendingAnswers]);
+  }, [code, session, snapshot?.question?.id, snapshot?.room.phase, syncPendingAnswers]);
 
   useEffect(() => {
     if (!session || !snapshot?.room.phaseEndsAt) {
@@ -200,7 +197,6 @@ export function RoomScreen({ code }: { code: string }) {
     }
 
     const waitingForAnswer =
-      snapshot.room.speedrunMode &&
       snapshot.room.phase === "question" &&
       snapshot.question &&
       !snapshot.myAnswer &&
@@ -235,7 +231,6 @@ export function RoomScreen({ code }: { code: string }) {
     snapshot?.question,
     snapshot?.room.phase,
     snapshot?.room.phaseEndsAt,
-    snapshot?.room.speedrunMode,
   ]);
 
   async function runAction(name: string, action: () => Promise<void>) {
@@ -880,7 +875,6 @@ function Generating({ locale, snapshot }: { locale: QuizLanguage; snapshot: Room
           <span className="animate-float relative flex h-28 w-28 items-center justify-center rounded-full bg-[var(--surface-raised)] shadow-xl">
             <Bot size={57} className="text-primary-deep" />
           </span>
-          <Star className="animate-orbit absolute inset-0 m-auto text-secondary" />
         </div>
         <h1 className="text-3xl font-extrabold">{copy.preparing}</h1>
         <p className="mt-2 font-medium text-muted">{copy.selecting}</p>

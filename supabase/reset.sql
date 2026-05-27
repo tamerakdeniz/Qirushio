@@ -247,7 +247,7 @@ begin
   where id = p_room_id
   for update;
 
-  scoring_grace := room_row.speedrun_mode and room_row.phase = 'scoring';
+  scoring_grace := room_row.phase = 'scoring';
 
   if scoring_grace then
     null;
@@ -425,22 +425,15 @@ begin
 
     if room_row.phase_ends_at <= v_now or answer_count >= player_count then
       if room_row.current_question_index + 1 >= room_row.question_count then
-        if room_row.speedrun_mode then
-          v_scoring_ms := case
-            when room_row.question_pause_ms > 0 then room_row.question_pause_ms
-            else 1500
-          end;
-          update public.rooms
-          set phase = 'scoring',
-              phase_ends_at = v_now + (v_scoring_ms * interval '1 millisecond')
-          where id = p_room_id;
-          return query select true, 'scoring'::public.room_phase;
-        else
-          update public.rooms
-          set phase = 'finished', phase_ends_at = null
-          where id = p_room_id;
-          return query select true, 'finished'::public.room_phase;
-        end if;
+        v_scoring_ms := case
+          when room_row.question_pause_ms > 0 then room_row.question_pause_ms
+          else 1500
+        end;
+        update public.rooms
+        set phase = 'scoring',
+            phase_ends_at = v_now + (v_scoring_ms * interval '1 millisecond')
+        where id = p_room_id;
+        return query select true, 'scoring'::public.room_phase;
       elsif room_row.question_pause_ms > 0 then
         update public.rooms
         set phase = 'transition',

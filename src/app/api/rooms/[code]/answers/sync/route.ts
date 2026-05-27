@@ -15,10 +15,6 @@ export async function POST(
   try {
     const input = answerSyncSchema.parse(await request.json());
     const room = await findRoom((await params).code);
-    if (!room.speedrunMode) {
-      return NextResponse.json({ error: "Speedrun dışı odalarda senkron kullanılamaz." }, { status: 400 });
-    }
-
     const authorized = await requirePlayer(request, room.id);
     const admin = getSupabaseAdmin();
     const synced: string[] = [];
