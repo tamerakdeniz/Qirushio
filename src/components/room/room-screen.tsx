@@ -30,7 +30,11 @@ import { AppHeader } from "@/components/brand";
 import { RoomSettingsForm } from "@/components/room-settings-form";
 import { ErrorNotice, Spinner } from "@/components/ui";
 import { apiRequest } from "@/lib/client-api";
-import { categoryLabelsByLanguage, difficultyLabelsByLanguage } from "@/lib/constants";
+import {
+  betweenQuestionsPauseSeconds,
+  categoryLabelsByLanguage,
+  difficultyLabelsByLanguage,
+} from "@/lib/constants";
 import { commonCopy, homeCopy, roomCopy } from "@/lib/i18n";
 import { getSupabaseBrowser } from "@/lib/supabase/browser";
 import {
@@ -419,7 +423,7 @@ export function RoomScreen({ code }: { code: string }) {
           />
         );
       case "transition":
-        return <Countdown room={snapshot.room} title={copy.nextQuestion} subtitle={copy.focus} compact />;
+        return <CircularPauseCountdown room={snapshot.room} title={copy.nextQuestion} subtitle={copy.focus} />;
       case "scoring":
         return (
           <ScoringFlush
@@ -512,11 +516,10 @@ function ScoringFlush({
   }, [code]);
 
   return (
-    <Countdown
+    <CircularPauseCountdown
       room={room}
       title={status === "syncing" ? copy.syncingAnswers : copy.preparingResults}
       subtitle={copy.preparingResults}
-      compact
     />
   );
 }
@@ -628,7 +631,7 @@ function Lobby({
   async function shareRoom() {
     const url = window.location.href;
     if (navigator.share) {
-      await navigator.share({ title: "Qirushio", text: copy.shareCode(room.code), url });
+      await navigator.share({ title: `Qirushio · ${room.code}`, url });
     } else {
       await navigator.clipboard.writeText(url);
     }
@@ -900,6 +903,25 @@ function useRemainingSeconds(endsAt: string | null): number {
   return remaining;
 }
 
+function usePhaseProgress(endsAt: string | null, durationSeconds: number): number {
+  const [progress, setProgress] = useState(1);
+  useEffect(() => {
+    const durationMs = durationSeconds * 1000;
+    function tick() {
+      if (!endsAt) {
+        setProgress(0);
+        return;
+      }
+      const remainingMs = Math.max(0, new Date(endsAt).getTime() - Date.now());
+      setProgress(Math.min(1, remainingMs / durationMs));
+    }
+    tick();
+    const interval = window.setInterval(tick, 50);
+    return () => window.clearInterval(interval);
+  }, [durationSeconds, endsAt]);
+  return progress;
+}
+
 function StartCountdown({
   room,
   title,
@@ -933,27 +955,64 @@ function StartCountdown({
   );
 }
 
-function Countdown({
+function CircularPauseCountdown({
   room,
   title,
   subtitle,
-  compact = false,
+  durationSeconds = betweenQuestionsPauseSeconds,
 }: {
   room: RoomView;
   title: string;
   subtitle: string;
-  compact?: boolean;
+  durationSeconds?: number;
 }) {
-  const remaining = useRemainingSeconds(room.phaseEndsAt);
+  const progress = usePhaseProgress(room.phaseEndsAt, durationSeconds);
+  const size = 168;
+  const stroke = 11;
+  const radius = (size - stroke) / 2;
+  const circumference = 2 * Math.PI * radius;
+  const dashOffset = circumference * (1 - progress);
+
   return (
     <main className="flex min-h-screen items-center justify-center px-4 text-center">
       <section className="glass-panel w-full max-w-md p-9">
         <Sparkles className="mx-auto mb-5 text-secondary" size={32} />
         <p className="text-lg font-bold text-muted">{subtitle}</p>
         <h1 className="mt-2 text-3xl font-extrabold">{title}</h1>
-        <p className={cn("mx-auto mt-8 font-extrabold tabular-nums text-primary", compact ? "text-7xl" : "text-8xl")}>
-          {remaining || 1}
-        </p>
+        <div className="mx-auto mt-10 flex justify-center">
+          <svg
+            aria-label={title}
+            aria-valuemax={100}
+            aria-valuemin={0}
+            aria-valuenow={Math.round(progress * 100)}
+            className="-rotate-90"
+            height={size}
+            role="progressbar"
+            viewBox={`0 0 ${size} ${size}`}
+            width={size}
+          >
+            <circle
+              cx={size / 2}
+              cy={size / 2}
+              fill="none"
+              r={radius}
+              stroke="var(--outline)"
+              strokeWidth={stroke}
+            />
+            <circle
+              className="text-primary transition-[stroke-dashoffset] duration-75 ease-linear"
+              cx={size / 2}
+              cy={size / 2}
+              fill="none"
+              r={radius}
+              stroke="currentColor"
+              strokeDasharray={circumference}
+              strokeDashoffset={dashOffset}
+              strokeLinecap="round"
+              strokeWidth={stroke}
+            />
+          </svg>
+        </div>
       </section>
     </main>
   );
