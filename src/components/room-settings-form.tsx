@@ -193,7 +193,7 @@ export function RoomSettingsForm({
         </div>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-3">
+      <div className="grid gap-4 sm:grid-cols-2">
         <label className="text-sm font-bold">
           {copy.questions}
           <select
@@ -204,20 +204,6 @@ export function RoomSettingsForm({
             {[5, 10, 15, 20].map((count) => (
               <option key={count} value={count}>
                 {count} {copy.question}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label className="text-sm font-bold">
-          {copy.secondsPerQuestion}
-          <select
-            className="form-input mt-2"
-            value={settings.questionTimeSeconds}
-            onChange={(event) => update("questionTimeSeconds", Number(event.target.value))}
-          >
-            {timeOptions.map((seconds) => (
-              <option key={seconds} value={seconds}>
-                {seconds} {copy.second}
               </option>
             ))}
           </select>
@@ -235,6 +221,21 @@ export function RoomSettingsForm({
           />
         </label>
       </div>
+
+      <label className="block text-sm font-bold">
+        {copy.secondsPerQuestion}
+        <select
+          className="form-input mt-2"
+          value={settings.questionTimeSeconds}
+          onChange={(event) => update("questionTimeSeconds", Number(event.target.value))}
+        >
+          {timeOptions.map((seconds) => (
+            <option key={seconds} value={seconds}>
+              {seconds} {copy.second}
+            </option>
+          ))}
+        </select>
+      </label>
 
       <div>
         <p className="mb-2 text-sm font-bold">{copy.questionPause}</p>

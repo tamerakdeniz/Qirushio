@@ -19,6 +19,7 @@ import {
   Sparkles,
   Star,
   Timer,
+  UserMinus,
   Users,
   X,
 } from "lucide-react";
@@ -397,6 +398,15 @@ export function RoomScreen({ code }: { code: string }) {
                 await apiRequest(`/api/rooms/${code}/start`, { method: "POST", body: "{}" }, session);
               })
             }
+            onKickPlayer={(playerId) =>
+              runAction(`kick:${playerId}`, async () => {
+                await apiRequest(
+                  `/api/rooms/${encodeURIComponent(code)}/players/${encodeURIComponent(playerId)}/kick`,
+                  { method: "POST", body: "{}" },
+                  session,
+                );
+              })
+            }
             onHome={() => leaveRoom()}
           />
         );
@@ -604,6 +614,7 @@ function Lobby({
   onReady,
   onSettings,
   onStart,
+  onKickPlayer,
   onHome,
 }: {
   snapshot: RoomSnapshot;
@@ -616,6 +627,7 @@ function Lobby({
   onReady: (ready: boolean) => Promise<void>;
   onSettings: (settings: RoomSettings) => Promise<void>;
   onStart: () => Promise<void>;
+  onKickPlayer: (playerId: string) => Promise<void>;
   onHome: () => void | Promise<void>;
 }) {
   const room = snapshot.room;
@@ -761,14 +773,28 @@ function Lobby({
                       )}
                     </div>
                     {!(player.id === currentPlayer.id && editingNickname) && (
-                      <span
-                        className={cn(
-                          "rounded-full px-3 py-1.5 text-xs font-bold",
-                          player.isReady ? "bg-blue-600 text-white" : "bg-[var(--control-selected)] text-muted",
+                      <div className="flex shrink-0 items-center gap-2">
+                        <span
+                          className={cn(
+                            "rounded-full px-3 py-1.5 text-xs font-bold",
+                            player.isReady ? "bg-blue-600 text-white" : "bg-[var(--control-selected)] text-muted",
+                          )}
+                        >
+                          {player.isReady ? copy.ready : copy.waiting}
+                        </span>
+                        {currentPlayer.isHost && !player.isHost && player.id !== currentPlayer.id && (
+                          <button
+                            aria-label={`${copy.kickPlayer}: ${player.nickname}`}
+                            className="flex h-9 w-9 items-center justify-center rounded-full bg-red-500/10 text-[var(--danger)] transition hover:bg-red-500/20 disabled:opacity-50"
+                            disabled={busy !== null}
+                            onClick={() => void onKickPlayer(player.id)}
+                            title={copy.kickPlayer}
+                            type="button"
+                          >
+                            <UserMinus size={16} />
+                          </button>
                         )}
-                      >
-                        {player.isReady ? copy.ready : copy.waiting}
-                      </span>
+                      </div>
                     )}
                   </div>
                 ))}
@@ -787,7 +813,7 @@ function Lobby({
               </h2>
               {currentPlayer.isHost ? (
                 <RoomSettingsForm
-                  key={`${room.category}-${room.questionCount}-${room.questionTimeSeconds}-${room.questionPauseSeconds}-${room.speedrunMode}-${room.difficulty}`}
+                  key={`${room.category}-${room.questionCount}-${room.questionTimeSeconds}-${room.questionPauseSeconds}-${room.speedrunMode}-${room.difficulty}-${room.maxPlayers}`}
                   initial={room}
                   locale={locale}
                   submitLabel={copy.saveSettings}
