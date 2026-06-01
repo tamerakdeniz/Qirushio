@@ -56,7 +56,7 @@ create table public.rooms (
   speedrun_mode boolean not null default false,
   question_pause_ms integer not null default 1500 check (question_pause_ms in (0, 1500, 3000)),
   is_public boolean not null default true,
-  max_players integer not null default 10 check (max_players between 2 and 20),
+  max_players integer not null default 10 check (max_players >= 2),
   round_number integer not null default 0,
   current_question_index integer not null default -1,
   phase_ends_at timestamptz,
@@ -227,7 +227,6 @@ begin
     raise exception 'players_not_ready';
   end if;
 
-  delete from public.questions where room_id = p_room_id;
   update public.players set score = 0 where room_id = p_room_id;
 
   update public.rooms
@@ -526,7 +525,6 @@ begin
     raise exception 'host_required';
   end if;
 
-  delete from public.questions where room_id = p_room_id;
   update public.players
   set score = 0, is_ready = is_host
   where room_id = p_room_id;

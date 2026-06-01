@@ -18,6 +18,7 @@ export const roomSettingsSchema = z
     questionPauseSeconds: z.union([z.literal(0), z.literal(1.5), z.literal(3)]),
     speedrunMode: z.boolean(),
     isPublic: z.boolean(),
+    maxPlayers: z.number().int().min(2).default(10),
   })
   .superRefine((settings, context) => {
     const allowed = settings.speedrunMode ? [3, 5] : [5, 10, 15, 20, 30];

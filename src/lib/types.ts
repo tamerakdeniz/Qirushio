@@ -30,12 +30,12 @@ export interface RoomSettings {
   questionPauseSeconds: QuestionPauseSeconds;
   speedrunMode: boolean;
   isPublic: boolean;
+  maxPlayers: number;
 }
 
 export interface RoomSummary extends RoomSettings {
   code: string;
   playerCount: number;
-  maxPlayers: number;
   hostNickname: string;
 }
 
@@ -44,7 +44,6 @@ export interface RoomView extends RoomSettings {
   code: string;
   phase: RoomPhase;
   hostPlayerId: string;
-  maxPlayers: number;
   roundNumber: number;
   currentQuestionIndex: number;
   phaseEndsAt: string | null;

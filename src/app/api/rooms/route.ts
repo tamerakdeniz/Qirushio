@@ -13,7 +13,7 @@ import {
 } from "@/lib/server/http";
 import { listPublicRooms } from "@/lib/server/list-public-rooms";
 import { notifyRoomChanged } from "@/lib/server/realtime";
-import type { RoomSession, RoomSummary } from "@/lib/types";
+import type { RoomSession } from "@/lib/types";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -61,6 +61,7 @@ export async function POST(request: Request): Promise<NextResponse> {
           speedrun_mode: input.settings.speedrunMode,
           question_pause_ms: questionPauseMs(input.settings.questionPauseSeconds),
           is_public: input.settings.isPublic,
+          max_players: input.settings.maxPlayers,
         })
         .select("id, code")
         .single<{ id: string; code: string }>();
@@ -117,4 +118,3 @@ export async function POST(request: Request): Promise<NextResponse> {
     return routeErrorResponse(error);
   }
 }
-

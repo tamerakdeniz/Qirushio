@@ -41,6 +41,7 @@ export const defaultRoomSettings: RoomSettings = {
   questionPauseSeconds: defaultQuestionPauseSeconds,
   speedrunMode: false,
   isPublic: true,
+  maxPlayers: 10,
 };
 
 export const categoryLabels = {

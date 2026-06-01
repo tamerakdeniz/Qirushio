@@ -31,6 +31,7 @@ export async function PATCH(
         speedrun_mode: settings.speedrunMode,
         question_pause_ms: questionPauseMs(settings.questionPauseSeconds),
         is_public: settings.isPublic,
+        max_players: settings.maxPlayers,
       })
       .eq("id", room.id);
     if (error) {
@@ -46,4 +47,3 @@ export async function PATCH(
     return routeErrorResponse(error);
   }
 }
-

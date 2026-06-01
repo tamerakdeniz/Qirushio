@@ -39,6 +39,13 @@ function normalizeQuestionTime(speedrunMode: boolean, seconds: number): number {
   return options[0];
 }
 
+function normalizeMaxPlayers(maxPlayers: number): number {
+  if (!Number.isFinite(maxPlayers)) {
+    return defaultRoomSettings.maxPlayers;
+  }
+  return Math.max(2, Math.floor(maxPlayers));
+}
+
 function questionPauseLabel(
   copy: (typeof settingsCopy)[QuizLanguage],
   pauseSeconds: QuestionPauseSeconds,
@@ -69,6 +76,7 @@ export function RoomSettingsForm({
     ...initial,
     questionTimeSeconds: normalizeQuestionTime(initial.speedrunMode, initial.questionTimeSeconds),
     questionPauseSeconds: initial.questionPauseSeconds ?? defaultQuestionPauseSeconds,
+    maxPlayers: normalizeMaxPlayers(initial.maxPlayers),
   });
   const copy = settingsCopy[locale];
   const categoryLabels = categoryLabelsByLanguage[locale];
@@ -185,7 +193,7 @@ export function RoomSettingsForm({
         </div>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2">
+      <div className="grid gap-4 sm:grid-cols-3">
         <label className="text-sm font-bold">
           {copy.questions}
           <select
@@ -213,6 +221,18 @@ export function RoomSettingsForm({
               </option>
             ))}
           </select>
+        </label>
+        <label className="text-sm font-bold">
+          {copy.maxPlayers}
+          <input
+            className="form-input mt-2"
+            inputMode="numeric"
+            min={2}
+            step={1}
+            type="number"
+            value={settings.maxPlayers}
+            onChange={(event) => update("maxPlayers", normalizeMaxPlayers(Number(event.target.value)))}
+          />
         </label>
       </div>
 

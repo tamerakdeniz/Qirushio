@@ -851,6 +851,7 @@ function RoomSettingSummary({ locale, room }: { locale: QuizLanguage; room: Room
         [copy.category, categoryLabels[room.category]],
         [copy.questionCount, `${room.questionCount} ${copy.question}`],
         [copy.duration, `${room.questionTimeSeconds} ${copy.second}`],
+        [copy.maxPlayers, room.maxPlayers],
         [copy.questionPause, questionPauseSummaryLabel(copy, room.questionPauseSeconds)],
         ...(room.speedrunMode ? [[copy.speedrun, copy.speedrunOn] as const] : []),
         [copy.difficulty, difficultyLabels[room.difficulty]],
