@@ -20,6 +20,8 @@ export async function POST(
     roomId = room.id;
     const host = await requireHost(request, room.id);
     const admin = getSupabaseAdmin();
+    const body = (await request.json().catch(() => ({}))) as { force?: unknown };
+    const forceStart = body.force === true;
 
     const { data: usedQuestions, error: usedError } = await admin
       .from("questions")
@@ -27,6 +29,16 @@ export async function POST(
       .gte("created_at", usedPromptsSince());
     if (usedError) {
       throw new Error(usedError.message);
+    }
+
+    if (forceStart && (room.phase === "lobby" || room.phase === "finished")) {
+      const { error: readyError } = await admin
+        .from("players")
+        .update({ is_ready: true })
+        .eq("room_id", room.id);
+      if (readyError) {
+        throw new Error(readyError.message);
+      }
     }
 
     const { data: roundNumber, error: beginError } = await admin.rpc("begin_round", {

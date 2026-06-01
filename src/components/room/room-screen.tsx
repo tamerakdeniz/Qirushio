@@ -393,9 +393,13 @@ export function RoomScreen({ code }: { code: string }) {
                 );
               })
             }
-            onStart={() =>
+            onStart={(force) =>
               runAction("start", async () => {
-                await apiRequest(`/api/rooms/${code}/start`, { method: "POST", body: "{}" }, session);
+                await apiRequest(
+                  `/api/rooms/${code}/start`,
+                  { method: "POST", body: JSON.stringify({ force }) },
+                  session,
+                );
               })
             }
             onKickPlayer={(playerId) =>
@@ -626,7 +630,7 @@ function Lobby({
   onNicknameChange: (nickname: string) => Promise<boolean>;
   onReady: (ready: boolean) => Promise<void>;
   onSettings: (settings: RoomSettings) => Promise<void>;
-  onStart: () => Promise<void>;
+  onStart: (force?: boolean) => Promise<void>;
   onKickPlayer: (playerId: string) => Promise<void>;
   onHome: () => void | Promise<void>;
 }) {
@@ -827,8 +831,13 @@ function Lobby({
             {currentPlayer.isHost ? (
               <button
                 className="primary-button w-full"
-                disabled={!allReady || busy !== null}
-                onClick={() => void onStart()}
+                disabled={busy !== null}
+                onClick={() => {
+                  if (!allReady && !window.confirm(copy.startUnreadyConfirm)) {
+                    return;
+                  }
+                  void onStart(!allReady);
+                }}
               >
                 <Play size={20} /> {busy === "start" ? copy.preparing : copy.start}
               </button>
