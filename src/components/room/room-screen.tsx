@@ -29,7 +29,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 import { AppHeader } from "@/components/brand";
 import { RoomSettingsForm } from "@/components/room-settings-form";
-import { ErrorNotice, Spinner } from "@/components/ui";
+import { ErrorNotice, Modal, Spinner } from "@/components/ui";
 import { apiRequest } from "@/lib/client-api";
 import {
   categoryLabelsByLanguage,
@@ -640,6 +640,7 @@ function Lobby({
   const [editingNickname, setEditingNickname] = useState(false);
   const [nicknameDraft, setNicknameDraft] = useState(currentPlayer.nickname);
   const [nicknameError, setNicknameError] = useState<string | null>(null);
+  const [confirmForceStart, setConfirmForceStart] = useState(false);
 
   async function shareRoom() {
     const url = window.location.href;
@@ -673,6 +674,37 @@ function Lobby({
 
   return (
     <>
+      <Modal
+        open={confirmForceStart}
+        onClose={() => setConfirmForceStart(false)}
+        title={copy.startUnreadyTitle}
+        closeLabel={commonCopy[locale].close}
+      >
+        <div className="space-y-5">
+          <p className="text-sm font-medium leading-6 text-muted">{copy.startUnreadyConfirm}</p>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <button
+              className="ghost-button w-full bg-[var(--surface-raised)]"
+              disabled={busy !== null}
+              onClick={() => setConfirmForceStart(false)}
+              type="button"
+            >
+              {copy.startUnreadyCancel}
+            </button>
+            <button
+              className="primary-button w-full"
+              disabled={busy !== null}
+              onClick={() => {
+                setConfirmForceStart(false);
+                void onStart(true);
+              }}
+              type="button"
+            >
+              <Play size={18} /> {copy.startUnreadyStart}
+            </button>
+          </div>
+        </div>
+      </Modal>
       <AppHeader
         compact
         action={
@@ -833,10 +865,11 @@ function Lobby({
                 className="primary-button w-full"
                 disabled={busy !== null}
                 onClick={() => {
-                  if (!allReady && !window.confirm(copy.startUnreadyConfirm)) {
+                  if (!allReady) {
+                    setConfirmForceStart(true);
                     return;
                   }
-                  void onStart(!allReady);
+                  void onStart(false);
                 }}
               >
                 <Play size={20} /> {busy === "start" ? copy.preparing : copy.start}
