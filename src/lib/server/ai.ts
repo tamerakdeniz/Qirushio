@@ -8,6 +8,22 @@ const MAX_USED_PROMPTS_IN_PROMPT = 80;
 const MAX_GENERATION_ATTEMPTS = 4;
 const USED_PROMPT_WINDOW_MS = 24 * 60 * 60 * 1000;
 
+const GEMINI_PRIMARY_MODEL = process.env.GEMINI_MODEL ?? "gemini-3.1-flash-lite";
+const GEMINI_FALLBACK_MODEL = process.env.GEMINI_FALLBACK_MODEL ?? "gemini-2.5-flash-lite";
+const ANTHROPIC_MODEL = process.env.ANTHROPIC_MODEL ?? "claude-haiku-4-5-20251001";
+
+class ProviderRequestError extends Error {
+  constructor(
+    message: string,
+    readonly provider: "gemini" | "anthropic",
+    readonly status: number,
+    readonly rateLimited: boolean,
+  ) {
+    super(message);
+    this.name = "ProviderRequestError";
+  }
+}
+
 export function normalizeQuestionPrompt(prompt: string): string {
   return prompt
     .toLowerCase()
@@ -29,6 +45,15 @@ export function usedPromptsSince(): string {
 
 function maxOutputTokens(questionCount: number): number {
   return Math.min(16_384, 700 + questionCount * 520);
+}
+
+function isRateLimited(status: number, message: string): boolean {
+  if (status === 429 || status === 503) {
+    return true;
+  }
+  return /rate.?limit|quota|resource.?exhausted|overloaded|too many requests|capacity/i.test(
+    message,
+  );
 }
 
 interface PromptContext {
@@ -110,14 +135,28 @@ function dedupeQuestions(
   return unique;
 }
 
-async function generateWithGemini(
+function geminiErrorMessage(payload: unknown, status: number): string {
+  if (payload && typeof payload === "object") {
+    const error = (payload as { error?: { message?: string } }).error?.message;
+    if (error) {
+      return error;
+    }
+  }
+  return `Gemini request failed (${status}).`;
+}
+
+async function generateWithGeminiModel(
+  model: string,
   settings: RoomSettings,
   context: PromptContext,
 ): Promise<GeneratedQuestion[]> {
   const apiKey = process.env.GEMINI_API_KEY;
-  const model = process.env.GEMINI_MODEL ?? "gemini-2.5-flash";
+  if (!apiKey) {
+    throw new Error("GEMINI_API_KEY is not configured.");
+  }
+
   const response = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(apiKey ?? "")}`,
+    `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(apiKey)}`,
     {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -133,35 +172,73 @@ async function generateWithGemini(
     },
   );
 
+  const payload = (await response.json().catch(() => null)) as {
+    error?: { message?: string };
+    candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }>;
+  } | null;
+
   if (!response.ok) {
-    throw new Error(`Gemini request failed (${response.status}).`);
+    const message = geminiErrorMessage(payload, response.status);
+    throw new ProviderRequestError(message, "gemini", response.status, isRateLimited(response.status, message));
   }
 
-  const payload = (await response.json()) as {
-    candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }>;
-  };
-  const text = payload.candidates?.[0]?.content?.parts?.[0]?.text;
+  const text = payload?.candidates?.[0]?.content?.parts?.[0]?.text;
   if (!text) {
-    throw new Error("Gemini returned no question content.");
+    throw new Error(`Gemini (${model}) returned no question content.`);
   }
 
   return parseQuestions(text, context.batchSize);
+}
+
+async function generateWithGeminiChain(
+  settings: RoomSettings,
+  context: PromptContext,
+): Promise<GeneratedQuestion[]> {
+  const models = [GEMINI_PRIMARY_MODEL, GEMINI_FALLBACK_MODEL].filter(
+    (model, index, list) => list.indexOf(model) === index,
+  );
+  let lastRateLimitError: ProviderRequestError | null = null;
+
+  for (const model of models) {
+    try {
+      return await generateWithGeminiModel(model, settings, context);
+    } catch (error) {
+      if (error instanceof ProviderRequestError && error.provider === "gemini" && error.rateLimited) {
+        lastRateLimitError = error;
+        continue;
+      }
+      throw error;
+    }
+  }
+
+  if (process.env.ANTHROPIC_API_KEY) {
+    return generateWithAnthropic(settings, context);
+  }
+
+  throw (
+    lastRateLimitError ??
+    new Error("Gemini rate limits were exceeded and no Anthropic fallback is configured.")
+  );
 }
 
 async function generateWithAnthropic(
   settings: RoomSettings,
   context: PromptContext,
 ): Promise<GeneratedQuestion[]> {
-  const model = process.env.ANTHROPIC_MODEL ?? "claude-haiku-4-5-20251001";
+  const apiKey = process.env.ANTHROPIC_API_KEY;
+  if (!apiKey) {
+    throw new Error("ANTHROPIC_API_KEY is not configured.");
+  }
+
   const response = await fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      "x-api-key": process.env.ANTHROPIC_API_KEY ?? "",
+      "x-api-key": apiKey,
       "anthropic-version": "2023-06-01",
     },
     body: JSON.stringify({
-      model,
+      model: ANTHROPIC_MODEL,
       max_tokens: maxOutputTokens(context.batchSize),
       temperature: 0.75 + context.attempt * 0.05,
       messages: [{ role: "user", content: promptForQuestions(settings, context) }],
@@ -169,14 +246,22 @@ async function generateWithAnthropic(
     signal: AbortSignal.timeout(50_000),
   });
 
+  const payload = (await response.json().catch(() => null)) as {
+    error?: { message?: string };
+    content?: Array<{ type: string; text?: string }>;
+  } | null;
+
   if (!response.ok) {
-    throw new Error(`Anthropic request failed (${response.status}).`);
+    const message = payload?.error?.message ?? `Anthropic request failed (${response.status}).`;
+    throw new ProviderRequestError(
+      message,
+      "anthropic",
+      response.status,
+      isRateLimited(response.status, message),
+    );
   }
 
-  const payload = (await response.json()) as {
-    content?: Array<{ type: string; text?: string }>;
-  };
-  const text = payload.content?.find((part) => part.type === "text")?.text;
+  const text = payload?.content?.find((part) => part.type === "text")?.text;
   if (!text) {
     throw new Error("Anthropic returned no question content.");
   }
@@ -189,7 +274,7 @@ async function generateBatch(
   context: PromptContext,
 ): Promise<GeneratedQuestion[]> {
   if (process.env.GEMINI_API_KEY) {
-    return generateWithGemini(settings, context);
+    return generateWithGeminiChain(settings, context);
   }
   if (process.env.ANTHROPIC_API_KEY) {
     return generateWithAnthropic(settings, context);

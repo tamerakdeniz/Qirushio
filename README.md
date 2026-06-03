@@ -45,17 +45,16 @@ npm run dev
 | `NEXT_PUBLIC_SUPABASE_URL` | Browser + server | Supabase proje URL'i |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Browser | Realtime Broadcast ve Presence bağlantısı |
 | `SUPABASE_SERVICE_ROLE_KEY` | Server only | API route'larının veri erişimi ve RPC çalıştırması |
-| `GEMINI_API_KEY` | Server only | Gemini soru üretimi |
-| `GEMINI_MODEL` | Server only | Varsayılan: `gemini-2.5-flash` |
-| `ANTHROPIC_API_KEY` | Server only | Claude soru üretimi |
+| `GEMINI_API_KEY` | Server only | Birincil soru üretimi (Gemini) |
+| `GEMINI_MODEL` | Server only | Varsayılan: `gemini-3.1-flash-lite` |
+| `GEMINI_FALLBACK_MODEL` | Server only | Rate limit'te: `gemini-2.5-flash-lite` |
+| `ANTHROPIC_API_KEY` | Server only | Gemini kotası dolunca: Claude Haiku |
 | `ANTHROPIC_MODEL` | Server only | Varsayılan: `claude-haiku-4-5-20251001` |
 | `CRON_SECRET` | Server only | `/api/cron/cleanup` isteğini korur |
 | `ALLOW_DEMO_QUESTIONS` | Server only | Yerel geliştirme fallback'i; production'da `false` kalmalı |
 | `NEXT_PUBLIC_SITE_URL` | Build + metadata | Canonical URL (`http://qirushio.tamerakdeniz.com`); OG, sitemap ve robots için |
 
-AI model varsayılanları sağlayıcıların resmi belgelerindeki kararlı/üretim kimliklerine göre seçildi:
-[Gemini modelleri](https://ai.google.dev/gemini-api/docs/models/gemini-v2) ve
-[Claude modelleri](https://platform.claude.com/docs/en/docs/about-claude/models/all-models).
+Soru üretimi sırası: `GEMINI_MODEL` → rate limit ise `GEMINI_FALLBACK_MODEL` → hâlâ limit ise `ANTHROPIC_MODEL`. Model kimlikleri: [Gemini](https://ai.google.dev/gemini-api/docs/models) ve [Claude](https://platform.claude.com/docs/en/docs/about-claude/models/all-models).
 
 ## Mimari
 
