@@ -7,8 +7,10 @@ import {
   ChevronRight,
   CircleAlert,
   Clock3,
+  Copy,
   Crown,
   Eye,
+  ExternalLink,
   Home,
   Medal,
   Pencil,
@@ -25,6 +27,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import QRCode from "react-qr-code";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { AppHeader } from "@/components/brand";
@@ -641,13 +644,61 @@ function Lobby({
   const [nicknameDraft, setNicknameDraft] = useState(currentPlayer.nickname);
   const [nicknameError, setNicknameError] = useState<string | null>(null);
   const [confirmForceStart, setConfirmForceStart] = useState(false);
+  const [shareOpen, setShareOpen] = useState(false);
+  const [shareUrl, setShareUrl] = useState("");
+  const [linkCopied, setLinkCopied] = useState(false);
+  const [shareError, setShareError] = useState<string | null>(null);
+  const copiedTimerRef = useRef<number | null>(null);
+  const nativeShareAvailable = typeof navigator !== "undefined" && typeof navigator.share === "function";
 
-  async function shareRoom() {
-    const url = window.location.href;
-    if (navigator.share) {
-      await navigator.share({ title: `Qirushio · ${room.code}`, url });
-    } else {
+  useEffect(() => {
+    return () => {
+      if (copiedTimerRef.current) {
+        window.clearTimeout(copiedTimerRef.current);
+      }
+    };
+  }, []);
+
+  function roomInviteUrl() {
+    return new URL(`/room/${encodeURIComponent(room.code)}`, window.location.origin).toString();
+  }
+
+  function openShareRoom() {
+    setShareUrl(roomInviteUrl());
+    setLinkCopied(false);
+    setShareError(null);
+    setShareOpen(true);
+  }
+
+  async function copyInviteLink() {
+    const url = shareUrl || roomInviteUrl();
+    try {
       await navigator.clipboard.writeText(url);
+      setLinkCopied(true);
+      setShareError(null);
+      if (copiedTimerRef.current) {
+        window.clearTimeout(copiedTimerRef.current);
+      }
+      copiedTimerRef.current = window.setTimeout(() => setLinkCopied(false), 1800);
+    } catch {
+      setShareError(copy.shareCopyFailed);
+    }
+  }
+
+  async function shareInviteLink() {
+    const url = shareUrl || roomInviteUrl();
+    if (!navigator.share) {
+      await copyInviteLink();
+      return;
+    }
+    try {
+      await navigator.share({ title: `Qirushio · ${room.code}`, text: copy.shareNativeText(room.code), url });
+      setShareError(null);
+    } catch (reason) {
+      if (reason instanceof DOMException && reason.name === "AbortError") {
+        return;
+      }
+      setShareError(copy.shareFailed);
     }
   }
 
@@ -674,6 +725,55 @@ function Lobby({
 
   return (
     <>
+      <Modal
+        open={shareOpen}
+        onClose={() => setShareOpen(false)}
+        title={copy.shareTitle}
+        closeLabel={commonCopy[locale].close}
+      >
+        <div className="space-y-5">
+          <p className="text-sm font-medium leading-6 text-muted">{copy.shareDescription}</p>
+          <div className="mx-auto flex w-full max-w-[250px] justify-center rounded-2xl bg-white p-4 shadow-sm">
+            {shareUrl ? (
+              <QRCode
+                aria-label={copy.shareQrLabel}
+                bgColor="#ffffff"
+                fgColor="#0f172a"
+                level="M"
+                size={210}
+                value={shareUrl}
+                viewBox="0 0 256 256"
+              />
+            ) : null}
+          </div>
+          <label className="block text-sm font-bold">
+            {copy.inviteLink}
+            <input
+              aria-label={copy.inviteLink}
+              className="form-input mt-2 text-sm"
+              onFocus={(event) => event.currentTarget.select()}
+              readOnly
+              value={shareUrl}
+            />
+          </label>
+          <ErrorNotice message={shareError} />
+          <div className="grid gap-3 sm:grid-cols-2">
+            <button className="primary-button w-full" onClick={() => void copyInviteLink()} type="button">
+              {linkCopied ? <Check size={18} /> : <Copy size={18} />}
+              {linkCopied ? copy.linkCopied : copy.copyLink}
+            </button>
+            {nativeShareAvailable ? (
+              <button className="secondary-button w-full" onClick={() => void shareInviteLink()} type="button">
+                <Share2 size={18} /> {copy.systemShare}
+              </button>
+            ) : (
+              <a className="secondary-button w-full" href={shareUrl || `/room/${room.code}`}>
+                <ExternalLink size={18} /> {copy.openLink}
+              </a>
+            )}
+          </div>
+        </div>
+      </Modal>
       <Modal
         open={confirmForceStart}
         onClose={() => setConfirmForceStart(false)}
@@ -724,7 +824,7 @@ function Lobby({
                   {room.code}
                 </h1>
               </div>
-              <button className="secondary-button" onClick={() => void shareRoom()}>
+              <button className="secondary-button" onClick={openShareRoom} type="button">
                 <Share2 size={19} /> {copy.share}
               </button>
             </section>
