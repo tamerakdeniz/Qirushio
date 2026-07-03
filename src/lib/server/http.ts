@@ -11,6 +11,7 @@ interface RoomRow {
   code: string;
   phase: RoomView["phase"];
   host_player_id: string | null;
+  mode?: RoomView["mode"] | null;
   language: RoomView["language"];
   category: RoomView["category"];
   difficulty: RoomView["difficulty"];
@@ -59,6 +60,7 @@ export function mapRoom(row: RoomRow): RoomView {
     code: row.code,
     phase: row.phase,
     hostPlayerId: row.host_player_id ?? "",
+    mode: row.mode ?? "classic",
     language: row.language,
     category: row.category,
     difficulty: row.difficulty,
@@ -90,7 +92,7 @@ export async function findRoom(code: string): Promise<RoomView> {
   const { data, error } = await getSupabaseAdmin()
     .from("rooms")
     .select(
-      "id, code, phase, host_player_id, language, category, difficulty, scope, question_count, question_time_seconds, speedrun_mode, question_pause_ms, is_public, max_players, round_number, current_question_index, phase_ends_at, generation_error",
+      "id, code, phase, host_player_id, mode, language, category, difficulty, scope, question_count, question_time_seconds, speedrun_mode, question_pause_ms, is_public, max_players, round_number, current_question_index, phase_ends_at, generation_error",
     )
     .eq("code", code.toUpperCase())
     .maybeSingle<RoomRow>();
@@ -192,4 +194,3 @@ export function routeErrorResponse(error: unknown): NextResponse {
   console.error(error);
   return NextResponse.json({ error: "Sunucu isteği tamamlanamadı." }, { status: 500 });
 }
-

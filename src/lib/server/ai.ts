@@ -1,7 +1,8 @@
 import "server-only";
 
+import { fortyTwoQuestionContext } from "@/lib/server/forty-two-sources";
 import { generatedQuestionsSchema } from "@/lib/validation";
-import type { GeneratedQuestion, RoomSettings } from "@/lib/types";
+import type { ClassicQuizCategory, GeneratedQuestion, RoomSettings } from "@/lib/types";
 
 const BATCH_SIZE = 8;
 const MAX_USED_PROMPTS_IN_PROMPT = 80;
@@ -68,19 +69,6 @@ function promptForQuestions(settings: RoomSettings, context: PromptContext): str
   const language = settings.language === "tr" ? "Turkish" : "English";
   const difficulty = { easy: "easy", medium: "medium", hard: "hard" }[settings.difficulty];
   const scope = { global: "global", local: "local context" }[settings.scope];
-  const category = {
-    general: "general knowledge",
-    science: "science",
-    sports: "sports",
-    arts: "arts",
-    history: "history",
-    random: "mixed",
-  }[settings.category];
-  const categoryInstruction =
-    settings.category === "random"
-      ? "Category pool: mix questions across general knowledge, science, sports, arts, and history."
-      : `Category: ${category}.`;
-
   const usedInDb = context.usedPrompts.slice(-MAX_USED_PROMPTS_IN_PROMPT);
   const usedSection =
     usedInDb.length > 0
@@ -89,6 +77,35 @@ function promptForQuestions(settings: RoomSettings, context: PromptContext): str
           ...usedInDb.map((prompt) => `- ${prompt}`),
         ].join("\n")
       : "No prompts were used in the database during the last 24 hours.";
+  const fortyTwoContext = fortyTwoQuestionContext(settings);
+
+  if (fortyTwoContext) {
+    return [
+      `Generate exactly ${context.batchSize} multiplayer quiz questions in ${language}.`,
+      `Batch ${context.batchIndex + 1}/${context.totalBatches}. Difficulty: ${difficulty}.`,
+      fortyTwoContext,
+      "Each question must have exactly five credible answer options and exactly one correct answer.",
+      "Every prompt in this batch must be unique and must not match any prompt listed below.",
+      usedSection,
+      "Use this JSON shape only, without markdown:",
+      '[{"category":"...","prompt":"...","options":["...","...","...","...","..."],"correctOption":0,"explanation":"..."}]',
+      "correctOption is a zero-based integer from 0 to 4. Explanations must be concise and cite the relevant rule/process in plain language.",
+    ].join("\n");
+  }
+
+  const classicCategory = settings.category as ClassicQuizCategory;
+  const category = {
+    general: "general knowledge",
+    science: "science",
+    sports: "sports",
+    arts: "arts",
+    history: "history",
+    random: "mixed",
+  }[classicCategory];
+  const categoryInstruction =
+    classicCategory === "random"
+      ? "Category pool: mix questions across general knowledge, science, sports, arts, and history."
+      : `Category: ${category}.`;
 
   return [
     `Generate exactly ${context.batchSize} multiplayer trivia questions in ${language}.`,
@@ -405,8 +422,111 @@ const demoBankEn: GeneratedQuestion[] = [
   },
 ];
 
+const demoBank42: GeneratedQuestion[] = [
+  {
+    category: "Norm Kuralları",
+    prompt: "Norm'a göre bir C fonksiyonu, kendi süslü parantezleri hariç en fazla kaç satır olabilir?",
+    options: ["15", "20", "25", "30", "42"],
+    correctOption: 2,
+    explanation: "Norm, fonksiyon gövdesini kendi parantezleri hariç en fazla 25 satırla sınırlar.",
+  },
+  {
+    category: "Norm Kuralları",
+    prompt: "Norm'a göre bir fonksiyon en fazla kaç isimlendirilmiş parametre alabilir?",
+    options: ["3", "4", "5", "6", "Sınır yoktur"],
+    correctOption: 1,
+    explanation: "Bir fonksiyon en fazla 4 isimlendirilmiş parametre alabilir.",
+  },
+  {
+    category: "42 Türkiye İç Yönerge",
+    prompt: "42 Türkiye'de genel ziyaretçi talebi en az ne kadar önce iletilmelidir?",
+    options: ["2 saat önce", "Aynı gün", "1 iş günü / 24 saat önce", "1 hafta önce", "Sadece kapıda"],
+    correctOption: 2,
+    explanation: "Genel ziyaretçi talebi en az 1 iş günü, yani 24 saat önce Issue Sistemi üzerinden iletilir.",
+  },
+  {
+    category: "42 Türkiye İç Yönerge",
+    prompt: "Piscine süreci yönergeye göre kaç gün sürer?",
+    options: ["14", "21", "26", "30", "42"],
+    correctOption: 2,
+    explanation: "Havuz Eğitimi 26 gün süren bir seçim sürecidir.",
+  },
+  {
+    category: "42 Türkiye İç Yönerge",
+    prompt: "Sınav sırasında telefon veya akıllı saat için doğru davranış hangisidir?",
+    options: [
+      "Masada sessizde durabilir",
+      "Kapalı şekilde çantada durmalıdır",
+      "Sadece mola sırasında kontrol edilebilir",
+      "Tutor onayı olmadan kullanılabilir",
+      "Cluster zemininde bırakılmalıdır",
+    ],
+    correctOption: 1,
+    explanation: "Telefonlar ve akıllı saatler kapatılıp çantaya konulmalıdır; kontrol etmek kopya sayılabilir.",
+  },
+  {
+    category: "Git & GitHub",
+    prompt: "Commit'e girecek değişiklikleri son kez görmek için hangi komut kullanılır?",
+    options: ["git diff", "git diff --staged", "git status --short", "git fetch", "git remote -v"],
+    correctOption: 1,
+    explanation: "git diff --staged, staging alanındaki yani commit'e hazırlanmış değişiklikleri gösterir.",
+  },
+  {
+    category: "Git & GitHub",
+    prompt: "Paylaşılmış bir commit'i güvenli şekilde geri almak için genellikle hangi komut tercih edilir?",
+    options: ["git reset --hard HEAD", "git restore .", "git revert <hash>", "git rm -r .git", "git stash pop"],
+    correctOption: 2,
+    explanation: "Paylaşılmış geçmişte git revert yeni bir ters commit oluşturduğu için en güvenli yoldur.",
+  },
+  {
+    category: "42 Genel Bilgi",
+    prompt: "Havuz Eğitimini tamamlayıp ana eğitime başlayan öğrencinin statüsü nedir?",
+    options: ["Applicant", "Pisciner", "Cadet", "Transcender", "Graduate"],
+    correctOption: 2,
+    explanation: "Havuz Eğitimini tamamlayıp ana eğitime başlayan öğrenci Cadet statüsünü kazanır.",
+  },
+];
+
+const demoBank42En: GeneratedQuestion[] = [
+  {
+    category: "Norm Rules",
+    prompt: "Under the Norm, what is the maximum number of lines in a C function, excluding its own braces?",
+    options: ["15", "20", "25", "30", "42"],
+    correctOption: 2,
+    explanation: "The Norm limits a function to 25 lines, excluding the function's own braces.",
+  },
+  {
+    category: "42 Turkey Internal Rules",
+    prompt: "How early must a general visitor request be submitted?",
+    options: ["2 hours before", "The same day", "1 business day / 24 hours before", "1 week before", "Only at the door"],
+    correctOption: 2,
+    explanation: "A general visitor request must be submitted at least 1 business day, or 24 hours, before the visit.",
+  },
+  {
+    category: "Git & GitHub",
+    prompt: "Which command shows the changes already selected for the next commit?",
+    options: ["git diff", "git diff --staged", "git fetch", "git remote -v", "git stash list"],
+    correctOption: 1,
+    explanation: "git diff --staged shows the changes currently in the staging area.",
+  },
+  {
+    category: "42 General Knowledge",
+    prompt: "Which status belongs to a student who has completed the Piscine and started the main curriculum?",
+    options: ["Applicant", "Pisciner", "Cadet", "Transcender", "Graduate"],
+    correctOption: 2,
+    explanation: "After completing the Piscine and starting the main curriculum, the student becomes a Cadet.",
+  },
+];
+
 function demoQuestions(settings: RoomSettings, context: PromptContext): GeneratedQuestion[] {
-  const sourceBank = settings.language === "en" ? demoBankEn : demoBank;
+  const sourceBank =
+    settings.mode === "fortyTwo"
+      ? settings.language === "en"
+        ? demoBank42En
+        : demoBank42
+      : settings.language === "en"
+        ? demoBankEn
+        : demoBank;
   const seen = new Set(context.usedPrompts.map(normalizeQuestionPrompt));
   const picked: GeneratedQuestion[] = [];
 

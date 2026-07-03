@@ -22,6 +22,7 @@ export async function PATCH(
     const { error } = await getSupabaseAdmin()
       .from("rooms")
       .update({
+        mode: settings.mode,
         language: settings.language,
         category: settings.category,
         difficulty: settings.difficulty,

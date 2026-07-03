@@ -15,12 +15,22 @@ export interface PendingAnswer {
 
 export type QuizLanguage = "tr" | "en";
 export type AppTheme = "dark" | "light";
-export type QuizCategory = "general" | "science" | "sports" | "arts" | "history" | "random";
+export type QuizMode = "classic" | "fortyTwo";
+export type ClassicQuizCategory = "general" | "science" | "sports" | "arts" | "history" | "random";
+export type FortyTwoQuizCategory =
+  | "ft_general"
+  | "ft_norm"
+  | "ft_internal"
+  | "ft_norm_internal_mix"
+  | "ft_git_github"
+  | "ft_mixed";
+export type QuizCategory = ClassicQuizCategory | FortyTwoQuizCategory;
 export type QuizDifficulty = "easy" | "medium" | "hard";
 export type QuizScope = "global" | "local";
 export type QuestionPauseSeconds = 0 | 1.5 | 3;
 
 export interface RoomSettings {
+  mode: QuizMode;
   language: QuizLanguage;
   category: QuizCategory;
   difficulty: QuizDifficulty;

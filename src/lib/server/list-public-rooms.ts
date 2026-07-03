@@ -10,6 +10,7 @@ const roomColumns = [
   "code",
   "phase",
   "host_player_id",
+  "mode",
   "language",
   "category",
   "difficulty",
@@ -24,6 +25,7 @@ const roomColumns = [
   "phase_ends_at",
   "generation_error",
 ] as const;
+const legacyRoomColumns = roomColumns.filter((column) => column !== "mode");
 
 const playerEmbed = "players!players_room_id_fkey(nickname, is_host)";
 
@@ -34,7 +36,7 @@ type ListedRoomRow = Parameters<typeof mapRoom>[0] & {
 };
 
 function isListingSchemaDrift(message: string): boolean {
-  return /last_active_at|question_pause_ms|schema cache|relationship|players_room_id_fkey/i.test(
+  return /last_active_at|question_pause_ms|mode|schema cache|relationship|players_room_id_fkey/i.test(
     message,
   );
 }
@@ -46,6 +48,7 @@ function mapListedRooms(rows: ListedRoomRow[]): RoomSummary[] {
       const room = mapRoom(row);
       return {
         code: room.code,
+        mode: room.mode,
         language: room.language,
         category: room.category,
         difficulty: room.difficulty,
@@ -105,11 +108,11 @@ export async function listPublicRooms(admin: SupabaseClient): Promise<RoomSummar
     throw new Error(modern.error.message);
   }
 
-  const legacySelect = [...roomColumns, "updated_at", playerEmbed].join(", ");
+  const legacySelect = [...legacyRoomColumns, "updated_at", playerEmbed].join(", ");
   let legacy = await queryListedRooms(admin, legacySelect, "updated_at", activeSince);
 
   if (legacy.error && isListingSchemaDrift(legacy.error.message)) {
-    const plainSelect = [...roomColumns, "updated_at", "players(nickname, is_host)"].join(", ");
+    const plainSelect = [...legacyRoomColumns, "updated_at", "players(nickname, is_host)"].join(", ");
     legacy = await queryListedRooms(admin, plainSelect, "updated_at", activeSince);
   }
 

@@ -44,9 +44,25 @@ create table public.rooms (
   code text not null unique check (code ~ '^[A-Z2-9]{6}$'),
   host_player_id uuid,
   phase public.room_phase not null default 'lobby',
+  mode text not null default 'classic' check (mode in ('classic', 'fortyTwo')),
   language text not null default 'tr' check (language in ('tr', 'en')),
   category text not null default 'general'
-    check (category in ('general', 'science', 'sports', 'arts', 'history', 'random')),
+    check (
+      category in (
+        'general',
+        'science',
+        'sports',
+        'arts',
+        'history',
+        'random',
+        'ft_general',
+        'ft_norm',
+        'ft_internal',
+        'ft_norm_internal_mix',
+        'ft_git_github',
+        'ft_mixed'
+      )
+    ),
   difficulty text not null default 'medium'
     check (difficulty in ('easy', 'medium', 'hard')),
   scope text not null default 'global' check (scope in ('global', 'local')),
@@ -121,6 +137,7 @@ create table public.answers (
 
 create index rooms_open_index on public.rooms (phase, is_public, created_at desc);
 create index rooms_listing_index on public.rooms (phase, is_public, last_active_at desc);
+create index rooms_mode_listing_index on public.rooms (mode, phase, is_public, last_active_at desc);
 create index players_room_index on public.players (room_id, joined_at);
 create index questions_round_index on public.questions (room_id, round_number, position);
 create index answers_question_index on public.answers (question_id);

@@ -52,6 +52,7 @@ export async function POST(request: Request): Promise<NextResponse> {
         .from("rooms")
         .insert({
           code,
+          mode: input.settings.mode,
           language: input.settings.language,
           category: input.settings.category,
           difficulty: input.settings.difficulty,

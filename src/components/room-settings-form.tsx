@@ -1,6 +1,20 @@
 "use client";
 
-import { BookOpen, FlaskConical, Globe2, Palette, Shuffle, Trophy, Zap } from "lucide-react";
+import {
+  BookOpen,
+  Code2,
+  FileText,
+  FlaskConical,
+  GitBranch,
+  Globe2,
+  Layers3,
+  Palette,
+  School,
+  ScrollText,
+  Shuffle,
+  Trophy,
+  Zap,
+} from "lucide-react";
 import { useState } from "react";
 
 import {
@@ -11,6 +25,7 @@ import {
   languageLabels,
   normalQuestionTimeOptions,
   questionPauseOptions,
+  quizCategoriesByMode,
   scopeLabelsByLanguage,
   speedrunQuestionTimeOptions,
 } from "@/lib/constants";
@@ -18,13 +33,19 @@ import { settingsCopy } from "@/lib/i18n";
 import type { QuestionPauseSeconds, QuizCategory, QuizLanguage, RoomSettings } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
-const categoryIcons = {
+const categoryIcons: Record<QuizCategory, typeof Globe2> = {
   general: Globe2,
   science: FlaskConical,
   sports: Trophy,
   arts: Palette,
   history: BookOpen,
   random: Shuffle,
+  ft_general: School,
+  ft_norm: Code2,
+  ft_internal: ScrollText,
+  ft_norm_internal_mix: Layers3,
+  ft_git_github: GitBranch,
+  ft_mixed: FileText,
 };
 
 function questionTimeOptions(speedrunMode: boolean): readonly number[] {
@@ -44,6 +65,16 @@ function normalizeMaxPlayers(maxPlayers: number): number {
     return defaultRoomSettings.maxPlayers;
   }
   return Math.max(2, Math.floor(maxPlayers));
+}
+
+function normalizeInitialSettings(initial: RoomSettings): RoomSettings {
+  const mode = initial.mode ?? "classic";
+  const categories = quizCategoriesByMode[mode];
+  return {
+    ...initial,
+    mode,
+    category: categories.some((category) => category === initial.category) ? initial.category : categories[0],
+  };
 }
 
 function questionPauseLabel(
@@ -72,17 +103,21 @@ export function RoomSettingsForm({
   busy?: boolean;
   onSubmit: (settings: RoomSettings) => Promise<void> | void;
 }) {
-  const [settings, setSettings] = useState({
-    ...initial,
-    questionTimeSeconds: normalizeQuestionTime(initial.speedrunMode, initial.questionTimeSeconds),
-    questionPauseSeconds: initial.questionPauseSeconds ?? defaultQuestionPauseSeconds,
-    maxPlayers: normalizeMaxPlayers(initial.maxPlayers),
+  const [settings, setSettings] = useState(() => {
+    const normalized = normalizeInitialSettings(initial);
+    return {
+      ...normalized,
+      questionTimeSeconds: normalizeQuestionTime(normalized.speedrunMode, normalized.questionTimeSeconds),
+      questionPauseSeconds: normalized.questionPauseSeconds ?? defaultQuestionPauseSeconds,
+      maxPlayers: normalizeMaxPlayers(normalized.maxPlayers),
+    };
   });
   const copy = settingsCopy[locale];
   const categoryLabels = categoryLabelsByLanguage[locale];
   const difficultyLabels = difficultyLabelsByLanguage[locale];
   const scopeLabels = scopeLabelsByLanguage[locale];
   const timeOptions = questionTimeOptions(settings.speedrunMode);
+  const categoryOptions = quizCategoriesByMode[settings.mode];
 
   function update<K extends keyof RoomSettings>(key: K, value: RoomSettings[K]) {
     setSettings((previous) => ({ ...previous, [key]: value }));
@@ -128,7 +163,7 @@ export function RoomSettingsForm({
       <div>
         <p className="mb-2 text-sm font-bold">{copy.category}</p>
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-          {(Object.keys(categoryLabels) as QuizCategory[]).map((category) => {
+          {categoryOptions.map((category) => {
             const Icon = categoryIcons[category];
             return (
               <button

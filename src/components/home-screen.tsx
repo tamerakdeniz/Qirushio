@@ -9,6 +9,7 @@ import {
   LogIn,
   Moon,
   PlusCircle,
+  School,
   Sparkles,
   Sun,
   Timer,
@@ -23,10 +24,15 @@ import { AppHeader } from "@/components/brand";
 import { RoomSettingsForm } from "@/components/room-settings-form";
 import { ErrorNotice, Modal, Spinner } from "@/components/ui";
 import { apiRequest } from "@/lib/client-api";
-import { categoryLabelsByLanguage, defaultRoomSettings } from "@/lib/constants";
+import {
+  categoryLabelsByLanguage,
+  defaultFortyTwoRoomSettings,
+  defaultRoomSettings,
+  modeLabelsByLanguage,
+} from "@/lib/constants";
 import { commonCopy, homeCopy } from "@/lib/i18n";
 import { readLanguage, readNickname, readTheme, saveLanguage, saveNickname, saveRoomSession, saveTheme } from "@/lib/storage";
-import type { AppTheme, QuizLanguage, RoomSession, RoomSettings, RoomSummary } from "@/lib/types";
+import type { AppTheme, QuizLanguage, QuizMode, RoomSession, RoomSettings, RoomSummary } from "@/lib/types";
 import { nicknameSchema } from "@/lib/validation";
 
 type Dialog = "create" | "join" | "rooms" | "help" | null;
@@ -38,6 +44,7 @@ export function HomeScreen() {
   const [locale, setLocale] = useState<QuizLanguage>("tr");
   const [theme, setTheme] = useState<AppTheme>("dark");
   const [dialog, setDialog] = useState<Dialog>(null);
+  const [activeMode, setActiveMode] = useState<QuizMode>("classic");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [joinCode, setJoinCode] = useState("");
@@ -97,7 +104,7 @@ export function HomeScreen() {
     setError(null);
     try {
       const result = await apiRequest<{ rooms: RoomSummary[] }>("/api/rooms");
-      setRooms(result.rooms);
+      setRooms(result.rooms.filter((room) => room.mode === activeMode));
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : copy.roomsFailed);
       setRooms([]);
@@ -124,6 +131,24 @@ export function HomeScreen() {
   const copy = homeCopy[locale];
   const common = commonCopy[locale];
   const categoryLabels = categoryLabelsByLanguage[locale];
+  const modeLabels = modeLabelsByLanguage[locale];
+  const isFortyTwoMode = activeMode === "fortyTwo";
+  const screenCopy = {
+    aiBadge: isFortyTwoMode ? copy.fortyTwoBadge : copy.aiBadge,
+    heroLead: isFortyTwoMode ? copy.fortyTwoHeroLead : copy.heroLead,
+    heroAccent: isFortyTwoMode ? copy.fortyTwoHeroAccent : copy.heroAccent,
+    heroTail: isFortyTwoMode ? copy.fortyTwoHeroTail : copy.heroTail,
+    heroWin: isFortyTwoMode ? copy.fortyTwoHeroWin : copy.heroWin,
+    heroDescription: isFortyTwoMode ? copy.fortyTwoHeroDescription : copy.heroDescription,
+    createRoom: isFortyTwoMode ? copy.createFortyTwoRoom : copy.createRoom,
+    createDescription: isFortyTwoMode ? copy.createFortyTwoDescription : copy.createDescription,
+    createTitle: isFortyTwoMode ? copy.createFortyTwoTitle : copy.createTitle,
+    createHelp: isFortyTwoMode ? copy.createFortyTwoHelp : copy.createHelp,
+    noRoomsHelp: isFortyTwoMode ? copy.noFortyTwoRoomsHelp : copy.noRoomsHelp,
+  };
+  const initialRoomSettings = isFortyTwoMode
+    ? defaultFortyTwoRoomSettings
+    : defaultRoomSettings;
 
   if (!hydrated) {
     return (
@@ -192,15 +217,23 @@ export function HomeScreen() {
           <div>
             <span className="mb-4 inline-flex items-center gap-2 rounded-full border border-secondary/15 bg-blue-500/15 px-4 py-2 text-sm font-bold text-secondary-deep">
               <Sparkles size={16} />
-              {copy.aiBadge}
+              {screenCopy.aiBadge}
             </span>
             <h1 className="max-w-xl text-4xl font-extrabold tracking-tight sm:text-5xl">
-              {copy.heroLead} <span className="text-primary-deep">{copy.heroAccent}</span>, {copy.heroTail}{" "}
-              <span className="text-secondary-deep">{copy.heroWin}</span>
+              {screenCopy.heroLead} <span className="text-primary-deep">{screenCopy.heroAccent}</span>,{" "}
+              {screenCopy.heroTail} <span className="text-secondary-deep">{screenCopy.heroWin}</span>
             </h1>
             <p className="mt-4 max-w-xl text-base font-medium leading-7 text-muted sm:text-lg">
-              {copy.heroDescription}
+              {screenCopy.heroDescription}
             </p>
+            <button
+              className="secondary-button mt-6"
+              onClick={() => setActiveMode(isFortyTwoMode ? "classic" : "fortyTwo")}
+              type="button"
+            >
+              <School size={18} />
+              {isFortyTwoMode ? copy.switchToClassicMode : copy.switchToFortyTwoMode}
+            </button>
           </div>
           <div className="relative mx-auto flex h-56 w-full max-w-[300px] items-center justify-center rounded-3xl bg-gradient-to-br from-orange-500/15 to-blue-500/18">
             <div className="absolute left-5 top-7 rounded-2xl bg-[var(--surface-raised)] p-3 shadow-md">
@@ -223,8 +256,8 @@ export function HomeScreen() {
 
         <section className="mt-5 grid gap-4 md:grid-cols-3">
           <ActionCard
-            title={copy.createRoom}
-            description={copy.createDescription}
+            title={screenCopy.createRoom}
+            description={screenCopy.createDescription}
             icon={PlusCircle}
             tone="orange"
             onClick={() => setDialog("create")}
@@ -246,14 +279,20 @@ export function HomeScreen() {
         </section>
       </main>
 
-      <Modal open={dialog === "create"} onClose={closeDialog} title={copy.createTitle} closeLabel={common.close} wide>
-        <p className="mb-5 text-sm text-muted">{copy.createHelp}</p>
+      <Modal
+        open={dialog === "create"}
+        onClose={closeDialog}
+        title={screenCopy.createTitle}
+        closeLabel={common.close}
+        wide
+      >
+        <p className="mb-5 text-sm text-muted">{screenCopy.createHelp}</p>
         <ErrorNotice message={error} />
         <div className={error ? "mt-5" : ""}>
           <RoomSettingsForm
-            initial={{ ...defaultRoomSettings, language: locale }}
+            initial={{ ...initialRoomSettings, language: locale }}
             locale={locale}
-            submitLabel={copy.createRoom}
+            submitLabel={screenCopy.createRoom}
             busy={busy}
             onSubmit={createRoom}
           />
@@ -297,7 +336,7 @@ export function HomeScreen() {
           <div className="rounded-2xl bg-[var(--surface-raised)] p-8 text-center">
             <Gamepad2 className="mx-auto mb-3 text-secondary" />
             <p className="font-bold">{copy.noRooms}</p>
-            <p className="mt-1 text-sm text-muted">{copy.noRoomsHelp}</p>
+            <p className="mt-1 text-sm text-muted">{screenCopy.noRoomsHelp}</p>
           </div>
         ) : (
           <div className="space-y-3">
@@ -311,7 +350,7 @@ export function HomeScreen() {
                 <div>
                   <p className="font-extrabold text-primary-deep">{room.code}</p>
                   <p className="text-sm text-muted">
-                    {categoryLabels[room.category]} · {room.questionCount} {copy.questionUnit} · {room.hostNickname}
+                    {modeLabels[room.mode]} · {categoryLabels[room.category]} · {room.questionCount} {copy.questionUnit} · {room.hostNickname}
                   </p>
                 </div>
                 <span className="flex items-center gap-1 rounded-full bg-blue-500/15 px-3 py-2 text-sm font-bold text-secondary-deep">

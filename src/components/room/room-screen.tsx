@@ -37,6 +37,7 @@ import { apiRequest } from "@/lib/client-api";
 import {
   categoryLabelsByLanguage,
   difficultyLabelsByLanguage,
+  modeLabelsByLanguage,
   scoringPauseSeconds,
 } from "@/lib/constants";
 import { commonCopy, homeCopy, roomCopy } from "@/lib/i18n";
@@ -1013,9 +1014,11 @@ function RoomSettingSummary({ locale, room }: { locale: QuizLanguage; room: Room
   const copy = roomCopy[locale];
   const categoryLabels = categoryLabelsByLanguage[locale];
   const difficultyLabels = difficultyLabelsByLanguage[locale];
+  const modeLabels = modeLabelsByLanguage[locale];
   return (
     <dl className="space-y-3 text-sm">
       {[
+        [copy.mode, modeLabels[room.mode]],
         [copy.category, categoryLabels[room.category]],
         [copy.questionCount, `${room.questionCount} ${copy.question}`],
         [copy.duration, `${room.questionTimeSeconds} ${copy.second}`],

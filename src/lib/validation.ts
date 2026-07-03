@@ -1,5 +1,10 @@
 import { z } from "zod";
 
+import { classicQuizCategories, fortyTwoQuizCategories } from "@/lib/constants";
+
+const quizModeValues = ["classic", "fortyTwo"] as const;
+const quizCategoryValues = [...classicQuizCategories, ...fortyTwoQuizCategories] as const;
+
 export const nicknameSchema = z
   .string()
   .trim()
@@ -9,8 +14,9 @@ export const nicknameSchema = z
 
 export const roomSettingsSchema = z
   .object({
+    mode: z.enum(quizModeValues).default("classic"),
     language: z.enum(["tr", "en"]),
-    category: z.enum(["general", "science", "sports", "arts", "history", "random"]),
+    category: z.enum(quizCategoryValues),
     difficulty: z.enum(["easy", "medium", "hard"]),
     scope: z.enum(["global", "local"]),
     questionCount: z.number().int().min(5).max(20),
@@ -21,6 +27,19 @@ export const roomSettingsSchema = z
     maxPlayers: z.number().int().min(2).default(10),
   })
   .superRefine((settings, context) => {
+    const allowedCategories =
+      settings.mode === "fortyTwo" ? fortyTwoQuizCategories : classicQuizCategories;
+    if (!allowedCategories.some((category) => category === settings.category)) {
+      context.addIssue({
+        code: "custom",
+        path: ["category"],
+        message:
+          settings.mode === "fortyTwo"
+            ? "42 modunda yalnızca 42 kategorileri seçilebilir."
+            : "Klasik modda yalnızca klasik kategoriler seçilebilir.",
+      });
+    }
+
     const allowed = settings.speedrunMode ? [3, 5] : [5, 10, 15, 20, 30];
     if (!allowed.includes(settings.questionTimeSeconds)) {
       context.addIssue({

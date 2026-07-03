@@ -1,8 +1,11 @@
 import type {
+  ClassicQuizCategory,
+  FortyTwoQuizCategory,
   QuestionPauseSeconds,
   QuizCategory,
   QuizDifficulty,
   QuizLanguage,
+  QuizMode,
   QuizScope,
   RoomSettings,
 } from "@/lib/types";
@@ -12,6 +15,26 @@ export const speedrunQuestionTimeOptions = [3, 5] as const;
 export const questionPauseOptions = [0, 1.5, 3] as const satisfies readonly QuestionPauseSeconds[];
 export const preGameCountdownSeconds = 3;
 export const defaultQuestionPauseSeconds: QuestionPauseSeconds = 1.5;
+export const classicQuizCategories = [
+  "general",
+  "science",
+  "sports",
+  "arts",
+  "history",
+  "random",
+] as const satisfies readonly ClassicQuizCategory[];
+export const fortyTwoQuizCategories = [
+  "ft_norm_internal_mix",
+  "ft_norm",
+  "ft_internal",
+  "ft_git_github",
+  "ft_general",
+  "ft_mixed",
+] as const satisfies readonly FortyTwoQuizCategory[];
+export const quizCategoriesByMode: Record<QuizMode, readonly QuizCategory[]> = {
+  classic: classicQuizCategories,
+  fortyTwo: fortyTwoQuizCategories,
+};
 
 export function questionPauseMs(seconds: QuestionPauseSeconds): number {
   return seconds === 0 ? 0 : seconds * 1000;
@@ -32,6 +55,7 @@ export function scoringPauseSeconds(pauseSeconds: QuestionPauseSeconds): Questio
 }
 
 export const defaultRoomSettings: RoomSettings = {
+  mode: "classic",
   language: "tr",
   category: "general",
   difficulty: "medium",
@@ -44,6 +68,14 @@ export const defaultRoomSettings: RoomSettings = {
   maxPlayers: 10,
 };
 
+export const defaultFortyTwoRoomSettings: RoomSettings = {
+  ...defaultRoomSettings,
+  mode: "fortyTwo",
+  category: "ft_norm_internal_mix",
+  questionCount: 10,
+  questionTimeSeconds: 20,
+};
+
 export const categoryLabels = {
   general: "Genel Kültür",
   science: "Bilim",
@@ -51,7 +83,13 @@ export const categoryLabels = {
   arts: "Sanat",
   history: "Tarih",
   random: "Rastgele",
-} as const;
+  ft_general: "42 Genel Bilgi",
+  ft_norm: "Norm Kuralları",
+  ft_internal: "42 Türkiye İç Yönerge",
+  ft_norm_internal_mix: "Norm + Yönerge",
+  ft_git_github: "Git & GitHub",
+  ft_mixed: "42 Karma",
+} as const satisfies Record<QuizCategory, string>;
 
 export const difficultyLabels = {
   easy: "Kolay",
@@ -69,6 +107,17 @@ export const languageLabels = {
   en: "English",
 } as const;
 
+export const modeLabelsByLanguage: Record<QuizLanguage, Record<QuizMode, string>> = {
+  tr: {
+    classic: "Klasik",
+    fortyTwo: "42 İstanbul",
+  },
+  en: {
+    classic: "Classic",
+    fortyTwo: "42 Istanbul",
+  },
+};
+
 export const categoryLabelsByLanguage: Record<QuizLanguage, Record<QuizCategory, string>> = {
   tr: categoryLabels,
   en: {
@@ -78,6 +127,12 @@ export const categoryLabelsByLanguage: Record<QuizLanguage, Record<QuizCategory,
     arts: "Arts",
     history: "History",
     random: "Random",
+    ft_general: "42 General Knowledge",
+    ft_norm: "Norm Rules",
+    ft_internal: "42 Turkey Internal Rules",
+    ft_norm_internal_mix: "Norm + Rules",
+    ft_git_github: "Git & GitHub",
+    ft_mixed: "42 Mixed",
   },
 };
 
