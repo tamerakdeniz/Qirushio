@@ -1,6 +1,7 @@
 import "server-only";
 
 import { fortyTwoQuestionContext } from "@/lib/server/forty-two-sources";
+import { scubaQuestionContext } from "@/lib/server/scuba-sources";
 import { generatedQuestionsSchema } from "@/lib/validation";
 import type { ClassicQuizCategory, GeneratedQuestion, RoomSettings } from "@/lib/types";
 
@@ -93,6 +94,22 @@ function promptForQuestions(settings: RoomSettings, context: PromptContext): str
     ].join("\n");
   }
 
+  const scubaContext = scubaQuestionContext(settings);
+
+  if (scubaContext) {
+    return [
+      `Generate exactly ${context.batchSize} multiplayer quiz questions in ${language}.`,
+      `Batch ${context.batchIndex + 1}/${context.totalBatches}. Difficulty: ${difficulty}. Context: ${scope}.`,
+      scubaContext,
+      "Each question must have exactly five credible answer options and exactly one correct answer.",
+      "Every prompt in this batch must be unique and must not match any prompt listed below.",
+      usedSection,
+      "Use this JSON shape only, without markdown:",
+      '[{"category":"...","prompt":"...","options":["...","...","...","...","..."],"correctOption":0,"explanation":"..."}]',
+      "correctOption is a zero-based integer from 0 to 4. Explanations must be concise and should identify the relevant scuba concept in plain language.",
+    ].join("\n");
+  }
+
   const classicCategory = settings.category as ClassicQuizCategory;
   const category = {
     general: "general knowledge",
@@ -100,11 +117,12 @@ function promptForQuestions(settings: RoomSettings, context: PromptContext): str
     sports: "sports",
     arts: "arts",
     history: "history",
+    scuba: "scuba diving theory, safety, equipment, dive planning, and instructor-candidate knowledge",
     random: "mixed",
   }[classicCategory];
   const categoryInstruction =
     classicCategory === "random"
-      ? "Category pool: mix questions across general knowledge, science, sports, arts, and history."
+      ? "Category pool: mix questions across general knowledge, science, sports, arts, history, and scuba diving."
       : `Category: ${category}.`;
 
   return [
@@ -422,6 +440,220 @@ const demoBankEn: GeneratedQuestion[] = [
   },
 ];
 
+const demoBankScuba: GeneratedQuestion[] = [
+  {
+    category: "Scuba Dalış",
+    prompt: "Dalışta asla nefes tutmama kuralının temel nedeni nedir?",
+    options: [
+      "Maskenin buğulanmasını önlemek",
+      "Akciğerlerdeki havanın çıkışta genişleyebilmesi",
+      "Palet vuruşunu hızlandırmak",
+      "Tüp basıncını sabit tutmak",
+      "El işaretlerini daha net görmek",
+    ],
+    correctOption: 1,
+    explanation: "Çıkışta çevre basıncı azalır ve akciğerdeki hava genişler; bu yüzden sürekli nefes vermek kritik bir güvenlik prensibidir.",
+  },
+  {
+    category: "Scuba Dalış",
+    prompt: "Bir BCD'nin dalıştaki ana görevi hangisidir?",
+    options: [
+      "Solunan gazı filtrelemek",
+      "Yüzerliği ayarlamaya yardımcı olmak",
+      "Derinliği otomatik sınırlamak",
+      "Azot narkozunu engellemek",
+      "Pusula yönünü kilitlemek",
+    ],
+    correctOption: 1,
+    explanation: "BCD, dalıcının pozitif, negatif veya nötr yüzerliğe yaklaşmasına yardımcı olur.",
+  },
+  {
+    category: "Scuba Dalış",
+    prompt: "Boyle yasası scuba dalışta en çok hangi ilişkiyi açıklamak için kullanılır?",
+    options: [
+      "Işık renginin derinlikle değişmesi",
+      "Gaz hacmi ile mutlak basınç arasındaki ters ilişki",
+      "Tuzluluk ile akıntı hızı arasındaki ilişki",
+      "Suyun sıcaklığı ile görüş arasındaki doğru ilişki",
+      "Dalış bilgisayarının pil ömrü",
+    ],
+    correctOption: 1,
+    explanation: "Boyle yasası, sabit sıcaklıkta gaz hacminin mutlak basınçla ters orantılı olduğunu anlatır.",
+  },
+  {
+    category: "Scuba Dalış",
+    prompt: "Azot narkozu belirtileri görülen bir dalıcı için en güvenli genel yaklaşım hangisidir?",
+    options: [
+      "Daha derine inip belirtileri karşılaştırmak",
+      "Belirtileri yok sayıp plana devam etmek",
+      "Buddy ile kontrolü koruyup daha sığ derinliğe çıkmak",
+      "Regülatörü çıkarıp yeniden takmak",
+      "Daha hızlı yüzerek aktiviteyi artırmak",
+    ],
+    correctOption: 2,
+    explanation: "Narkoz riski derinlikle artar ve daha sığa çıkmak belirtilerin azalmasına yardımcı olabilir.",
+  },
+  {
+    category: "Scuba Dalış",
+    prompt: "İyi bir buddy check'in amacı hangisidir?",
+    options: [
+      "Sadece fotoğraf ekipmanını hazırlamak",
+      "Dalıştan önce temel ekipman ve gaz kontrollerini karşılıklı doğrulamak",
+      "Yalnız dalışı daha hızlı başlatmak",
+      "Dalış sonrası log kaydını otomatik doldurmak",
+      "Su altı canlılarını listelemek",
+    ],
+    correctOption: 1,
+    explanation: "Buddy check, ekipmanın ve temel güvenlik hazırlıklarının iki dalıcı tarafından doğrulanmasını sağlar.",
+  },
+  {
+    category: "Scuba Dalış",
+    prompt: "IDC/ITC tarzı bir öğretim sunumunda zayıf kontrol örneği hangisidir?",
+    options: [
+      "Öğrencileri net pozisyonlandırmak",
+      "Beceriyi yavaş ve görünür göstermek",
+      "Hata yapan öğrenciyi fark etmeden grubu ilerletmek",
+      "Briefingde sinyalleri açıklamak",
+      "Debriefingde düzeltici geri bildirim vermek",
+    ],
+    correctOption: 2,
+    explanation: "Eğitmen adayından beklenen, öğrenciyi gözlemlemek, hatayı güvenli şekilde durdurmak ve düzeltici geri bildirim vermektir.",
+  },
+  {
+    category: "Scuba Dalış",
+    prompt: "Resif üzerinde iyi çevresel uygulama hangisidir?",
+    options: [
+      "Nötr yüzerliği koruyup canlılara dokunmamak",
+      "Hatıra için küçük mercan parçası almak",
+      "Dip tortusunu bilerek kaldırmak",
+      "Balıkları elle beslemek",
+      "Paletleri resife dayayarak dinlenmek",
+    ],
+    correctOption: 0,
+    explanation: "Nötr yüzerlik ve dokunmama yaklaşımı, resif ve canlı yaşamı üzerindeki etkiyi azaltır.",
+  },
+  {
+    category: "Scuba Dalış",
+    prompt: "PADI IDC yoluyla ilgili doğru ifade hangisidir?",
+    options: [
+      "IDC yalnızca tek bir teorik sınavdan oluşur",
+      "IDC, Assistant Instructor ve OWSI bölümlerini içeren bir eğitmen geliştirme sürecidir",
+      "IDC'ye başlamak için hiç kayıtlı dalış gerekmez",
+      "IE, Divemaster sertifikasından önce tamamlanır",
+      "IDC sadece serbest dalış eğitimidir",
+    ],
+    correctOption: 1,
+    explanation: "PADI'nin kamuya açık açıklamasına göre IDC, AI ve OWSI bölümlerinden oluşur; çoğu aday ardından IE'ye girer.",
+  },
+];
+
+const demoBankScubaEn: GeneratedQuestion[] = [
+  {
+    category: "Scuba Diving",
+    prompt: "Why is continuous breathing a core scuba safety rule during ascent?",
+    options: [
+      "It keeps the mask clear",
+      "It lets expanding air leave the lungs as pressure decreases",
+      "It increases tank pressure",
+      "It prevents all nitrogen absorption",
+      "It makes hand signals easier to see",
+    ],
+    correctOption: 1,
+    explanation: "As ambient pressure decreases on ascent, gas expands; continuous breathing helps avoid lung overexpansion risk.",
+  },
+  {
+    category: "Scuba Diving",
+    prompt: "What is the primary role of a BCD?",
+    options: [
+      "Filtering breathing gas",
+      "Helping the diver control buoyancy",
+      "Automatically limiting depth",
+      "Preventing nitrogen narcosis",
+      "Locking compass direction",
+    ],
+    correctOption: 1,
+    explanation: "A BCD helps the diver adjust buoyancy throughout the dive.",
+  },
+  {
+    category: "Scuba Diving",
+    prompt: "Which relationship does Boyle's law describe for scuba divers?",
+    options: [
+      "Light color and depth",
+      "Gas volume and absolute pressure",
+      "Salinity and current speed",
+      "Water temperature and visibility",
+      "Battery life and depth",
+    ],
+    correctOption: 1,
+    explanation: "At constant temperature, gas volume changes inversely with absolute pressure.",
+  },
+  {
+    category: "Scuba Diving",
+    prompt: "A diver shows signs of nitrogen narcosis at depth. What is the best general response?",
+    options: [
+      "Descend deeper to compare symptoms",
+      "Ignore it and continue the plan",
+      "Maintain buddy control and ascend to a shallower depth",
+      "Remove and replace the regulator",
+      "Swim faster to increase activity",
+    ],
+    correctOption: 2,
+    explanation: "Narcosis risk increases with depth and often improves after ascending to a shallower depth.",
+  },
+  {
+    category: "Scuba Diving",
+    prompt: "What is the purpose of a buddy check before a dive?",
+    options: [
+      "Preparing only camera gear",
+      "Mutually confirming essential equipment and gas checks",
+      "Starting solo dives faster",
+      "Automatically filling the logbook",
+      "Cataloging marine life",
+    ],
+    correctOption: 1,
+    explanation: "A buddy check helps both divers confirm key equipment and safety readiness before entering the water.",
+  },
+  {
+    category: "Scuba Diving",
+    prompt: "In an ITC/IDC-style teaching scenario, which behavior shows weak control?",
+    options: [
+      "Positioning students clearly",
+      "Demonstrating a skill slowly and visibly",
+      "Moving on without noticing a student's unsafe mistake",
+      "Explaining signals in the briefing",
+      "Giving corrective feedback in the debriefing",
+    ],
+    correctOption: 2,
+    explanation: "Instructor candidates are expected to observe students, stop unsafe errors, and give useful corrective feedback.",
+  },
+  {
+    category: "Scuba Diving",
+    prompt: "Which practice best protects a reef during a dive?",
+    options: [
+      "Maintaining neutral buoyancy and avoiding contact",
+      "Taking a small piece of coral as a souvenir",
+      "Deliberately stirring sediment",
+      "Hand-feeding fish",
+      "Resting fins on the reef",
+    ],
+    correctOption: 0,
+    explanation: "Neutral buoyancy and no-contact behavior reduce damage to fragile reef ecosystems.",
+  },
+  {
+    category: "Scuba Diving",
+    prompt: "Which statement about the PADI IDC pathway is correct?",
+    options: [
+      "The IDC is only one written theory exam",
+      "The IDC includes Assistant Instructor and OWSI development before most candidates attend an IE",
+      "No logged dives are needed to start an IDC",
+      "The IE is completed before Divemaster certification",
+      "The IDC is a freediving-only course",
+    ],
+    correctOption: 1,
+    explanation: "Public PADI material describes the IDC as AI plus OWSI development, with most candidates then attending an Instructor Examination.",
+  },
+];
+
 const demoBank42: GeneratedQuestion[] = [
   {
     category: "Norm Kuralları",
@@ -518,15 +750,18 @@ const demoBank42En: GeneratedQuestion[] = [
   },
 ];
 
+function demoQuestionBank(settings: RoomSettings): GeneratedQuestion[] {
+  if (settings.mode === "classic" && settings.category === "scuba") {
+    return settings.language === "en" ? demoBankScubaEn : demoBankScuba;
+  }
+  if (settings.mode === "fortyTwo") {
+    return settings.language === "en" ? demoBank42En : demoBank42;
+  }
+  return settings.language === "en" ? demoBankEn : demoBank;
+}
+
 function demoQuestions(settings: RoomSettings, context: PromptContext): GeneratedQuestion[] {
-  const sourceBank =
-    settings.mode === "fortyTwo"
-      ? settings.language === "en"
-        ? demoBank42En
-        : demoBank42
-      : settings.language === "en"
-        ? demoBankEn
-        : demoBank;
+  const sourceBank = demoQuestionBank(settings);
   const seen = new Set(context.usedPrompts.map(normalizeQuestionPrompt));
   const picked: GeneratedQuestion[] = [];
 

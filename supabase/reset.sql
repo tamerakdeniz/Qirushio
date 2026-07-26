@@ -54,6 +54,7 @@ create table public.rooms (
         'sports',
         'arts',
         'history',
+        'scuba',
         'random',
         'ft_general',
         'ft_norm',

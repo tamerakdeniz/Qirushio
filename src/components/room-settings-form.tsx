@@ -13,6 +13,7 @@ import {
   ScrollText,
   Shuffle,
   Trophy,
+  Waves,
   Zap,
 } from "lucide-react";
 import { useState } from "react";
@@ -39,6 +40,7 @@ const categoryIcons: Record<QuizCategory, typeof Globe2> = {
   sports: Trophy,
   arts: Palette,
   history: BookOpen,
+  scuba: Waves,
   random: Shuffle,
   ft_general: School,
   ft_norm: Code2,

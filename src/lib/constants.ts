@@ -21,6 +21,7 @@ export const classicQuizCategories = [
   "sports",
   "arts",
   "history",
+  "scuba",
   "random",
 ] as const satisfies readonly ClassicQuizCategory[];
 export const fortyTwoQuizCategories = [
@@ -82,6 +83,7 @@ export const categoryLabels = {
   sports: "Spor",
   arts: "Sanat",
   history: "Tarih",
+  scuba: "Scuba Dalış",
   random: "Rastgele",
   ft_general: "42 Genel Bilgi",
   ft_norm: "Norm Kuralları",
@@ -126,6 +128,7 @@ export const categoryLabelsByLanguage: Record<QuizLanguage, Record<QuizCategory,
     sports: "Sports",
     arts: "Arts",
     history: "History",
+    scuba: "Scuba Diving",
     random: "Random",
     ft_general: "42 General Knowledge",
     ft_norm: "Norm Rules",
