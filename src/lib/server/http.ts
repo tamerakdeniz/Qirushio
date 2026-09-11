@@ -3,7 +3,7 @@ import { createHash, randomBytes } from "node:crypto";
 import { NextResponse } from "next/server";
 
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
-import { questionPauseFromMs } from "@/lib/constants";
+import { isQuizModeEnabled, questionPauseFromMs } from "@/lib/constants";
 import type { PlayerView, RoomView } from "@/lib/types";
 
 interface RoomRow {
@@ -104,7 +104,11 @@ export async function findRoom(code: string): Promise<RoomView> {
     throw new ApiError(404, "Oda bulunamadı.");
   }
 
-  return mapRoom(data);
+  const room = mapRoom(data);
+  if (!isQuizModeEnabled(room.mode)) {
+    throw new ApiError(403, "42 modu devre dışı. / 42 mode is disabled.");
+  }
+  return room;
 }
 
 export interface AuthorizedPlayer {

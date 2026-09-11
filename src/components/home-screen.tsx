@@ -29,6 +29,7 @@ import {
   defaultFortyTwoRoomSettings,
   defaultRoomSettings,
   modeLabelsByLanguage,
+  fortyTwoModeEnabled,
 } from "@/lib/constants";
 import { commonCopy, homeCopy } from "@/lib/i18n";
 import { readLanguage, readNickname, readTheme, saveLanguage, saveNickname, saveRoomSession, saveTheme } from "@/lib/storage";
@@ -226,14 +227,16 @@ export function HomeScreen() {
             <p className="mt-4 max-w-xl text-base font-medium leading-7 text-muted sm:text-lg">
               {screenCopy.heroDescription}
             </p>
-            <button
-              className="secondary-button mt-6"
-              onClick={() => setActiveMode(isFortyTwoMode ? "classic" : "fortyTwo")}
-              type="button"
-            >
-              <School size={18} />
-              {isFortyTwoMode ? copy.switchToClassicMode : copy.switchToFortyTwoMode}
-            </button>
+            {fortyTwoModeEnabled && (
+              <button
+                className="secondary-button mt-6"
+                onClick={() => setActiveMode(isFortyTwoMode ? "classic" : "fortyTwo")}
+                type="button"
+              >
+                <School size={18} />
+                {isFortyTwoMode ? copy.switchToClassicMode : copy.switchToFortyTwoMode}
+              </button>
+            )}
           </div>
           <div className="relative mx-auto flex h-56 w-full max-w-[300px] items-center justify-center rounded-3xl bg-gradient-to-br from-orange-500/15 to-blue-500/18">
             <div className="absolute left-5 top-7 rounded-2xl bg-[var(--surface-raised)] p-3 shadow-md">

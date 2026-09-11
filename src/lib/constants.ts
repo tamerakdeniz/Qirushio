@@ -10,6 +10,12 @@ import type {
   RoomSettings,
 } from "@/lib/types";
 
+export const fortyTwoModeEnabled = false;
+
+export function isQuizModeEnabled(mode: QuizMode): boolean {
+  return mode === "classic" || fortyTwoModeEnabled;
+}
+
 export const normalQuestionTimeOptions = [5, 10, 15, 20, 30] as const;
 export const speedrunQuestionTimeOptions = [3, 5] as const;
 export const questionPauseOptions = [0, 1.5, 3] as const satisfies readonly QuestionPauseSeconds[];

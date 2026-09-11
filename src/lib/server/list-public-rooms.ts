@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
+import { isQuizModeEnabled } from "@/lib/constants";
 import { mapRoom } from "@/lib/server/http";
 import type { RoomSummary } from "@/lib/types";
 
@@ -43,7 +44,7 @@ function isListingSchemaDrift(message: string): boolean {
 
 function mapListedRooms(rows: ListedRoomRow[]): RoomSummary[] {
   return rows
-    .filter((row) => row.players.length > 0)
+    .filter((row) => row.players.length > 0 && isQuizModeEnabled(row.mode ?? "classic"))
     .map((row) => {
       const room = mapRoom(row);
       return {

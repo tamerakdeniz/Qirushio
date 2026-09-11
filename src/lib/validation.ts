@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { classicQuizCategories, fortyTwoQuizCategories } from "@/lib/constants";
+import { classicQuizCategories, fortyTwoQuizCategories, isQuizModeEnabled } from "@/lib/constants";
 
 const quizModeValues = ["classic", "fortyTwo"] as const;
 const quizCategoryValues = [...classicQuizCategories, ...fortyTwoQuizCategories] as const;
@@ -27,6 +27,14 @@ export const roomSettingsSchema = z
     maxPlayers: z.number().int().min(2).default(10),
   })
   .superRefine((settings, context) => {
+    if (!isQuizModeEnabled(settings.mode)) {
+      context.addIssue({
+        code: "custom",
+        path: ["mode"],
+        message: "42 modu devre dışı. / 42 mode is disabled.",
+      });
+    }
+
     const allowedCategories =
       settings.mode === "fortyTwo" ? fortyTwoQuizCategories : classicQuizCategories;
     if (!allowedCategories.some((category) => category === settings.category)) {
