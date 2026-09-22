@@ -29,6 +29,7 @@ export async function PATCH(
         medical_year: settings.medicalYear,
           medical_years: settings.medicalYears ?? null,
           medical_subject: settings.medicalSubject,
+          medical_subjects: settings.medicalSubjects ?? null,
         scope: settings.scope,
         question_count: settings.questionCount,
         question_time_seconds: settings.questionTimeSeconds,

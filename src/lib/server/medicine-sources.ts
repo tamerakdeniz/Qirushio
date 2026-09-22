@@ -1,5 +1,5 @@
 import "server-only";
-import { medicalSubjectLabels, medicalSubjects, selectedMedicalYears } from "@/lib/medicine";
+import { medicalSubjectLabels, medicalSubjects, selectedMedicalYears, selectedMedicalSubjects } from "@/lib/medicine";
 import type { MedicalYear, RoomSettings } from "@/lib/types";
 
 // Game progression, not a claim that every Turkish faculty teaches topics in
@@ -16,13 +16,14 @@ const yearTopics: Record<MedicalYear, string> = {
 export function medicineQuestionContext(settings: RoomSettings): string | null {
   if (settings.mode !== "classic" || settings.category !== "medicine") return null;
   const included = selectedMedicalYears(settings);
-  const subject = settings.medicalSubject ?? "mixed";
+  const subjects = selectedMedicalSubjects(settings);
+  const allSubjects = subjects.includes("mixed");
   return [
     "Category: Medicine. Audience: medical students studying in Turkey, in a friendly multiplayer quiz.",
     `Eligible curriculum years: ${included.join(", ")}. Use ONLY these selected years; do not include unselected earlier or later years.`,
     `Difficulty: ${settings.difficulty}. Apply this within the selected curriculum: easy = direct recall, medium = connecting concepts, hard = multi-step reasoning. Hard must never introduce a higher, unselected year.`,
-    `Subject: ${medicalSubjectLabels.en[subject]}. ${subject === "mixed" ? "Mix disciplines within the selected years." : "Every question must focus on this subject at a selected year's level. Foundational concepts may be tested before clinical clerkships; do not introduce advanced management into preclinical years."}`,
-    `Include medicalSubject on every question using its subject ID (${subject === "mixed" ? medicalSubjects.filter((value) => value !== "mixed").join(", ") : subject}).`,
+    `Subject: ${subjects.map((subject) => medicalSubjectLabels.en[subject]).join(", ")}. ${allSubjects ? "Mix disciplines within the selected years." : "Every question must focus on one of the selected subjects; balance the round across them when the question count allows. Exclude unselected subjects. Test each subject at a selected year's level. Foundational concepts may be tested before clinical clerkships; do not introduce advanced management into preclinical years."}`,
+    `Include medicalSubject on every question using its subject ID (${allSubjects ? medicalSubjects.filter((value) => value !== "mixed").join(", ") : subjects.join(", ")}).`,
     "Use the following curriculum levels. Topic examples are not an exhaustive list of subjects; the selected subject must be tested at the selected year level:",
     ...included.map((value) => `Year ${value}: ${yearTopics[value]}.`),
     included.length === 1 ? `Every question must be curriculumYear ${included[0]}.` : "Balance questions across the selected years. A short round need not contain every selected year.",

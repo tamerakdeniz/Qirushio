@@ -1,5 +1,7 @@
 "use client";
 
+import { mixedDifficultyLabel } from "@/lib/difficulty";
+
 import {
   ArrowLeft,
   Bot,
@@ -41,7 +43,7 @@ import {
   modeLabelsByLanguage,
   scoringPauseSeconds,
 } from "@/lib/constants";
-import { medicalSelectionLabel, medicalSubjectLabels } from "@/lib/medicine";
+import { medicalSelectionLabel, medicalSubjectsLabel } from "@/lib/medicine";
 import { commonCopy, homeCopy, roomCopy } from "@/lib/i18n";
 import { getSupabaseBrowser } from "@/lib/supabase/browser";
 import {
@@ -954,7 +956,7 @@ function Lobby({
               </h2>
               {currentPlayer.isHost ? (
                 <RoomSettingsForm
-                  key={`${room.category}-${room.questionCount}-${room.questionTimeSeconds}-${room.questionPauseSeconds}-${room.speedrunMode}-${room.difficulty}-${room.medicalYear}-${room.medicalYears?.join(",")}-${room.medicalSubject}-${room.maxPlayers}`}
+                  key={`${room.category}-${room.questionCount}-${room.questionTimeSeconds}-${room.questionPauseSeconds}-${room.speedrunMode}-${room.difficulty}-${room.medicalYear}-${room.medicalYears?.join(",")}-${room.medicalSubject}-${room.medicalSubjects?.join(",")}-${room.maxPlayers}`}
                   initial={room}
                   locale={locale}
                   submitLabel={copy.saveSettings}
@@ -1029,15 +1031,17 @@ function RoomSettingSummary({ locale, room }: { locale: QuizLanguage; room: Room
         [copy.maxPlayers, room.maxPlayers],
         [copy.questionPause, questionPauseSummaryLabel(copy, room.questionPauseSeconds)],
         ...(room.speedrunMode ? [[copy.speedrun, copy.speedrunOn] as const] : []),
-        [copy.difficulty, difficultyLabels[room.difficulty]],
+        [copy.difficulty, room.difficulty === "mixed"
+          ? `${difficultyLabels.mixed} (${mixedDifficultyLabel(room.questionCount, locale)})`
+          : difficultyLabels[room.difficulty]],
         ...(room.category === "medicine" ? [
           [locale === "tr" ? "Sınıf Kapsamı" : "Year Coverage", medicalSelectionLabel(room, locale)],
-          [locale === "tr" ? "Ders" : "Subject", medicalSubjectLabels[locale][room.medicalSubject ?? "mixed"]],
+          [locale === "tr" ? "Ders" : "Subject", medicalSubjectsLabel(room, locale)],
         ] : []),
       ].map(([title, value]) => (
         <div key={title} className="soft-panel flex items-center justify-between px-4 py-3">
           <dt className="text-muted">{title}</dt>
-          <dd className="font-bold">{value}</dd>
+          <dd className="max-w-[65%] text-right font-bold break-words">{value}</dd>
         </div>
       ))}
     </dl>

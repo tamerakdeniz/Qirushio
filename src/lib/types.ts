@@ -36,7 +36,8 @@ export type FortyTwoQuizCategory =
   | "ft_mixed";
 export type QuizCategory = ClassicQuizCategory | FortyTwoQuizCategory;
 export type MedicalYear = 1 | 2 | 3 | 4 | 5 | 6;
-export type QuizDifficulty = "easy" | "medium" | "hard";
+export type QuestionDifficulty = "easy" | "medium" | "hard";
+export type QuizDifficulty = QuestionDifficulty | "mixed";
 export type QuizScope = "global" | "local";
 export type QuestionPauseSeconds = 0 | 1.5 | 3;
 
@@ -48,6 +49,7 @@ export interface RoomSettings {
   medicalYear: MedicalYear;
   medicalYears?: MedicalYear[];
   medicalSubject?: MedicalSubject;
+  medicalSubjects?: MedicalSubject[];
   scope: QuizScope;
   questionCount: number;
   questionTimeSeconds: number;
@@ -121,6 +123,7 @@ export interface RoomSession {
 }
 
 export interface GeneratedQuestion {
+  difficulty?: QuestionDifficulty;
   curriculumYear?: MedicalYear;
   medicalSubject?: MedicalSubject;
   knowledgeKey?: string;

@@ -41,3 +41,37 @@ describe("medical year persistence through room APIs", () => {
     expect(state.writes[0].values).toMatchObject({ category: "medicine", medical_year: 3, medical_years: [2, 3], medical_subject: "physiology", difficulty: "easy" });
   });
 });
+
+describe("multiple medical subjects", () => {
+  const settings = { ...defaultRoomSettings, category: "medicine", medicalYears: [2, 3], medicalSubjects: ["anatomy", "physiology"] };
+  it("persists all selected subjects on creation", async () => {
+    const response = await POST(new Request("http://localhost/api/rooms", { method: "POST", body: JSON.stringify({ nickname: "Test", settings }) }));
+    expect(response.status).toBe(201);
+    expect(state.writes[0].values).toMatchObject({ medical_subjects: ["anatomy", "physiology"], medical_subject: "mixed" });
+  });
+  it("preserves multiple selections when editing a lobby", async () => {
+    const response = await PATCH(new Request("http://localhost/api/rooms/ABCDEF/settings", { method: "PATCH", body: JSON.stringify(settings) }), { params: Promise.resolve({ code: "ABCDEF" }) });
+    expect(response.status).toBe(200);
+    expect(state.writes[0].values.medical_subjects).toEqual(["anatomy", "physiology"]);
+  });
+  it.each([[], ["unknown"], ["mixed", "anatomy"], ["anatomy", "anatomy"]])("rejects invalid selections before writing: %j", async (...subjects) => {
+    const response = await POST(new Request("http://localhost/api/rooms", { method: "POST", body: JSON.stringify({ nickname: "Test", settings: { ...settings, medicalSubjects: subjects } }) }));
+    expect(response.status).toBe(400);
+    expect(state.writes).toHaveLength(0);
+  });
+});
+
+
+describe("mixed difficulty persistence", () => {
+  const settings = { ...defaultRoomSettings, category: "medicine", difficulty: "mixed", questionCount: 10 };
+  it("creates a room with mixed difficulty", async () => {
+    const response = await POST(new Request("http://localhost/api/rooms", { method: "POST", body: JSON.stringify({ nickname: "Test", settings }) }));
+    expect(response.status).toBe(201);
+    expect(state.writes[0].values).toMatchObject({ difficulty: "mixed", question_count: 10 });
+  });
+  it("saves mixed difficulty in an existing lobby", async () => {
+    const response = await PATCH(new Request("http://localhost/api/rooms/ABCDEF/settings", { method: "PATCH", body: JSON.stringify(settings) }), { params: Promise.resolve({ code: "ABCDEF" }) });
+    expect(response.status).toBe(200);
+    expect(state.writes[0].values.difficulty).toBe("mixed");
+  });
+});

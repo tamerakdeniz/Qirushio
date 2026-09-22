@@ -37,7 +37,7 @@ import {
   modeLabelsByLanguage,
   fortyTwoModeEnabled,
 } from "@/lib/constants";
-import { medicalSelectionLabel, medicalSubjectLabels } from "@/lib/medicine";
+import { medicalSelectionLabel, medicalSubjectsLabel } from "@/lib/medicine";
 import { commonCopy, homeCopy } from "@/lib/i18n";
 import { readLanguage, readNickname, readTheme, saveLanguage, saveNickname, saveRoomSession, saveTheme } from "@/lib/storage";
 import type { AppTheme, QuizLanguage, QuizMode, RoomSession, RoomSettings, RoomSummary } from "@/lib/types";
@@ -384,7 +384,7 @@ export function HomeScreen({ medical = false }: { medical?: boolean }) {
                 <div>
                   <p className="font-extrabold text-primary-deep">{room.code}</p>
                   <p className="text-sm text-muted">
-                    {modeLabels[room.mode]} · {categoryLabels[room.category]}{room.category === "medicine" ? ` · ${medicalSelectionLabel(room, locale)} · ${medicalSubjectLabels[locale][room.medicalSubject ?? "mixed"]}` : ""} · {room.questionCount} {copy.questionUnit} · {room.hostNickname}
+                    {modeLabels[room.mode]} · {categoryLabels[room.category]}{room.category === "medicine" ? ` · ${medicalSelectionLabel(room, locale)} · ${medicalSubjectsLabel(room, locale)}` : ""} · {room.questionCount} {copy.questionUnit} · {room.hostNickname}
                   </p>
                 </div>
                 <span className="flex items-center gap-1 rounded-full bg-blue-500/15 px-3 py-2 text-sm font-bold text-secondary-deep">

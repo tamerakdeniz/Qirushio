@@ -198,3 +198,12 @@ export function medicalSelectionLabel(settings: Pick<RoomSettings, "medicalYear"
   const years = parts.length === 1 ? parts[0] : `${parts.slice(0, -1).join(", ")}${locale === "tr" ? " ve " : " & "}${parts[parts.length - 1]}`;
   return locale === "tr" ? `Yalnızca ${years} sınıf` : `Only year${selected.length > 1 ? "s" : ""} ${years}`;
 }
+
+// Missing arrays belong to legacy single-subject rooms. "mixed" means all subjects.
+export function selectedMedicalSubjects(settings: Pick<RoomSettings, "medicalSubject" | "medicalSubjects">): MedicalSubject[] {
+  return settings.medicalSubjects ?? [settings.medicalSubject ?? "mixed"];
+}
+
+export function medicalSubjectsLabel(settings: Pick<RoomSettings, "medicalSubject" | "medicalSubjects">, locale: QuizLanguage): string {
+  return selectedMedicalSubjects(settings).map((subject) => medicalSubjectLabels[locale][subject]).join(", ");
+}

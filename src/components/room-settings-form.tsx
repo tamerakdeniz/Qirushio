@@ -33,7 +33,9 @@ import {
   scopeLabelsByLanguage,
   speedrunQuestionTimeOptions,
 } from "@/lib/constants";
-import { medicalSelectionLabel, medicalSubjectLabels, medicalSubjectGroups, selectedMedicalYears } from "@/lib/medicine";
+import { medicalSelectionLabel, selectedMedicalSubjects, selectedMedicalYears } from "@/lib/medicine";
+import { MedicalSubjectSelect } from "@/components/medical-subject-select";
+import { mixedDifficultyLabel } from "@/lib/difficulty";
 import { settingsCopy } from "@/lib/i18n";
 import type { QuestionPauseSeconds, QuizCategory, QuizLanguage, RoomSettings } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -83,6 +85,7 @@ function normalizeInitialSettings(initial: RoomSettings): RoomSettings {
     medicalYear: initial.medicalYear ?? 1,
     medicalYears: selectedMedicalYears(initial),
     medicalSubject: initial.medicalSubject ?? "mixed",
+    medicalSubjects: selectedMedicalSubjects(initial),
     category: categories.some((category) => category === initial.category) ? initial.category : categories[0],
   };
 }
@@ -230,18 +233,11 @@ export function RoomSettingsForm({
             {medicalSelectionLabel(settings, locale)}
           </p>
           <p className="mt-1 text-xs text-muted">{locale === "tr" ? "Bir veya birden fazla sınıf seçebilirsin. İşaretlemediğin sınıflar dahil edilmez; en az bir sınıf seçili kalır." : "Select one or more years. Unselected years are excluded; keep at least one selected."}</p>
-          <label className="mt-5 block text-sm font-bold">
-            {locale === "tr" ? "Ders" : "Subject"}
-            <select className="form-input mt-2" value={settings.medicalSubject ?? "mixed"}
-              onChange={(event) => update("medicalSubject", event.target.value as RoomSettings["medicalSubject"])}>
-              <option value="mixed">{medicalSubjectLabels[locale].mixed}</option>
-              {medicalSubjectGroups.map((group) => (
-                <optgroup key={group.id} label={group.label[locale]}>
-                  {group.subjects.map((subject) => <option key={subject} value={subject}>{medicalSubjectLabels[locale][subject]}</option>)}
-                </optgroup>
-              ))}
-            </select>
-          </label>
+          <MedicalSubjectSelect value={selectedMedicalSubjects(settings)} locale={locale}
+            onChange={(subjects) => setSettings((previous) => ({
+              ...previous, medicalSubjects: subjects,
+              medicalSubject: subjects.length === 1 ? subjects[0] : "mixed",
+            }))} />
         </fieldset>
       )}
         <div className="grid gap-4 sm:grid-cols-2">
@@ -265,6 +261,11 @@ export function RoomSettingsForm({
                 </button>
               ))}
             </div>
+            {settings.difficulty === "mixed" && (
+              <p className="mt-2 text-xs font-semibold text-primary-deep" aria-live="polite">
+                {mixedDifficultyLabel(settings.questionCount, locale)}
+              </p>
+            )}
           </div>
           {!isMedicine && <div>
             <p className="mb-2 text-sm font-bold">{copy.scope}</p>

@@ -119,6 +119,19 @@ describe("question generation", () => {
     expect(result).toEqual(valid);
   });
 
+  it("accepts each selected subject and rejects unselected or missing subject metadata", async () => {
+    const valid = prompts.slice(0, 5).map((p, i) => ({ ...question(p), curriculumYear: 2 as const, medicalSubject: i % 2 ? "physiology" as const : "anatomy" as const }));
+    const wrong = { ...question(prompts[5]), curriculumYear: 2 as const, medicalSubject: "pathology" as const };
+    const missing = { ...question(prompts[6]), curriculumYear: 2 as const };
+    const fetchMock = vi.fn().mockResolvedValue(response([wrong, missing, ...valid]));
+    vi.stubGlobal("fetch", fetchMock);
+    const result = await generateQuestions({ ...settings, category: "medicine", medicalYears: [2], medicalSubjects: ["anatomy", "physiology"] });
+    expect(result).toEqual(valid);
+    const prompt = JSON.parse(fetchMock.mock.calls[0][1].body).contents[0].parts[0].text;
+    expect(prompt).toContain("Subject: Anatomy, Physiology.");
+    expect(prompt).toContain("subject ID (anatomy, physiology)");
+  });
+
   it("fails closed when permanent history is unavailable", async () => {
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue(response(prompts.slice(0, 7).map((p) => question(p)))));
     await expect(generateQuestions(settings, [], async () => { throw new Error("history unavailable"); })).rejects.toThrow("history unavailable");
@@ -137,5 +150,69 @@ describe("question generation", () => {
     const fetchMock = vi.fn(); vi.stubGlobal("fetch", fetchMock);
     await expect(generateQuestions(settings, [], async (q) => q, Date.now() - 1)).rejects.toThrow("unique questions");
     expect(fetchMock).not.toHaveBeenCalled();
+  });
+});
+
+
+describe("mixed difficulty", () => {
+  const mixed = { ...settings, category: "medicine", difficulty: "mixed", questionCount: 10 } as RoomSettings;
+  const candidate = (index: number, difficulty?: GeneratedQuestion["difficulty"]): GeneratedQuestion => ({
+    ...question(prompts[index % prompts.length] + ` Example ${index}.`, `unique|fact|${index}`),
+    options: [`Answer ${index}`, "B", "C", "D", "E"], difficulty, curriculumYear: 1,
+  });
+  const initial = () => [
+    ...Array.from({ length: 2 }, (_, i) => candidate(i, "easy")),
+    ...Array.from({ length: 5 }, (_, i) => candidate(i + 2, "medium")),
+    ...Array.from({ length: 3 }, (_, i) => candidate(i + 7, "hard")),
+  ];
+  const counts = (questions: GeneratedQuestion[]) => ["easy", "medium", "hard"].map(
+    (difficulty) => questions.filter((q) => q.difficulty === difficulty).length,
+  );
+
+  it("produces the exact 2/5/3 distribution with medical filters", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(response(initial()));
+    vi.stubGlobal("fetch", fetchMock);
+    const result = await generateQuestions(mixed);
+    expect(counts(result)).toEqual([2, 5, 3]);
+    expect(fetchMock.mock.calls[0][1].body).toContain("exactly 2 easy, 5 medium, and 3 hard");
+  });
+
+  it("replenishes the rejected difficulty after permanent history filtering", async () => {
+    const fetchMock = vi.fn().mockResolvedValueOnce(response(initial()))
+      .mockResolvedValueOnce(response([candidate(10, "hard")]));
+    vi.stubGlobal("fetch", fetchMock);
+    const filter = vi.fn().mockImplementationOnce(async (batch: GeneratedQuestion[]) => batch.slice(0, 9))
+      .mockImplementationOnce(async (batch: GeneratedQuestion[]) => batch);
+    expect(counts(await generateQuestions(mixed, [], filter))).toEqual([2, 5, 3]);
+    expect(fetchMock.mock.calls[1][1].body).toContain("exactly 0 easy, 0 medium, and 1 hard");
+  });
+
+  it("rejects excess and missing difficulty labels and requests the missing quota", async () => {
+    const batch = initial();
+    batch[8] = candidate(8, "easy");
+    batch[9] = candidate(9);
+    const fetchMock = vi.fn().mockResolvedValueOnce(response(batch))
+      .mockResolvedValueOnce(response([candidate(10, "hard"), candidate(11, "hard")]));
+    vi.stubGlobal("fetch", fetchMock);
+    const result = await generateQuestions(mixed);
+    expect(counts(result)).toEqual([2, 5, 3]);
+    expect(result.some((q) => q.knowledgeKey === "unique|fact|8" || q.knowledgeKey === "unique|fact|9")).toBe(false);
+    expect(fetchMock.mock.calls[1][1].body).toContain("exactly 0 easy, 0 medium, and 2 hard");
+  });
+
+  it("preserves quotas across multiple batches for twenty questions", async () => {
+    const batch1 = [4, 3, 3].flatMap((count, level) => Array.from({ length: count }, (_, i) =>
+      candidate(level * 10 + i, (["easy", "medium", "hard"] as const)[level])));
+    const batch2 = [7, 3].flatMap((count, level) => Array.from({ length: count }, (_, i) =>
+      candidate(30 + level * 10 + i, (["medium", "hard"] as const)[level])));
+    const fetchMock = vi.fn().mockResolvedValueOnce(response(batch1)).mockResolvedValueOnce(response(batch2));
+    vi.stubGlobal("fetch", fetchMock);
+    expect(counts(await generateQuestions({ ...mixed, questionCount: 20 }))).toEqual([4, 10, 6]);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
+  it("does not silently publish a round with the wrong distribution", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(response(initial().map((q) => ({ ...q, difficulty: "easy" })))));
+    await expect(generateQuestions(mixed)).rejects.toThrow("Could not produce enough unique questions (2/10)");
   });
 });

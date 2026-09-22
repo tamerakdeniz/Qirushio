@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { medicalSubjects, selectedMedicalYears } from "@/lib/medicine";
+import { medicalSubjects, selectedMedicalYears, selectedMedicalSubjects } from "@/lib/medicine";
 
 import { classicQuizCategories, fortyTwoQuizCategories, isQuizModeEnabled } from "@/lib/constants";
 
@@ -20,11 +20,14 @@ export const roomSettingsSchema = z
     mode: z.enum(quizModeValues).default("classic"),
     language: z.enum(["tr", "en"]),
     category: z.enum(quizCategoryValues),
-    difficulty: z.enum(["easy", "medium", "hard"]),
+    difficulty: z.enum(["easy", "medium", "hard", "mixed"]),
     medicalYear: medicalYearSchema.default(1),
     medicalYears: z.array(medicalYearSchema).min(1).max(6)
       .refine((years) => new Set(years).size === years.length, "Sınıflar tekrarlanamaz.").optional(),
     medicalSubject: z.enum(medicalSubjects).default("mixed"),
+    medicalSubjects: z.array(z.enum(medicalSubjects)).min(1).max(medicalSubjects.length - 1)
+      .refine((subjects) => new Set(subjects).size === subjects.length, "Dersler tekrarlanamaz.")
+      .refine((subjects) => !subjects.includes("mixed") || subjects.length === 1, "Tüm dersler seçimi başka derslerle birleştirilemez.").optional(),
     scope: z.enum(["global", "local"]),
     questionCount: z.number().int().min(5).max(20),
     questionTimeSeconds: z.number().int().min(3).max(30),
@@ -66,9 +69,17 @@ export const roomSettingsSchema = z
       });
     }
   })
-  .transform((settings) => settings.category === "medicine"
-    ? { ...settings, medicalYears: selectedMedicalYears(settings).slice().sort((a, b) => a - b), scope: "local" as const }
-    : settings);
+  .transform((settings) => {
+    if (settings.category !== "medicine") return settings;
+    const subjects = selectedMedicalSubjects(settings);
+    return {
+      ...settings,
+      medicalYears: selectedMedicalYears(settings).slice().sort((a, b) => a - b),
+      medicalSubjects: subjects,
+      medicalSubject: subjects.length === 1 ? subjects[0] : "mixed" as const,
+      scope: "local" as const,
+    };
+  });
 
 export const createRoomSchema = z.object({
   nickname: nicknameSchema,
@@ -107,6 +118,7 @@ export const answerSyncSchema = z.object({
 });
 
 export const generatedQuestionSchema = z.object({
+  difficulty: z.enum(["easy", "medium", "hard"]).optional(),
   medicalSubject: z.enum(medicalSubjects).optional(),
   curriculumYear: z.union([z.literal(1), z.literal(2), z.literal(3), z.literal(4), z.literal(5), z.literal(6)]).optional(),
   knowledgeKey: z.string().trim().min(5).max(240),

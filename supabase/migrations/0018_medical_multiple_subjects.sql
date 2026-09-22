@@ -1,0 +1,67 @@
+-- Null preserves the single subject of existing rooms until the host edits it.
+alter table public.rooms add column if not exists medical_subjects text[];
+alter table public.rooms add constraint rooms_medical_subjects_check check (
+  medical_subjects is null or (
+    cardinality(medical_subjects) between 1 and 55
+    and array_position(medical_subjects, null) is null
+    and (not ('mixed' = any(medical_subjects)) or cardinality(medical_subjects) = 1)
+    and medical_subjects <@ array[
+      'mixed',
+      'anatomy',
+      'physiology',
+      'histology',
+      'biochemistry',
+      'medical_biology',
+      'genetics',
+      'biophysics',
+      'biostatistics',
+      'microbiology',
+      'immunology',
+      'parasitology',
+      'pathology',
+      'pharmacology',
+      'internal',
+      'cardiology',
+      'pulmonology',
+      'gastroenterology',
+      'endocrinology',
+      'nephrology',
+      'hematology',
+      'oncology',
+      'rheumatology',
+      'geriatrics',
+      'infectious',
+      'pediatrics',
+      'neurology',
+      'psychiatry',
+      'child_psychiatry',
+      'dermatology',
+      'rehabilitation',
+      'radiology',
+      'nuclear_medicine',
+      'radiation_oncology',
+      'sports_medicine',
+      'surgery',
+      'obgyn',
+      'pediatric_surgery',
+      'neurosurgery',
+      'cardiovascular_surgery',
+      'thoracic_surgery',
+      'orthopedics',
+      'urology',
+      'ent',
+      'ophthalmology',
+      'plastic_surgery',
+      'anesthesiology',
+      'emergency',
+      'intensive_care',
+      'family_medicine',
+      'public_health',
+      'forensic',
+      'ethics_history',
+      'clinical_skills',
+      'evidence_based',
+      'medical_informatics'
+    ]::text[]
+  )
+);

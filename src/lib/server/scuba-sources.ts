@@ -14,6 +14,7 @@ export function scubaQuestionContext(settings: RoomSettings): string | null {
   const audienceInstruction =
     "Audience: certified and training-path divers across Open Water Diver, Advanced/Open Water Adventure, Rescue Diver, Divemaster, Assistant Instructor, Instructor, ITC, and IDC levels. The category must be playable by non-instructors too; do not make every question instructor-only.";
   const difficultyInstruction = {
+    mixed: "Selected difficulty is MIXED: follow the exact batch quotas. Easy questions cover Open Water fundamentals; medium questions use Advanced/Rescue-level scenarios and judgment; hard questions combine multiple concepts for experienced divers and instructor candidates.",
     easy: "Selected difficulty is EASY: focus on Open Water Diver-level fundamentals, basic equipment roles, hand signals, simple safety rules, environmental manners, and accessible scuba culture. Avoid trick wording and avoid instructor-only standards.",
     medium:
       "Selected difficulty is MEDIUM: target Advanced Open Water, Rescue, and experienced recreational-diver understanding. Use short scenarios, gas/buoyancy reasoning, buddy/problem recognition, environment, and planning concepts that require judgment beyond memorized definitions.",

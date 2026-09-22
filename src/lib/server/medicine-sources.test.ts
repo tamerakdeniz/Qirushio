@@ -4,7 +4,7 @@ vi.mock("server-only", () => ({}));
 import { defaultRoomSettings, medicalYears } from "../constants";
 import { medicineQuestionContext } from "./medicine-sources";
 import { roomSettingsSchema } from "../validation";
-import { medicalSelectionLabel, medicalSubjects, medicalSubjectGroups } from "../medicine";
+import { medicalSelectionLabel, medicalSubjects, medicalSubjectGroups, selectedMedicalSubjects } from "../medicine";
 
 describe("medical filters", () => {
   it.each(medicalYears)("preserves legacy cumulative year %i", (medicalYear) => {
@@ -50,6 +50,11 @@ describe("medical filters", () => {
     const selectable = ["mixed", ...medicalSubjectGroups.flatMap((group) => [...group.subjects])];
     expect(new Set(selectable)).toEqual(new Set(medicalSubjects));
     expect(new Set(allowedByDatabase)).toEqual(new Set(selectable));
+  });
+  it("reads both legacy rooms and explicit multi-subject selections", () => {
+    expect(selectedMedicalSubjects({ medicalSubject: "anatomy" })).toEqual(["anatomy"]);
+    expect(selectedMedicalSubjects({})).toEqual(["mixed"]);
+    expect(selectedMedicalSubjects({ medicalSubject: "anatomy", medicalSubjects: ["physiology", "histology"] })).toEqual(["physiology", "histology"]);
   });
   it("rejects unknown subjects", () => {
     expect(roomSettingsSchema.safeParse({ ...defaultRoomSettings, medicalSubject: "unknown" }).success).toBe(false);

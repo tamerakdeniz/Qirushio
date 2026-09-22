@@ -91,7 +91,7 @@ Modelin döndürdüğü `curriculumYear` seçili değilse veya belirli bir ders 
 
 Genel eğitim çerçevesi için [YÖK UÇEP](https://www.yok.gov.tr/kurumsal/idari-birimler/egitim-ogretim-dairesi/ulusal-cekirdek-egitimi-programlari), [Hacettepe](https://halksagligi.hacettepe.edu.tr/eng/egitim/lisans.php) ve [İstanbul Medeniyet](https://tip.medeniyet.edu.tr/tr/egitim/lisans) esas alındı; sınıf konu blokları oyunun pedagojik seçimidir.
 
-Deploy öncesi `0015_medicine_category.sql`, `0016_medical_filters.sql` ve `0017_medical_subject_catalog.sql` uygulanmalıdır.
+Deploy öncesi `0015_medicine_category.sql`, `0016_medical_filters.sql`, `0017_medical_subject_catalog.sql` ve `0018_medical_multiple_subjects.sql` uygulanmalıdır.
 
 ## Soru geçişleri
 
@@ -142,3 +142,7 @@ Orijinal referans ekranları ve HTML tasarımları `c&c-design/` klasöründe ko
 Ders seçimi 55 tıbbi alanı dört grupta sunar: temel, dahili, cerrahi ve toplum sağlığı/hekimlik uygulamaları. Katalog [Hacettepe eğitim kapsamı](https://tip.hacettepe.edu.tr/tr/sss), [Dönem IV–VI staj rehberleri](https://tip.hacettepe.edu.tr/tr/staj_rehberi-35) ve [Ankara ders kataloğu](https://www.medicine.ankara.edu.tr/dersler-ve-kredileri/) ile karşılaştırılmıştır. Fakülteye özgü seçmeliler ve genel üniversite ortak dersleri, bu tıp konu kataloğuyla birebir eşdeğer değildir.
 
 `/med` ve tıp odaları `background-medicine.webp` kullanır; renk paleti korunur. Görsel yerleşik image_gen aracıyla üretilmiş, WebP olarak yaklaşık 90 KB'a sıkıştırılmıştır. Üretim istemi `docs/medical-background-prompt.md` dosyasındadır.
+
+Ders seçimi aramalı çoklu seçimdir. `medical_subjects` seçilen dersleri saklar; `["mixed"]` tüm dersler anlamına gelir ve başka derslerle birleştirilemez. Son ders kaldırılırsa tüm derslere dönülür. Eski odalarda dizi null olduğunda tekil `medical_subject` kullanılır. Üretimde sadece seçilmiş ders kimlikleri kabul edilir.
+
+Karma zorluk modu, soruları %20 kolay, %50 orta, %30 zor hedefiyle üretir. Soru sayısına göre tam sayıya yuvarlanır (10 soruda 2/5/3); dağılım ayarlarda gösterilir. Üretimde geçmiş/tekrar kontrolünden geçen soruların zorluk kotaları doğrulanır, eksikler yeniden üretilir ve sıra karıştırılır. Karma mod bir AI sağlayıcısı gerektirir. Bu seçenek için `0019_mixed_difficulty.sql` migration dosyasını da uygulayın.

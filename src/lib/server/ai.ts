@@ -1,8 +1,9 @@
-import { selectedMedicalYears } from "@/lib/medicine";
+import { selectedMedicalYears, selectedMedicalSubjects } from "@/lib/medicine";
 import "server-only";
 
-import { randomUUID } from "node:crypto";
+import { randomInt, randomUUID } from "node:crypto";
 
+import { mixedDifficultyCounts, questionDifficulties, type DifficultyCounts } from "@/lib/difficulty";
 import { fortyTwoQuestionContext } from "@/lib/server/forty-two-sources";
 import { medicineQuestionContext } from "@/lib/server/medicine-sources";
 import { scubaQuestionContext } from "@/lib/server/scuba-sources";
@@ -59,6 +60,7 @@ function isRateLimited(status: number, message: string): boolean {
 }
 
 interface PromptContext {
+  difficultyCounts?: DifficultyCounts;
   batchSize: number;
   batchIndex: number;
   totalBatches: number;
@@ -76,7 +78,7 @@ function requestSignal(context: PromptContext): AbortSignal {
 
 function promptForQuestions(settings: RoomSettings, context: PromptContext): string {
   const language = settings.language === "tr" ? "Turkish" : "English";
-  const difficulty = { easy: "easy", medium: "medium", hard: "hard" }[settings.difficulty];
+  const difficulty = settings.difficulty;
   const scope = { global: "global", local: "local context" }[settings.scope];
   const usedInDb = context.usedPrompts.slice(-MAX_USED_PROMPTS_IN_PROMPT);
   const usedSection =
@@ -87,6 +89,11 @@ function promptForQuestions(settings: RoomSettings, context: PromptContext): str
         ].join("\n")
       : "No recent examples are provided. All candidates will still be checked against permanent history.";
   const varietyInstructions = [
+    ...(context.difficultyCounts ? [
+      `This batch must contain exactly ${context.difficultyCounts.easy} easy, ${context.difficultyCounts.medium} medium, and ${context.difficultyCounts.hard} hard questions.`,
+      'Include a "difficulty" field on EVERY question with exactly "easy", "medium", or "hard". Never use "mixed" as a question difficulty.',
+      "Match the actual reasoning required to the label: easy = direct recall, medium = connecting concepts, hard = multi-step reasoning. Do not relabel a question just to fill a quota.",
+    ] : []),
     `Variation seed: ${context.variationSeed}; attempt ${context.attempt + 1}. Choose fresh subtopics, entities, eras and scenarios.`,
     "Avoid common stock trivia. Changing punctuation, options, word order or translating an old question does not make it new.",
     "Include knowledgeKey: a concise canonical English subject|relationship|answer identifier of the tested fact, independent of wording, language, options and difficulty.",
@@ -358,6 +365,9 @@ async function generateBatch(
     if (settings.category === "medicine") {
       throw new Error("Medicine questions require GEMINI_API_KEY or ANTHROPIC_API_KEY.");
     }
+    if (settings.difficulty === "mixed") {
+      throw new Error("Mixed difficulty questions require GEMINI_API_KEY or ANTHROPIC_API_KEY.");
+    }
     return demoQuestions({ ...settings, questionCount: context.batchSize }, context);
   }
 
@@ -375,13 +385,30 @@ async function generateUniqueQuestions(
   const attemptedPrompts: string[] = [];
   const result: GeneratedQuestion[] = [];
   const target = settings.questionCount;
+  const difficultyRemaining = settings.difficulty === "mixed" ? mixedDifficultyCounts(target) : undefined;
+  const subjects = selectedMedicalSubjects(settings);
   const totalBatches = Math.ceil(target / BATCH_SIZE);
   const variationSeed = randomUUID();
 
   for (let attempt = 0; result.length < target && attempt < MAX_GENERATION_ATTEMPTS && Date.now() < deadline; attempt++) {
     const remaining = target - result.length;
+    const batchSize = Math.min(BATCH_SIZE + 2, difficultyRemaining ? remaining : remaining + 2);
+    let difficultyCounts: DifficultyCounts | undefined;
+    if (difficultyRemaining) {
+      difficultyCounts = { easy: 0, medium: 0, hard: 0 };
+      let allocated = 0;
+      while (allocated < batchSize) {
+        for (const difficulty of questionDifficulties) {
+          if (allocated < batchSize && difficultyCounts[difficulty] < difficultyRemaining[difficulty]) {
+            difficultyCounts[difficulty]++;
+            allocated++;
+          }
+        }
+      }
+    }
     const context: PromptContext = {
-      batchSize: Math.min(BATCH_SIZE + 2, remaining + 2),
+      batchSize,
+      difficultyCounts,
       batchIndex: Math.floor(result.length / BATCH_SIZE),
       totalBatches,
       usedPrompts: [...usedPrompts, ...attemptedPrompts],
@@ -402,18 +429,33 @@ async function generateUniqueQuestions(
       if (duplicate) continue;
       if (settings.category === "random" && (isDivingQuestion(question) || isMedicalQuestion(question))) continue;
       if (settings.category === "medicine" && (question.curriculumYear === undefined || !selectedMedicalYears(settings).includes(question.curriculumYear))) continue;
-      if (settings.category === "medicine" && settings.medicalSubject && settings.medicalSubject !== "mixed"
-        && question.medicalSubject !== settings.medicalSubject) continue;
+      if (settings.category === "medicine" && !subjects.includes("mixed")
+        && (!question.medicalSubject || !subjects.includes(question.medicalSubject))) continue;
       unique.push(question);
     }
     if (unique.length) {
       // This checks ALL permanent history, not just the sample in the AI prompt.
-      result.push(...(await filterQuestions(unique)).slice(0, remaining));
+      const eligible = await filterQuestions(unique);
+      for (const question of eligible) {
+        if (result.length === target) break;
+        if (difficultyRemaining) {
+          if (!question.difficulty || difficultyRemaining[question.difficulty] === 0) continue;
+          difficultyRemaining[question.difficulty]--;
+        }
+        result.push(question);
+      }
     }
   }
 
   if (result.length !== target) {
     throw new Error(`Could not produce enough unique questions (${result.length}/${target}).`);
+  }
+  if (difficultyRemaining) {
+    // Interleave difficulties instead of exposing provider-generated difficulty groups.
+    for (let i = result.length - 1; i > 0; i--) {
+      const j = randomInt(i + 1);
+      [result[i], result[j]] = [result[j], result[i]];
+    }
   }
   return result;
 }

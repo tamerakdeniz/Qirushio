@@ -116,6 +116,7 @@ export const difficultyLabels = {
   easy: "Kolay",
   medium: "Orta",
   hard: "Zor",
+  mixed: "Karma",
 } as const;
 
 export const scopeLabels = {
@@ -165,6 +166,7 @@ export const difficultyLabelsByLanguage: Record<QuizLanguage, Record<QuizDifficu
     easy: "Easy",
     medium: "Medium",
     hard: "Hard",
+    mixed: "Mixed",
   },
 };
 
