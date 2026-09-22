@@ -22,6 +22,7 @@ export type ClassicQuizCategory =
   | "sports"
   | "arts"
   | "history"
+  | "medicine"
   | "scuba"
   | "random";
 export type FortyTwoQuizCategory =
@@ -32,6 +33,7 @@ export type FortyTwoQuizCategory =
   | "ft_git_github"
   | "ft_mixed";
 export type QuizCategory = ClassicQuizCategory | FortyTwoQuizCategory;
+export type MedicalYear = 1 | 2 | 3 | 4 | 5 | 6;
 export type QuizDifficulty = "easy" | "medium" | "hard";
 export type QuizScope = "global" | "local";
 export type QuestionPauseSeconds = 0 | 1.5 | 3;
@@ -41,6 +43,7 @@ export interface RoomSettings {
   language: QuizLanguage;
   category: QuizCategory;
   difficulty: QuizDifficulty;
+  medicalYear: MedicalYear;
   scope: QuizScope;
   questionCount: number;
   questionTimeSeconds: number;
@@ -114,6 +117,7 @@ export interface RoomSession {
 }
 
 export interface GeneratedQuestion {
+  curriculumYear?: MedicalYear;
   knowledgeKey?: string;
   category: string;
   prompt: string;

@@ -18,6 +18,7 @@ export const roomSettingsSchema = z
     language: z.enum(["tr", "en"]),
     category: z.enum(quizCategoryValues),
     difficulty: z.enum(["easy", "medium", "hard"]),
+    medicalYear: z.union([z.literal(1), z.literal(2), z.literal(3), z.literal(4), z.literal(5), z.literal(6)]).default(1),
     scope: z.enum(["global", "local"]),
     questionCount: z.number().int().min(5).max(20),
     questionTimeSeconds: z.number().int().min(3).max(30),
@@ -58,7 +59,10 @@ export const roomSettingsSchema = z
           : "Soru süresi geçersiz.",
       });
     }
-  });
+  })
+  .transform((settings) => settings.category === "medicine"
+    ? { ...settings, difficulty: "medium" as const, scope: "local" as const }
+    : settings);
 
 export const createRoomSchema = z.object({
   nickname: nicknameSchema,
@@ -97,6 +101,7 @@ export const answerSyncSchema = z.object({
 });
 
 export const generatedQuestionSchema = z.object({
+  curriculumYear: z.union([z.literal(1), z.literal(2), z.literal(3), z.literal(4), z.literal(5), z.literal(6)]).optional(),
   knowledgeKey: z.string().trim().min(5).max(240),
   category: z.string().trim().min(1).max(60),
   prompt: z.string().trim().min(5).max(350),

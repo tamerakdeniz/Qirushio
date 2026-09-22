@@ -31,12 +31,16 @@ begin
 end;
 $$;
 
+-- Filter by answer through a B-tree index before calculating similarity.
+-- No extension GUC changes are needed by the migration or service_role.
+create index if not exists question_history_answer_index
+  on public.question_history (normalized_answer);
+
 -- Normalize the candidate once. Similar sentence templates with different
 -- answers are different facts, not duplicates (e.g. capitals of two countries).
 create or replace function public.is_known_question(p_prompt text, p_answer text, p_knowledge_key text)
 returns boolean language plpgsql volatile
 set search_path = public, extensions
-set pg_trgm.similarity_threshold = '0.55'
 as $$
 declare
   prompt_key text := public.normalize_question_text(p_prompt);
@@ -44,10 +48,13 @@ declare
   fact_key text := nullif(public.normalize_question_text(p_knowledge_key), '');
 begin
   return exists (
+    select 1 from public.question_history h where h.normalized_prompt = prompt_key
+  ) or (fact_key is not null and exists (
+    select 1 from public.question_history h where h.knowledge_key = fact_key
+  )) or exists (
     select 1 from public.question_history h
-    where h.normalized_prompt = prompt_key
-      or (h.knowledge_key is not null and h.knowledge_key = fact_key)
-      or (h.normalized_prompt % prompt_key and h.normalized_answer = answer_key)
+    where h.normalized_answer = answer_key
+      and similarity(h.normalized_prompt, prompt_key) >= 0.55
   );
 end;
 $$;

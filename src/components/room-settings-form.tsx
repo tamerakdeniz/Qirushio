@@ -12,6 +12,7 @@ import {
   School,
   ScrollText,
   Shuffle,
+  Stethoscope,
   Trophy,
   Waves,
   Zap,
@@ -24,6 +25,9 @@ import {
   defaultRoomSettings,
   difficultyLabelsByLanguage,
   languageLabels,
+  medicalYears,
+  medicalYearLabel,
+  medicalCoverageLabel,
   normalQuestionTimeOptions,
   questionPauseOptions,
   quizCategoriesByMode,
@@ -41,6 +45,7 @@ const categoryIcons: Record<QuizCategory, typeof Globe2> = {
   arts: Palette,
   history: BookOpen,
   scuba: Waves,
+  medicine: Stethoscope,
   random: Shuffle,
   ft_general: School,
   ft_norm: Code2,
@@ -75,6 +80,7 @@ function normalizeInitialSettings(initial: RoomSettings): RoomSettings {
   return {
     ...initial,
     mode,
+    medicalYear: initial.medicalYear ?? 1,
     category: categories.some((category) => category === initial.category) ? initial.category : categories[0],
   };
 }
@@ -138,7 +144,9 @@ export function RoomSettingsForm({
       className="space-y-6"
       onSubmit={(event) => {
         event.preventDefault();
-        void onSubmit(settings);
+        void onSubmit(settings.category === "medicine"
+          ? { ...settings, difficulty: "medium", scope: "local" }
+          : settings);
       }}
     >
       <div>
@@ -177,6 +185,7 @@ export function RoomSettingsForm({
                     ? "border-primary bg-primary text-white shadow-md"
                     : "border-[var(--outline)] bg-[var(--surface-raised)] text-muted",
                 )}
+                aria-pressed={settings.category === category}
                 onClick={() => update("category", category)}
               >
                 <Icon size={22} />
@@ -187,48 +196,76 @@ export function RoomSettingsForm({
         </div>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2">
-        <div>
-          <p className="mb-2 text-sm font-bold">{copy.difficulty}</p>
-          <div className="flex rounded-xl bg-[var(--control-track)] p-1">
-            {(Object.keys(difficultyLabels) as RoomSettings["difficulty"][]).map((difficulty) => (
+      {settings.category === "medicine" ? (
+        <fieldset className="rounded-xl border-2 border-primary/20 bg-primary/5 p-4">
+          <legend className="px-2 text-sm font-bold">{copy.medicalYear}</legend>
+          <div className="grid grid-cols-3 gap-2 sm:grid-cols-6">
+            {medicalYears.map((year) => (
               <button
-                key={difficulty}
+                key={year}
                 type="button"
+                aria-pressed={settings.medicalYear === year}
+                onClick={() => update("medicalYear", year)}
                 className={cn(
-                  "flex-1 rounded-lg px-2 py-2 text-sm font-bold",
-                  settings.difficulty === difficulty
-                    ? "bg-[var(--control-selected)] text-primary shadow-sm"
-                    : "text-muted",
+                  "rounded-lg border-2 px-2 py-3 text-sm font-bold",
+                  settings.medicalYear === year
+                    ? "border-primary bg-primary text-white shadow-sm"
+                    : "border-[var(--outline)] bg-[var(--surface-raised)] text-muted",
                 )}
-                onClick={() => update("difficulty", difficulty)}
               >
-                {difficultyLabels[difficulty]}
+                {medicalYearLabel(year, locale)}
               </button>
             ))}
           </div>
-        </div>
-        <div>
-          <p className="mb-2 text-sm font-bold">{copy.scope}</p>
-          <div className="flex rounded-xl bg-[var(--control-track)] p-1">
-            {(Object.keys(scopeLabels) as RoomSettings["scope"][]).map((scope) => (
-              <button
-                key={scope}
-                type="button"
-                className={cn(
-                  "flex-1 rounded-lg px-2 py-2 text-sm font-bold",
-                  settings.scope === scope
-                    ? "bg-[var(--control-selected)] text-secondary shadow-sm"
-                    : "text-muted",
-                )}
-                onClick={() => update("scope", scope)}
-              >
-                {scopeLabels[scope]}
-              </button>
-            ))}
+          <p className="mt-3 text-sm font-semibold text-primary-deep" aria-live="polite">
+            {medicalCoverageLabel(settings.medicalYear, locale)}
+          </p>
+          <p className="mt-1 text-xs text-muted">{copy.medicalHint}</p>
+        </fieldset>
+      ) : (
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div>
+            <p className="mb-2 text-sm font-bold">{copy.difficulty}</p>
+            <div className="flex rounded-xl bg-[var(--control-track)] p-1">
+              {(Object.keys(difficultyLabels) as RoomSettings["difficulty"][]).map((difficulty) => (
+                <button
+                  key={difficulty}
+                  type="button"
+                  className={cn(
+                    "flex-1 rounded-lg px-2 py-2 text-sm font-bold",
+                    settings.difficulty === difficulty
+                      ? "bg-[var(--control-selected)] text-primary shadow-sm"
+                      : "text-muted",
+                  )}
+                  onClick={() => update("difficulty", difficulty)}
+                >
+                  {difficultyLabels[difficulty]}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div>
+            <p className="mb-2 text-sm font-bold">{copy.scope}</p>
+            <div className="flex rounded-xl bg-[var(--control-track)] p-1">
+              {(Object.keys(scopeLabels) as RoomSettings["scope"][]).map((scope) => (
+                <button
+                  key={scope}
+                  type="button"
+                  className={cn(
+                    "flex-1 rounded-lg px-2 py-2 text-sm font-bold",
+                    settings.scope === scope
+                      ? "bg-[var(--control-selected)] text-secondary shadow-sm"
+                      : "text-muted",
+                  )}
+                  onClick={() => update("scope", scope)}
+                >
+                  {scopeLabels[scope]}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
       <div className="grid gap-4 sm:grid-cols-2">
         <label className="text-sm font-bold">

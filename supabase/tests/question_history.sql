@@ -97,6 +97,27 @@ values ('00000000-0000-0000-0000-000000000002', 3, 0, 'General', 'What is the ca
 select pg_temp.assert_true(not public.is_known_question('What is the capital city of Italy?', 'Rome', 'italy|capital|rome'), 'similar template with different answer is allowed');
 select pg_temp.assert_true(public.is_known_question('What is the capital city of France?', 'Lyon', 'unreliable key'), 'identical prompt blocked even with a changed answer');
 
+-- Function creation/execution must not require permission to set an extension GUC.
+select pg_temp.assert_true(not exists (
+  select 1 from pg_proc p, unnest(p.proconfig) c
+  where p.oid = 'public.is_known_question(text,text,text)'::regprocedure
+    and c like 'pg_trgm.similarity_threshold=%'
+), 'duplicate checks do not change extension settings');
+select pg_temp.assert_true(to_regclass('public.question_history_answer_index') is not null, 'answer similarity lookup is indexed');
+
+-- Medicine category/year settings persist without changing other categories.
+update public.rooms set category = 'medicine', medical_year = 6 where code = 'TESTAB';
+select pg_temp.assert_true((select category = 'medicine' and medical_year = 6 from public.rooms where code = 'TESTAB'), 'medical year persists');
+do $$
+begin
+  begin
+    update public.rooms set medical_year = 7 where code = 'TESTAB';
+    raise exception 'Invalid medical year accepted';
+  exception when check_violation then null;
+  end;
+end;
+$$;
+
 -- RLS and RPC permissions must not expose question memory to browsers.
 select pg_temp.assert_true(not has_table_privilege('anon', 'public.question_history', 'SELECT'), 'anonymous history access denied');
 select pg_temp.assert_true(not has_function_privilege('authenticated', 'public.publish_generated_round(uuid,integer,jsonb)', 'EXECUTE'), 'browser publication denied');

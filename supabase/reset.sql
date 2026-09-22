@@ -626,13 +626,12 @@ on conflict (normalized_prompt) do nothing;
 create or replace function public.is_known_question(p_prompt text, p_answer text, p_knowledge_key text)
 returns boolean language sql volatile
 set search_path = public, extensions
-set pg_trgm.similarity_threshold = '0.55'
 as $$
   select exists (
     select 1 from public.question_history h
     where h.normalized_prompt = public.normalize_question_text(p_prompt)
       or (h.knowledge_key is not null and h.knowledge_key = nullif(public.normalize_question_text(p_knowledge_key), ''))
-      or (h.normalized_prompt % public.normalize_question_text(p_prompt)
+      or (similarity(h.normalized_prompt, public.normalize_question_text(p_prompt)) >= 0.55
         and (similarity(h.normalized_prompt, public.normalize_question_text(p_prompt)) >= 0.82
           or h.normalized_answer = public.normalize_question_text(p_answer)))
   );
@@ -743,12 +742,16 @@ begin
 end;
 $$;
 
+-- Filter by answer through a B-tree index before calculating similarity.
+-- No extension GUC changes are needed by the migration or service_role.
+create index if not exists question_history_answer_index
+  on public.question_history (normalized_answer);
+
 -- Normalize the candidate once. Similar sentence templates with different
 -- answers are different facts, not duplicates (e.g. capitals of two countries).
 create or replace function public.is_known_question(p_prompt text, p_answer text, p_knowledge_key text)
 returns boolean language plpgsql volatile
 set search_path = public, extensions
-set pg_trgm.similarity_threshold = '0.55'
 as $$
 declare
   prompt_key text := public.normalize_question_text(p_prompt);
@@ -756,10 +759,13 @@ declare
   fact_key text := nullif(public.normalize_question_text(p_knowledge_key), '');
 begin
   return exists (
+    select 1 from public.question_history h where h.normalized_prompt = prompt_key
+  ) or (fact_key is not null and exists (
+    select 1 from public.question_history h where h.knowledge_key = fact_key
+  )) or exists (
     select 1 from public.question_history h
-    where h.normalized_prompt = prompt_key
-      or (h.knowledge_key is not null and h.knowledge_key = fact_key)
-      or (h.normalized_prompt % prompt_key and h.normalized_answer = answer_key)
+    where h.normalized_answer = answer_key
+      and similarity(h.normalized_prompt, prompt_key) >= 0.55
   );
 end;
 $$;
@@ -767,6 +773,17 @@ $$;
 revoke execute on function public.set_generation_deadline(), public.recover_expired_generation(uuid)
   from public, anon, authenticated;
 grant execute on function public.recover_expired_generation(uuid) to service_role;
+
+-- Opt-in medicine category (migration 0015).
+-- Medicine is an opt-in classic category; medical year replaces generic difficulty.
+alter table public.rooms add column if not exists medical_year smallint not null default 1;
+alter table public.rooms drop constraint if exists rooms_medical_year_check;
+alter table public.rooms add constraint rooms_medical_year_check check (medical_year between 1 and 6);
+alter table public.rooms drop constraint if exists rooms_category_check;
+alter table public.rooms add constraint rooms_category_check check (category in (
+  'general', 'science', 'sports', 'arts', 'history', 'scuba', 'medicine', 'random',
+  'ft_general', 'ft_norm', 'ft_internal', 'ft_norm_internal_mix', 'ft_git_github', 'ft_mixed'
+));
 
 commit;
 

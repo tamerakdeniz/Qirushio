@@ -50,13 +50,12 @@ on conflict (normalized_prompt) do nothing;
 create or replace function public.is_known_question(p_prompt text, p_answer text, p_knowledge_key text)
 returns boolean language sql volatile
 set search_path = public, extensions
-set pg_trgm.similarity_threshold = '0.55'
 as $$
   select exists (
     select 1 from public.question_history h
     where h.normalized_prompt = public.normalize_question_text(p_prompt)
       or (h.knowledge_key is not null and h.knowledge_key = nullif(public.normalize_question_text(p_knowledge_key), ''))
-      or (h.normalized_prompt % public.normalize_question_text(p_prompt)
+      or (similarity(h.normalized_prompt, public.normalize_question_text(p_prompt)) >= 0.55
         and (similarity(h.normalized_prompt, public.normalize_question_text(p_prompt)) >= 0.82
           or h.normalized_answer = public.normalize_question_text(p_answer)))
   );

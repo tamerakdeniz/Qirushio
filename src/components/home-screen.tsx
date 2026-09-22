@@ -26,6 +26,7 @@ import { ErrorNotice, Modal, Spinner } from "@/components/ui";
 import { apiRequest } from "@/lib/client-api";
 import {
   categoryLabelsByLanguage,
+  medicalCoverageLabel,
   defaultFortyTwoRoomSettings,
   defaultRoomSettings,
   modeLabelsByLanguage,
@@ -353,7 +354,7 @@ export function HomeScreen() {
                 <div>
                   <p className="font-extrabold text-primary-deep">{room.code}</p>
                   <p className="text-sm text-muted">
-                    {modeLabels[room.mode]} · {categoryLabels[room.category]} · {room.questionCount} {copy.questionUnit} · {room.hostNickname}
+                    {modeLabels[room.mode]} · {categoryLabels[room.category]}{room.category === "medicine" ? ` · ${medicalCoverageLabel(room.medicalYear, locale)}` : ""} · {room.questionCount} {copy.questionUnit} · {room.hostNickname}
                   </p>
                 </div>
                 <span className="flex items-center gap-1 rounded-full bg-blue-500/15 px-3 py-2 text-sm font-bold text-secondary-deep">

@@ -26,6 +26,7 @@ export async function PATCH(
         language: settings.language,
         category: settings.category,
         difficulty: settings.difficulty,
+        medical_year: settings.medicalYear,
         scope: settings.scope,
         question_count: settings.questionCount,
         question_time_seconds: settings.questionTimeSeconds,

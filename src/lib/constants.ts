@@ -28,6 +28,7 @@ export const classicQuizCategories = [
   "arts",
   "history",
   "scuba",
+  "medicine",
   "random",
 ] as const satisfies readonly ClassicQuizCategory[];
 export const fortyTwoQuizCategories = [
@@ -66,6 +67,7 @@ export const defaultRoomSettings: RoomSettings = {
   language: "tr",
   category: "general",
   difficulty: "medium",
+  medicalYear: 1,
   scope: "global",
   questionCount: 10,
   questionTimeSeconds: 20,
@@ -90,6 +92,7 @@ export const categoryLabels = {
   arts: "Sanat",
   history: "Tarih",
   scuba: "Scuba Dalış",
+  medicine: "Tıp",
   random: "Rastgele",
   ft_general: "42 Genel Bilgi",
   ft_norm: "Norm Kuralları",
@@ -135,6 +138,7 @@ export const categoryLabelsByLanguage: Record<QuizLanguage, Record<QuizCategory,
     arts: "Arts",
     history: "History",
     scuba: "Scuba Diving",
+    medicine: "Medicine",
     random: "Random",
     ft_general: "42 General Knowledge",
     ft_norm: "Norm Rules",
@@ -161,3 +165,12 @@ export const scopeLabelsByLanguage: Record<QuizLanguage, Record<QuizScope, strin
     local: "Local",
   },
 };
+
+export const medicalYears = [1, 2, 3, 4, 5, 6] as const;
+export function medicalYearLabel(year: RoomSettings["medicalYear"], locale: QuizLanguage): string {
+  return locale === "tr" ? `${year}. Sınıf` : `Year ${year}`;
+}
+export function medicalCoverageLabel(year: RoomSettings["medicalYear"], locale: QuizLanguage): string {
+  if (locale === "tr") return year === 1 ? "Yalnızca 1. sınıf konuları" : `1–${year}. sınıf konuları dahil`;
+  return year === 1 ? "Year 1 topics only" : `Includes years 1–${year}`;
+}

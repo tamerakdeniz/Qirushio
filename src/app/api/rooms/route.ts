@@ -56,6 +56,7 @@ export async function POST(request: Request): Promise<NextResponse> {
           language: input.settings.language,
           category: input.settings.category,
           difficulty: input.settings.difficulty,
+          medical_year: input.settings.medicalYear,
           scope: input.settings.scope,
           question_count: input.settings.questionCount,
           question_time_seconds: input.settings.questionTimeSeconds,

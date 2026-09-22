@@ -2,12 +2,12 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("server-only", () => ({}));
 
-import { generateQuestions, isDivingQuestion, normalizeQuestionPrompt } from "./ai";
+import { generateQuestions, isDivingQuestion, isMedicalQuestion, normalizeQuestionPrompt } from "./ai";
 import type { GeneratedQuestion, RoomSettings } from "../types";
 
 const settings: RoomSettings = {
   mode: "classic", language: "en", category: "random", difficulty: "medium",
-  scope: "global", questionCount: 5, questionTimeSeconds: 20,
+  medicalYear: 1, scope: "global", questionCount: 5, questionTimeSeconds: 20,
   questionPauseSeconds: 3, speedrunMode: false, isPublic: true, maxPlayers: 10,
 };
 const prompts = [
@@ -86,6 +86,28 @@ describe("question generation", () => {
     const result = await generateQuestions(settings);
     expect(result).toContainEqual(france);
     expect(result).toContainEqual(italy);
+  });
+
+  it("excludes medical-school questions from random while keeping general biology", async () => {
+    const clinical = { ...question("Which diagnosis best explains this patient's presentation?", "clinical|diagnosis|example"), category: "Science" };
+    expect(isMedicalQuestion(clinical)).toBe(true);
+    expect(isMedicalQuestion(question("Which organ pumps blood through the body?"))).toBe(false);
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(response([clinical, ...prompts.slice(0, 6).map((p) => question(p))])));
+    expect((await generateQuestions(settings)).some(isMedicalQuestion)).toBe(false);
+  });
+
+  it("accepts cumulative medical years and rejects missing or higher-year metadata", async () => {
+    const valid = prompts.slice(0, 5).map((p, index) => ({ ...question(p), curriculumYear: (index % 3 + 1) as 1 | 2 | 3 }));
+    const higher = { ...question(prompts[5]), curriculumYear: 6 as const };
+    const missing = question(prompts[6]);
+    const fetchMock = vi.fn().mockResolvedValue(response([higher, missing, ...valid]));
+    vi.stubGlobal("fetch", fetchMock);
+    const result = await generateQuestions({ ...settings, category: "medicine", medicalYear: 3, difficulty: "hard" });
+    expect(result).toEqual(valid);
+    const prompt = JSON.parse(fetchMock.mock.calls[0][1].body).contents[0].parts[0].text;
+    expect(prompt).toContain("Eligible curriculum years: 1, 2, 3.");
+    expect(prompt).not.toContain("Difficulty: hard");
+    expect(prompt).not.toContain("Year 4:");
   });
 
   it("fails closed when permanent history is unavailable", async () => {

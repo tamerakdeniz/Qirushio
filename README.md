@@ -14,7 +14,7 @@ Arkadaşlarla link veya kısa oda kodu üzerinden oynanan, her turda AI tarafın
 - Local storage üzerinde saklanan takma ad ve oda bazlı güvenli oyuncu oturumu
 - Oda oluşturma, kodla katılma ve katılıma açık lobi listesi
 - Türkçe/İngilizce arayüz ve oda bazlı soru dili seçimi
-- Host ayarları: genel kültür, bilim, spor, sanat ve tarihten oluşan rastgele havuz dahil (scuba hariç) kategori, zorluk, kapsam, soru sayısı, süre ve açık/gizli oda
+- Host ayarları: genel kültür, bilim, spor, sanat ve tarihten oluşan rastgele havuz dahil (scuba ve tıp hariç) kategori, zorluk, kapsam, soru sayısı, süre ve açık/gizli oda
 - Kalıcı açık/koyu tema seçimi, responsive arka plan görselleri ve koyu temada okunabilirliği koruyan karartma katmanı
 - Lobi hazır durumu, bağlantı paylaşımı ve Presence ile çevrimiçi göstergesi
 - AI hazırlık ekranı, 10 saniyelik oyun başlangıcı ve sorular arası 3 saniyelik geçiş
@@ -81,11 +81,21 @@ Skor hesabı server-side çalışır:
 score = isCorrect ? Math.floor(remainingTimeMs / 1000) * 10 : 0;
 ```
 
+## Tıp kategorisi
+
+Tıp ayrı seçilir; rastgele havuzuna dahil değildir. Kolay/orta/zor yerine **1–6. sınıf** seçilir. N. sınıf, 1’den N’ye kadar konuları kapsar; yıl bilgisi oda ayarlarında kalıcıdır ve oda listesi/özetinde gösterilir. Genel zorluk ve kapsam, tıp sorusu üretiminde kullanılmaz. Model her sorunun `curriculumYear` bilgisini üretir; eksik veya seçilen sınıfı aşan adaylar sunucuda elenir. İçeriğin gerçek akademik düzeyi modelin doğru sınıflandırmasına bağlıdır.
+
+Oyunun konu dağılımı: 1. sınıfta hücre/temel bilimler; 2’de normal yapı ve işlev; 3’te patoloji, mikrobiyoloji ve farmakoloji temelleri; 4’te ana klinik stajlar; 5’te uzmanlık stajları; 6’da intörnlük düzeyinde bütünleştirme. Her fakültenin birebir yıl müfredatı olduğu iddia edilmez. Eğlenceli kısa sorular, mekanizma bulmacaları ve uygun sınıflarda özgün kurgu vakalar kullanılır; gerçek sınav soruları kopyalanmaz.
+
+Genel eğitim çerçevesi için [YÖK UÇEP](https://www.yok.gov.tr/kurumsal/idari-birimler/egitim-ogretim-dairesi/ulusal-cekirdek-egitimi-programlari), [Hacettepe](https://halksagligi.hacettepe.edu.tr/eng/egitim/lisans.php) ve [İstanbul Medeniyet](https://tip.medeniyet.edu.tr/tr/egitim/lisans) esas alındı; sınıf konu blokları oyunun pedagojik seçimidir. Tıp üretimi Gemini veya Anthropic anahtarı gerektirir; genel demo sorularına düşmez.
+
+Deploy öncesi `0015_medicine_category.sql` uygulanmalıdır.
+
 ## Kalıcı tekrar önleme
 
 `0013_permanent_question_history.sql` ve `0014_generation_recovery_and_precise_dedup.sql` uygulama sürümünden **önce** uygulanmalıdır. Migration, halen DB’de bulunan tüm eski soruları (24 saatten eskiler dahil) kalıcı geçmişe aktarır. Daha önce silinmiş sorular geri getirilemez. Günlük cron yalnızca süresi dolan odaları ve oyun verilerini temizler. `reset.sql` de mevcut soru hafızasını korur.
 
-Model son 80 soruyu örnek olarak görür; her adayın asıl kontrolü indeksli sorgularla **tüm geçmişe** karşı yapılır. Büyük/küçük harf, aksan, noktalama ve boşluk farkları normalize edilir. `pg_trgm` benzerliği ve aynı doğru cevap, küçük metin değişikliklerini yakalar; farklı cevaplı benzer cümle kalıpları tek başına tekrar sayılmaz; dil ve soru biçiminden bağımsız İngilizce `knowledgeKey` aynı bilginin başka şekilde sorulmasını azaltır. Bilgi anahtarı model tarafından üretildiği için bütün anlamsal eşdeğerlikleri yüzde yüz yakalama garantisi yoktur. Eski soruların bilgi anahtarı bulunmadığından bunlar metin/cevap benzerliğiyle kontrol edilir.
+Model son 80 soruyu örnek olarak görür; her adayın asıl kontrolü indeksli sorgularla **tüm geçmişe** karşı yapılır. Büyük/küçük harf, aksan, noktalama ve boşluk farkları normalize edilir. `pg_trgm` benzerliği, sunucu parametresi değiştirmeden açık `similarity(...) >= 0.55` karşılaştırmasıyla hesaplanır. Doğru cevap indeksi karşılaştırılacak kayıtları daraltır. Benzerlik ve aynı doğru cevap, küçük metin değişikliklerini yakalar; farklı cevaplı benzer cümle kalıpları tek başına tekrar sayılmaz; dil ve soru biçiminden bağımsız İngilizce `knowledgeKey` aynı bilginin başka şekilde sorulmasını azaltır. Bilgi anahtarı model tarafından üretildiği için bütün anlamsal eşdeğerlikleri yüzde yüz yakalama garantisi yoktur. Eski soruların bilgi anahtarı bulunmadığından bunlar metin/cevap benzerliğiyle kontrol edilir.
 
 Kontrol tüm oyuncular ve odalar için ortaktır; dil, kategori veya zorluk değiştirmek geçmişi sıfırlamaz. Kayıt trigger'ı kısa bir transaction kilidiyle eşzamanlı oyunların çakışmasını engeller. Çakışmada tur tamamen geri alınır ve yeni adaylar üretilir. Üretim 100 saniyelik bütçe içinde sınırlı sayıda yeniden denenir; yeterli yeni soru yoksa tekrarlı/eksik sorularla başlamak yerine hata gösterilir. Aynı kural küçük demo havuzu için de geçerlidir. Üretim fazının DB’de 120 saniyelik son süresi vardır; sunucu süreci kesilirse süre dolduktan sonraki ilk oda isteği koşullu olarak lobiyi geri açar. Oyun ekranı, aynı anda gelen yenileme bildirimlerini tek takip isteğinde birleştirir; eski isteklerin yeni durumu ezmesi önlenir.
 

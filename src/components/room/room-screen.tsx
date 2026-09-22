@@ -38,6 +38,7 @@ import { apiRequest } from "@/lib/client-api";
 import {
   categoryLabelsByLanguage,
   difficultyLabelsByLanguage,
+  medicalCoverageLabel,
   modeLabelsByLanguage,
   scoringPauseSeconds,
 } from "@/lib/constants";
@@ -963,7 +964,7 @@ function Lobby({
               </h2>
               {currentPlayer.isHost ? (
                 <RoomSettingsForm
-                  key={`${room.category}-${room.questionCount}-${room.questionTimeSeconds}-${room.questionPauseSeconds}-${room.speedrunMode}-${room.difficulty}-${room.maxPlayers}`}
+                  key={`${room.category}-${room.questionCount}-${room.questionTimeSeconds}-${room.questionPauseSeconds}-${room.speedrunMode}-${room.difficulty}-${room.medicalYear}-${room.maxPlayers}`}
                   initial={room}
                   locale={locale}
                   submitLabel={copy.saveSettings}
@@ -1038,7 +1039,9 @@ function RoomSettingSummary({ locale, room }: { locale: QuizLanguage; room: Room
         [copy.maxPlayers, room.maxPlayers],
         [copy.questionPause, questionPauseSummaryLabel(copy, room.questionPauseSeconds)],
         ...(room.speedrunMode ? [[copy.speedrun, copy.speedrunOn] as const] : []),
-        [copy.difficulty, difficultyLabels[room.difficulty]],
+        room.category === "medicine"
+          ? [locale === "tr" ? "Sınıf Kapsamı" : "Year Coverage", medicalCoverageLabel(room.medicalYear, locale)]
+          : [copy.difficulty, difficultyLabels[room.difficulty]],
       ].map(([title, value]) => (
         <div key={title} className="soft-panel flex items-center justify-between px-4 py-3">
           <dt className="text-muted">{title}</dt>

@@ -3,6 +3,7 @@ import "server-only";
 import { randomUUID } from "node:crypto";
 
 import { fortyTwoQuestionContext } from "@/lib/server/forty-two-sources";
+import { medicineQuestionContext } from "@/lib/server/medicine-sources";
 import { scubaQuestionContext } from "@/lib/server/scuba-sources";
 import { generatedQuestionsSchema } from "@/lib/validation";
 import type { ClassicQuizCategory, GeneratedQuestion, RoomSettings } from "@/lib/types";
@@ -90,6 +91,20 @@ function promptForQuestions(settings: RoomSettings, context: PromptContext): str
     "Include knowledgeKey: a concise canonical English subject|relationship|answer identifier of the tested fact, independent of wording, language, options and difficulty.",
     "Example: turkey|capital|ankara. Different facts about the same subject must have different keys. Never add a random ID to knowledgeKey.",
   ].join("\n");
+  const medicineContext = medicineQuestionContext(settings);
+  if (medicineContext) {
+    return [
+      `Generate exactly ${context.batchSize} original medical-student quiz questions in ${language}.`,
+      medicineContext,
+      "Each question must have exactly five plausible options and one correct answer.",
+      varietyInstructions,
+      usedSection,
+      "Return JSON only, without markdown:",
+      '[{"category":"Medicine / topic","curriculumYear":1,"prompt":"...","options":["...","...","...","...","..."],"correctOption":0,"explanation":"...","knowledgeKey":"subject|relationship|answer"}]',
+      "Use the actual eligible curriculumYear for each question. correctOption is zero-based (0–4).",
+    ].join("\n");
+  }
+
   const fortyTwoContext = fortyTwoQuestionContext(settings);
 
   if (fortyTwoContext) {
@@ -131,12 +146,13 @@ function promptForQuestions(settings: RoomSettings, context: PromptContext): str
     sports: "sports",
     arts: "arts",
     history: "history",
+    medicine: "medical student knowledge",
     scuba: "scuba diving theory, safety, equipment, dive planning, and instructor-candidate knowledge",
     random: "mixed",
   }[classicCategory];
   const categoryInstruction =
     classicCategory === "random"
-      ? "Category pool: mix questions ONLY across general knowledge, science, sports, arts, and history. Exclude scuba diving, diving theory, underwater diving equipment, dive planning, and diver certification questions, even when they could be classified as science or sports."
+      ? "Category pool: mix questions ONLY across general knowledge, science, sports, arts, and history. Exclude scuba diving, diving theory, underwater diving equipment, dive planning, and diver certification questions, even when they could be classified as science or sports. Also exclude medical-school questions, clinical cases, diagnosis, pharmacology and specialist medical terminology. Everyday general biology is allowed; the Medicine category is opt-in."
       : `Category: ${category}.`;
 
   return [
@@ -171,6 +187,14 @@ function parseQuestions(text: string, expectedCount: number): GeneratedQuestion[
 export function isDivingQuestion(question: GeneratedQuestion): boolean {
   const text = normalizeQuestionPrompt([question.category, question.prompt, question.explanation, question.knowledgeKey ?? ""].join(" "));
   return /\b(scuba|diving|diver|divers|dive|dalis\w*|dalic\w*|padi|cmas|nitrox|decompression|dekompresyon)\b/u.test(text);
+}
+
+export function isMedicalQuestion(question: GeneratedQuestion): boolean {
+  if (question.curriculumYear !== undefined) return true;
+  const category = normalizeQuestionPrompt(question.category);
+  if (/\b(tip|medicine|medical|klinik|clinical|farmakoloji|pharmacology)\b/.test(category)) return true;
+  const content = normalizeQuestionPrompt([question.prompt, question.explanation, question.knowledgeKey ?? ""].join(" "));
+  return /\b(diagnos\w*|clinical|pharmacolog\w*|pathophysiolog\w*|histolog\w*|klin(?:ik|ig)\w*|patofizyoloj\w*|farmakoloj\w*|histoloj\w*|tani(?:si|sal)?|hastanin)\b/.test(content);
 }
 
 function similarQuestions(left: GeneratedQuestion, right: GeneratedQuestion): boolean {
@@ -330,6 +354,9 @@ async function generateBatch(
     return generateWithAnthropic(settings, context);
   }
   if (process.env.ALLOW_DEMO_QUESTIONS === "true") {
+    if (settings.category === "medicine") {
+      throw new Error("Medicine questions require GEMINI_API_KEY or ANTHROPIC_API_KEY.");
+    }
     return demoQuestions({ ...settings, questionCount: context.batchSize }, context);
   }
 
@@ -371,7 +398,9 @@ async function generateUniqueQuestions(
       seen.add(normalizeQuestionPrompt(question.prompt));
       if (key) seenKeys.add(key);
       attemptedPrompts.push(question.prompt);
-      if (duplicate || (settings.category === "random" && isDivingQuestion(question))) continue;
+      if (duplicate) continue;
+      if (settings.category === "random" && (isDivingQuestion(question) || isMedicalQuestion(question))) continue;
+      if (settings.category === "medicine" && (question.curriculumYear === undefined || question.curriculumYear > settings.medicalYear)) continue;
       unique.push(question);
     }
     if (unique.length) {
