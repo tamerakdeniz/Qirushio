@@ -4,9 +4,9 @@ import { CircleHelp } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 
-export function Brand({ compact = false }: { compact?: boolean }) {
+export function Brand({ compact = false, homeHref = "/" }: { compact?: boolean; homeHref?: string }) {
   return (
-    <Link href="/" className="flex items-center gap-2.5" aria-label="Qirushio home">
+    <Link href={homeHref} className="flex items-center gap-2.5" aria-label="Qirushio home">
       <Image
         src="/assets/logo.png"
         width={compact ? 38 : 48}
@@ -25,17 +25,19 @@ export function Brand({ compact = false }: { compact?: boolean }) {
 
 export function AppHeader({
   action,
+  homeHref = "/",
   compact = false,
   helpLabel = "Nasıl Oynanır?",
 }: {
   action?: React.ReactNode;
+  homeHref?: string;
   compact?: boolean;
   helpLabel?: string;
 }) {
   return (
     <header className="app-header sticky top-0 z-20 border-b backdrop-blur-xl">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 md:px-8">
-        <Brand compact={compact} />
+        <Brand compact={compact} homeHref={homeHref} />
         {action ?? (
           <button
             aria-label={helpLabel}

@@ -1,4 +1,5 @@
 import "server-only";
+import { medicalSubjectLabels, medicalSubjects, selectedMedicalYears } from "@/lib/medicine";
 import type { MedicalYear, RoomSettings } from "@/lib/types";
 
 // Game progression, not a claim that every Turkish faculty teaches topics in
@@ -14,14 +15,17 @@ const yearTopics: Record<MedicalYear, string> = {
 
 export function medicineQuestionContext(settings: RoomSettings): string | null {
   if (settings.mode !== "classic" || settings.category !== "medicine") return null;
-  const year = settings.medicalYear;
-  const included = Array.from({ length: year }, (_, index) => index + 1) as MedicalYear[];
+  const included = selectedMedicalYears(settings);
+  const subject = settings.medicalSubject ?? "mixed";
   return [
     "Category: Medicine. Audience: medical students studying in Turkey, in a friendly multiplayer quiz.",
-    `Selected medical year: ${year}. Eligible curriculum years: ${included.join(", ")}. This is a cumulative ceiling, not a generic easy/medium/hard setting.`,
-    "Only the following curriculum blocks are allowed:",
+    `Eligible curriculum years: ${included.join(", ")}. Use ONLY these selected years; do not include unselected earlier or later years.`,
+    `Difficulty: ${settings.difficulty}. Apply this within the selected curriculum: easy = direct recall, medium = connecting concepts, hard = multi-step reasoning. Hard must never introduce a higher, unselected year.`,
+    `Subject: ${medicalSubjectLabels.en[subject]}. ${subject === "mixed" ? "Mix disciplines within the selected years." : "Every question must focus on this subject at a selected year's level. Foundational concepts may be tested before clinical clerkships; do not introduce advanced management into preclinical years."}`,
+    `Include medicalSubject on every question using its subject ID (${subject === "mixed" ? medicalSubjects.filter((value) => value !== "mixed").join(", ") : subject}).`,
+    "Use the following curriculum levels. Topic examples are not an exhaustive list of subjects; the selected subject must be tested at the selected year level:",
     ...included.map((value) => `Year ${value}: ${yearTopics[value]}.`),
-    year === 1 ? "Every question must be curriculumYear 1." : "Mix selected-year topics with earlier eligible years. Include the selected year in every batch and put a selected-year question first. Do not let earlier-year trivia dominate. A short round need not contain every eligible year.",
+    included.length === 1 ? `Every question must be curriculumYear ${included[0]}.` : "Balance questions across the selected years. A short round need not contain every selected year.",
     "For each question include curriculumYear: an integer indicating the earliest eligible year whose knowledge is actually needed. Never label an advanced question as a lower year to pass the ceiling.",
     "Turkey context is fixed even when output language is English. Use familiar Turkish medical-school terms such as komite, staj and intörnlük only where useful; avoid university-specific exam customs or pretending this is a uniform official year-by-year curriculum.",
     "Make the game lively with short mechanism puzzles, lab clues, anatomy connections and (only at eligible clinical years) fictional mini-cases. Mix disciplines and formats. Use plausible distractors and a concise explanation with a memorable learning hook. Do not joke at patients' expense or invent facts for humor.",

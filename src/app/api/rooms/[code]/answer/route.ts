@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { after, NextResponse } from "next/server";
 import { ZodError } from "zod";
 
 import { answerSchema } from "@/lib/validation";
@@ -29,17 +29,14 @@ export async function POST(
       throw new Error(error.message);
     }
 
-    await notifyRoomChanged(room.id);
-    const { data: advanceResult, error: advanceError } = await admin.rpc("advance_game", {
+    const { error: advanceError } = await admin.rpc("advance_game", {
       p_room_id: room.id,
     });
     if (advanceError) {
       throw new Error(advanceError.message);
     }
-    const changed = Array.isArray(advanceResult) && advanceResult[0]?.changed;
-    if (changed) {
-      await notifyRoomChanged(room.id);
-    }
+    // One broadcast, after the transition, without delaying the answering player.
+    after(() => notifyRoomChanged(room.id));
 
     const result = Array.isArray(data) ? data[0] : data;
     return NextResponse.json({ accepted: result?.accepted ?? false });

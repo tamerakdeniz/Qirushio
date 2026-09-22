@@ -31,13 +31,13 @@ describe("medical year persistence through room APIs", () => {
       nickname: "Test", settings: { ...defaultRoomSettings, category: "medicine", medicalYear, difficulty: "hard" },
     }) }));
     expect(response.status).toBe(201);
-    expect(state.writes[0]).toMatchObject({ table: "rooms", values: { category: "medicine", medical_year: medicalYear, difficulty: "medium", scope: "local" } });
+    expect(state.writes[0]).toMatchObject({ table: "rooms", values: { category: "medicine", medical_year: medicalYear, difficulty: "hard", scope: "local" } });
   });
   it("saves a changed medical year in an existing lobby", async () => {
     const response = await PATCH(new Request("http://localhost/api/rooms/ABCDEF/settings", {
-      method: "PATCH", body: JSON.stringify({ ...defaultRoomSettings, category: "medicine", medicalYear: 5 }),
+      method: "PATCH", body: JSON.stringify({ ...defaultRoomSettings, category: "medicine", medicalYear: 3, medicalYears: [2, 3], medicalSubject: "physiology", difficulty: "easy" }),
     }), { params: Promise.resolve({ code: "ABCDEF" }) });
     expect(response.status).toBe(200);
-    expect(state.writes[0].values).toMatchObject({ category: "medicine", medical_year: 5 });
+    expect(state.writes[0].values).toMatchObject({ category: "medicine", medical_year: 3, medical_years: [2, 3], medical_subject: "physiology", difficulty: "easy" });
   });
 });

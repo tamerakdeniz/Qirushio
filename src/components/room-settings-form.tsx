@@ -27,13 +27,13 @@ import {
   languageLabels,
   medicalYears,
   medicalYearLabel,
-  medicalCoverageLabel,
   normalQuestionTimeOptions,
   questionPauseOptions,
   quizCategoriesByMode,
   scopeLabelsByLanguage,
   speedrunQuestionTimeOptions,
 } from "@/lib/constants";
+import { medicalSelectionLabel, medicalSubjectLabels, medicalSubjectGroups, selectedMedicalYears } from "@/lib/medicine";
 import { settingsCopy } from "@/lib/i18n";
 import type { QuestionPauseSeconds, QuizCategory, QuizLanguage, RoomSettings } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -81,6 +81,8 @@ function normalizeInitialSettings(initial: RoomSettings): RoomSettings {
     ...initial,
     mode,
     medicalYear: initial.medicalYear ?? 1,
+    medicalYears: selectedMedicalYears(initial),
+    medicalSubject: initial.medicalSubject ?? "mixed",
     category: categories.some((category) => category === initial.category) ? initial.category : categories[0],
   };
 }
@@ -125,7 +127,8 @@ export function RoomSettingsForm({
   const difficultyLabels = difficultyLabelsByLanguage[locale];
   const scopeLabels = scopeLabelsByLanguage[locale];
   const timeOptions = questionTimeOptions(settings.speedrunMode);
-  const categoryOptions = quizCategoriesByMode[settings.mode];
+  const isMedicine = initial.category === "medicine";
+  const categoryOptions = quizCategoriesByMode[settings.mode].filter((category) => category !== "medicine");
 
   function update<K extends keyof RoomSettings>(key: K, value: RoomSettings[K]) {
     setSettings((previous) => ({ ...previous, [key]: value }));
@@ -145,7 +148,7 @@ export function RoomSettingsForm({
       onSubmit={(event) => {
         event.preventDefault();
         void onSubmit(settings.category === "medicine"
-          ? { ...settings, difficulty: "medium", scope: "local" }
+          ? { ...settings, scope: "local" }
           : settings);
       }}
     >
@@ -170,7 +173,7 @@ export function RoomSettingsForm({
         </div>
       </div>
 
-      <div>
+      {!isMedicine && <div>
         <p className="mb-2 text-sm font-bold">{copy.category}</p>
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
           {categoryOptions.map((category) => {
@@ -194,9 +197,9 @@ export function RoomSettingsForm({
             );
           })}
         </div>
-      </div>
+      </div>}
 
-      {settings.category === "medicine" ? (
+      {isMedicine && (
         <fieldset className="rounded-xl border-2 border-primary/20 bg-primary/5 p-4">
           <legend className="px-2 text-sm font-bold">{copy.medicalYear}</legend>
           <div className="grid grid-cols-3 gap-2 sm:grid-cols-6">
@@ -204,11 +207,17 @@ export function RoomSettingsForm({
               <button
                 key={year}
                 type="button"
-                aria-pressed={settings.medicalYear === year}
-                onClick={() => update("medicalYear", year)}
+                aria-pressed={settings.medicalYears?.includes(year)}
+                onClick={() => setSettings((previous) => {
+                  const selected = selectedMedicalYears(previous);
+                  const next = selected.includes(year) ? selected.filter((value) => value !== year) : [...selected, year];
+                  if (next.length === 0) return previous;
+                  next.sort((a, b) => a - b);
+                  return { ...previous, medicalYears: next, medicalYear: next[next.length - 1] };
+                })}
                 className={cn(
                   "rounded-lg border-2 px-2 py-3 text-sm font-bold",
-                  settings.medicalYear === year
+                  settings.medicalYears?.includes(year)
                     ? "border-primary bg-primary text-white shadow-sm"
                     : "border-[var(--outline)] bg-[var(--surface-raised)] text-muted",
                 )}
@@ -218,11 +227,23 @@ export function RoomSettingsForm({
             ))}
           </div>
           <p className="mt-3 text-sm font-semibold text-primary-deep" aria-live="polite">
-            {medicalCoverageLabel(settings.medicalYear, locale)}
+            {medicalSelectionLabel(settings, locale)}
           </p>
-          <p className="mt-1 text-xs text-muted">{copy.medicalHint}</p>
+          <p className="mt-1 text-xs text-muted">{locale === "tr" ? "Bir veya birden fazla sınıf seçebilirsin. İşaretlemediğin sınıflar dahil edilmez; en az bir sınıf seçili kalır." : "Select one or more years. Unselected years are excluded; keep at least one selected."}</p>
+          <label className="mt-5 block text-sm font-bold">
+            {locale === "tr" ? "Ders" : "Subject"}
+            <select className="form-input mt-2" value={settings.medicalSubject ?? "mixed"}
+              onChange={(event) => update("medicalSubject", event.target.value as RoomSettings["medicalSubject"])}>
+              <option value="mixed">{medicalSubjectLabels[locale].mixed}</option>
+              {medicalSubjectGroups.map((group) => (
+                <optgroup key={group.id} label={group.label[locale]}>
+                  {group.subjects.map((subject) => <option key={subject} value={subject}>{medicalSubjectLabels[locale][subject]}</option>)}
+                </optgroup>
+              ))}
+            </select>
+          </label>
         </fieldset>
-      ) : (
+      )}
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
             <p className="mb-2 text-sm font-bold">{copy.difficulty}</p>
@@ -237,6 +258,7 @@ export function RoomSettingsForm({
                       ? "bg-[var(--control-selected)] text-primary shadow-sm"
                       : "text-muted",
                   )}
+                  aria-pressed={settings.difficulty === difficulty}
                   onClick={() => update("difficulty", difficulty)}
                 >
                   {difficultyLabels[difficulty]}
@@ -244,7 +266,7 @@ export function RoomSettingsForm({
               ))}
             </div>
           </div>
-          <div>
+          {!isMedicine && <div>
             <p className="mb-2 text-sm font-bold">{copy.scope}</p>
             <div className="flex rounded-xl bg-[var(--control-track)] p-1">
               {(Object.keys(scopeLabels) as RoomSettings["scope"][]).map((scope) => (
@@ -263,9 +285,8 @@ export function RoomSettingsForm({
                 </button>
               ))}
             </div>
-          </div>
+          </div>}
         </div>
-      )}
 
       <div className="grid gap-4 sm:grid-cols-2">
         <label className="text-sm font-bold">

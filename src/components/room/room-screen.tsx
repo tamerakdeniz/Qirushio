@@ -38,10 +38,10 @@ import { apiRequest } from "@/lib/client-api";
 import {
   categoryLabelsByLanguage,
   difficultyLabelsByLanguage,
-  medicalCoverageLabel,
   modeLabelsByLanguage,
   scoringPauseSeconds,
 } from "@/lib/constants";
+import { medicalSelectionLabel, medicalSubjectLabels } from "@/lib/medicine";
 import { commonCopy, homeCopy, roomCopy } from "@/lib/i18n";
 import { getSupabaseBrowser } from "@/lib/supabase/browser";
 import {
@@ -77,7 +77,7 @@ export function RoomScreen({ code }: { code: string }) {
   const [working, setWorking] = useState<string | null>(null);
   const [selectedPending, setSelectedPending] = useState<number | null>(null);
   const [preferredLocale, setPreferredLocale] = useState<QuizLanguage>("tr");
-  const answerInFlightRef = useRef(false);
+  const advanceRequestedRef = useRef(false);
   const refreshRunnerRef = useRef<(() => Promise<void>) | null>(null);
   const [advanceTick, setAdvanceTick] = useState(0);
 
@@ -100,11 +100,18 @@ export function RoomScreen({ code }: { code: string }) {
         return;
       }
       try {
+        const advance = advanceRequestedRef.current;
+        advanceRequestedRef.current = false;
         const nextSnapshot = await apiRequest<RoomSnapshot>(
-          `/api/rooms/${encodeURIComponent(code)}/state`,
-          {},
+          `/api/rooms/${encodeURIComponent(code)}/${advance ? "advance" : "state"}`,
+          advance ? { method: "POST", body: "{}" } : {},
           session,
         );
+        // Keep timers aligned even if the device clock differs from the server.
+        if (nextSnapshot.room.phaseEndsAt) {
+          const remaining = Date.parse(nextSnapshot.room.phaseEndsAt) - Date.parse(nextSnapshot.serverNow);
+          nextSnapshot.room.phaseEndsAt = new Date(Date.now() + remaining).toISOString();
+        }
         if (!active) return;
         setSnapshot(nextSnapshot);
         const currentQuestionId = nextSnapshot.question?.id;
@@ -197,7 +204,7 @@ export function RoomScreen({ code }: { code: string }) {
   );
 
   useEffect(() => {
-    if (!session || !snapshot || snapshot.room.phase !== "question" || !snapshot.question) {
+    if (!session || snapshot?.room.phase !== "question" || !snapshot?.question?.id) {
       return;
     }
 
@@ -207,7 +214,7 @@ export function RoomScreen({ code }: { code: string }) {
       return;
     }
 
-    void syncPendingAnswers(stale);
+    void syncPendingAnswers(stale).catch(() => { /* Retain buffered answers for the next refresh. */ });
   }, [code, session, snapshot?.question?.id, snapshot?.room.phase, syncPendingAnswers]);
 
   useEffect(() => {
@@ -215,39 +222,23 @@ export function RoomScreen({ code }: { code: string }) {
       return;
     }
 
-    const waitingForAnswer =
-      snapshot.room.phase === "question" &&
-      snapshot.question &&
-      !snapshot.myAnswer &&
-      answerInFlightRef.current;
+    if (!["countdown", "question", "transition", "scoring"].includes(snapshot.room.phase)) return;
 
-    if (waitingForAnswer) {
-      const retry = window.setTimeout(() => setAdvanceTick((tick) => tick + 1), 250);
-      return () => window.clearTimeout(retry);
-    }
-
-    const delay = Math.max(0, new Date(snapshot.room.phaseEndsAt).getTime() - Date.now() + 150);
+    const delay = Math.max(0, Date.parse(snapshot.room.phaseEndsAt) - Date.now() + 30);
+    let cancelled = false;
+    let retry: ReturnType<typeof setTimeout> | undefined;
     const timer = window.setTimeout(async () => {
-      try {
-        await apiRequest(
-          `/api/rooms/${encodeURIComponent(code)}/advance`,
-          { method: "POST", body: "{}" },
-          session,
-        );
-        await refresh();
-      } catch {
-        await refresh();
-      }
+      advanceRequestedRef.current = true;
+      await refresh();
+      // A failed request or an early timer must not wait for the polling interval.
+      if (!cancelled) retry = setTimeout(() => setAdvanceTick((tick) => tick + 1), 500);
     }, delay);
-    return () => window.clearTimeout(timer);
+    return () => { cancelled = true; window.clearTimeout(timer); if (retry) clearTimeout(retry); };
   }, [
     advanceTick,
     code,
     refresh,
-    selectedPending,
     session,
-    snapshot?.myAnswer,
-    snapshot?.question,
     snapshot?.room.phase,
     snapshot?.room.phaseEndsAt,
   ]);
@@ -276,7 +267,6 @@ export function RoomScreen({ code }: { code: string }) {
     );
     upsertPendingAnswer(code, { questionId, selectedOption, timeRemainingMs });
     setSelectedPending(selectedOption);
-    answerInFlightRef.current = true;
     setWorking("answer");
     setError(null);
     try {
@@ -293,7 +283,6 @@ export function RoomScreen({ code }: { code: string }) {
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : "İşlem tamamlanamadı.");
     } finally {
-      answerInFlightRef.current = false;
       setWorking(null);
       setAdvanceTick((tick) => tick + 1);
     }
@@ -301,7 +290,7 @@ export function RoomScreen({ code }: { code: string }) {
 
   const leaveRoom = useCallback(async () => {
     if (!session) {
-      router.push("/");
+      router.push(snapshot?.room.category === "medicine" ? "/med" : "/");
       return;
     }
     try {
@@ -314,8 +303,8 @@ export function RoomScreen({ code }: { code: string }) {
       // Oturum geçersiz olsa bile yerel kaydı temizleyip ana sayfaya dön.
     }
     removeRoomSession(code);
-    router.push("/");
-  }, [code, router, session]);
+    router.push(snapshot?.room.category === "medicine" ? "/med" : "/");
+  }, [code, router, session, snapshot?.room.category]);
 
   async function updateNickname(nickname: string): Promise<boolean> {
     if (!session) {
@@ -486,7 +475,7 @@ export function RoomScreen({ code }: { code: string }) {
     }
   })();
 
-  return <div className="min-h-screen">{content}</div>;
+  return <div className="min-h-screen" data-quiz-area={snapshot.room.category === "medicine" ? "medicine" : "classic"}>{content}</div>;
 }
 
 function captureTimeRemainingMs(phaseEndsAt: string | null, questionTimeSeconds: number): number {
@@ -821,6 +810,7 @@ function Lobby({
         </div>
       </Modal>
       <AppHeader
+        homeHref={room.category === "medicine" ? "/med" : "/"}
         compact
         action={
           <button type="button" className="ghost-button !min-h-10" onClick={() => void onHome()}>
@@ -964,7 +954,7 @@ function Lobby({
               </h2>
               {currentPlayer.isHost ? (
                 <RoomSettingsForm
-                  key={`${room.category}-${room.questionCount}-${room.questionTimeSeconds}-${room.questionPauseSeconds}-${room.speedrunMode}-${room.difficulty}-${room.medicalYear}-${room.maxPlayers}`}
+                  key={`${room.category}-${room.questionCount}-${room.questionTimeSeconds}-${room.questionPauseSeconds}-${room.speedrunMode}-${room.difficulty}-${room.medicalYear}-${room.medicalYears?.join(",")}-${room.medicalSubject}-${room.maxPlayers}`}
                   initial={room}
                   locale={locale}
                   submitLabel={copy.saveSettings}
@@ -1039,9 +1029,11 @@ function RoomSettingSummary({ locale, room }: { locale: QuizLanguage; room: Room
         [copy.maxPlayers, room.maxPlayers],
         [copy.questionPause, questionPauseSummaryLabel(copy, room.questionPauseSeconds)],
         ...(room.speedrunMode ? [[copy.speedrun, copy.speedrunOn] as const] : []),
-        room.category === "medicine"
-          ? [locale === "tr" ? "Sınıf Kapsamı" : "Year Coverage", medicalCoverageLabel(room.medicalYear, locale)]
-          : [copy.difficulty, difficultyLabels[room.difficulty]],
+        [copy.difficulty, difficultyLabels[room.difficulty]],
+        ...(room.category === "medicine" ? [
+          [locale === "tr" ? "Sınıf Kapsamı" : "Year Coverage", medicalSelectionLabel(room, locale)],
+          [locale === "tr" ? "Ders" : "Subject", medicalSubjectLabels[locale][room.medicalSubject ?? "mixed"]],
+        ] : []),
       ].map(([title, value]) => (
         <div key={title} className="soft-panel flex items-center justify-between px-4 py-3">
           <dt className="text-muted">{title}</dt>
@@ -1323,7 +1315,7 @@ function Results({
 
   return (
     <>
-      <AppHeader compact helpLabel={homeCopy[locale].howToPlay} />
+      <AppHeader compact homeHref={snapshot.room.category === "medicine" ? "/med" : "/"} helpLabel={homeCopy[locale].howToPlay} />
       <main className="mx-auto max-w-3xl px-4 py-7 text-center md:py-10">
         <h1 className="brand-gradient text-4xl font-extrabold">{copy.congratulations}</h1>
         <p className="mt-2 font-medium text-muted">{copy.ranking}</p>

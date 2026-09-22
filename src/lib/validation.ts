@@ -1,6 +1,9 @@
 import { z } from "zod";
+import { medicalSubjects, selectedMedicalYears } from "@/lib/medicine";
 
 import { classicQuizCategories, fortyTwoQuizCategories, isQuizModeEnabled } from "@/lib/constants";
+
+const medicalYearSchema = z.union([z.literal(1), z.literal(2), z.literal(3), z.literal(4), z.literal(5), z.literal(6)]);
 
 const quizModeValues = ["classic", "fortyTwo"] as const;
 const quizCategoryValues = [...classicQuizCategories, ...fortyTwoQuizCategories] as const;
@@ -18,7 +21,10 @@ export const roomSettingsSchema = z
     language: z.enum(["tr", "en"]),
     category: z.enum(quizCategoryValues),
     difficulty: z.enum(["easy", "medium", "hard"]),
-    medicalYear: z.union([z.literal(1), z.literal(2), z.literal(3), z.literal(4), z.literal(5), z.literal(6)]).default(1),
+    medicalYear: medicalYearSchema.default(1),
+    medicalYears: z.array(medicalYearSchema).min(1).max(6)
+      .refine((years) => new Set(years).size === years.length, "Sınıflar tekrarlanamaz.").optional(),
+    medicalSubject: z.enum(medicalSubjects).default("mixed"),
     scope: z.enum(["global", "local"]),
     questionCount: z.number().int().min(5).max(20),
     questionTimeSeconds: z.number().int().min(3).max(30),
@@ -61,7 +67,7 @@ export const roomSettingsSchema = z
     }
   })
   .transform((settings) => settings.category === "medicine"
-    ? { ...settings, difficulty: "medium" as const, scope: "local" as const }
+    ? { ...settings, medicalYears: selectedMedicalYears(settings).slice().sort((a, b) => a - b), scope: "local" as const }
     : settings);
 
 export const createRoomSchema = z.object({
@@ -101,6 +107,7 @@ export const answerSyncSchema = z.object({
 });
 
 export const generatedQuestionSchema = z.object({
+  medicalSubject: z.enum(medicalSubjects).optional(),
   curriculumYear: z.union([z.literal(1), z.literal(2), z.literal(3), z.literal(4), z.literal(5), z.literal(6)]).optional(),
   knowledgeKey: z.string().trim().min(5).max(240),
   category: z.string().trim().min(1).max(60),

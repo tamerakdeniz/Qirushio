@@ -126,6 +126,40 @@ body::after {
   }
 }
 
+/* Route-scoped decoration also follows medical rooms, without persisting on /.
+   A DOM marker avoids a client effect and a flash of the classic background. */
+body:has([data-quiz-area="medicine"]) {
+  --panel-border: rgba(115, 170, 235, 0.3);
+  --soft-border: rgba(115, 170, 235, 0.22);
+  --panel-shadow: 0 18px 44px rgba(0, 0, 0, 0.26), 0 4px 24px rgba(57, 137, 255, 0.12);
+}
+
+body:has([data-quiz-area="medicine"])::before {
+  background-image: url("/assets/background-medicine.webp");
+  background-position: 18% center;
+}
+
+body:has([data-quiz-area="medicine"])::after {
+  background: linear-gradient(180deg, rgba(4, 8, 18, 0.28), rgba(4, 8, 18, 0.54));
+  backdrop-filter: none;
+}
+
+:root[data-theme="light"] body:has([data-quiz-area="medicine"]) {
+  --panel-border: rgba(75, 135, 210, 0.28);
+  --soft-border: rgba(75, 135, 210, 0.22);
+  --panel-shadow: 0 14px 36px rgba(0, 88, 190, 0.1), 0 5px 18px rgba(159, 66, 0, 0.06);
+}
+
+:root[data-theme="light"] body:has([data-quiz-area="medicine"])::after {
+  background: linear-gradient(110deg, rgba(247, 249, 251, 0.74), rgba(247, 249, 251, 0.84));
+}
+
+@media (min-width: 768px) {
+  body:has([data-quiz-area="medicine"])::before {
+    background-position: center;
+  }
+}
+
 button,
 a,
 input,

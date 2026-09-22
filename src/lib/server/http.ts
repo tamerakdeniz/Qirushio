@@ -16,6 +16,8 @@ interface RoomRow {
   category: RoomView["category"];
   difficulty: RoomView["difficulty"];
   medical_year?: RoomView["medicalYear"];
+  medical_years?: RoomView["medicalYears"] | null;
+  medical_subject?: RoomView["medicalSubject"] | null;
   scope: RoomView["scope"];
   question_count: number;
   question_time_seconds: number;
@@ -66,6 +68,8 @@ export function mapRoom(row: RoomRow): RoomView {
     category: row.category,
     difficulty: row.difficulty,
     medicalYear: row.medical_year ?? 1,
+    medicalYears: row.medical_years ?? undefined,
+    medicalSubject: row.medical_subject ?? "mixed",
     scope: row.scope,
     questionCount: row.question_count,
     questionTimeSeconds: row.question_time_seconds,
@@ -95,7 +99,7 @@ export async function findRoom(code: string): Promise<RoomView> {
   const readRoom = () => admin
     .from("rooms")
     .select(
-      "id, code, phase, host_player_id, mode, language, category, difficulty, medical_year, scope, question_count, question_time_seconds, speedrun_mode, question_pause_ms, is_public, max_players, round_number, current_question_index, phase_ends_at, generation_error",
+      "id, code, phase, host_player_id, mode, language, category, difficulty, medical_year, medical_years, medical_subject, scope, question_count, question_time_seconds, speedrun_mode, question_pause_ms, is_public, max_players, round_number, current_question_index, phase_ends_at, generation_error",
     )
     .eq("code", code.toUpperCase())
     .maybeSingle<RoomRow>();

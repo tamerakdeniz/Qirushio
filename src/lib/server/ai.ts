@@ -1,3 +1,4 @@
+import { selectedMedicalYears } from "@/lib/medicine";
 import "server-only";
 
 import { randomUUID } from "node:crypto";
@@ -100,7 +101,7 @@ function promptForQuestions(settings: RoomSettings, context: PromptContext): str
       varietyInstructions,
       usedSection,
       "Return JSON only, without markdown:",
-      '[{"category":"Medicine / topic","curriculumYear":1,"prompt":"...","options":["...","...","...","...","..."],"correctOption":0,"explanation":"...","knowledgeKey":"subject|relationship|answer"}]',
+      '[{"category":"Medicine / topic","curriculumYear":1,"medicalSubject":"anatomy","prompt":"...","options":["...","...","...","...","..."],"correctOption":0,"explanation":"...","knowledgeKey":"subject|relationship|answer"}]',
       "Use the actual eligible curriculumYear for each question. correctOption is zero-based (0–4).",
     ].join("\n");
   }
@@ -400,7 +401,9 @@ async function generateUniqueQuestions(
       attemptedPrompts.push(question.prompt);
       if (duplicate) continue;
       if (settings.category === "random" && (isDivingQuestion(question) || isMedicalQuestion(question))) continue;
-      if (settings.category === "medicine" && (question.curriculumYear === undefined || question.curriculumYear > settings.medicalYear)) continue;
+      if (settings.category === "medicine" && (question.curriculumYear === undefined || !selectedMedicalYears(settings).includes(question.curriculumYear))) continue;
+      if (settings.category === "medicine" && settings.medicalSubject && settings.medicalSubject !== "mixed"
+        && question.medicalSubject !== settings.medicalSubject) continue;
       unique.push(question);
     }
     if (unique.length) {

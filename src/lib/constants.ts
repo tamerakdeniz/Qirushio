@@ -77,6 +77,16 @@ export const defaultRoomSettings: RoomSettings = {
   maxPlayers: 10,
 };
 
+export const defaultMedicalRoomSettings: RoomSettings = {
+  ...defaultRoomSettings,
+  category: "medicine",
+  medicalYear: 2,
+  medicalYears: [2],
+  medicalSubject: "mixed",
+  scope: "local",
+  questionTimeSeconds: 30,
+};
+
 export const defaultFortyTwoRoomSettings: RoomSettings = {
   ...defaultRoomSettings,
   mode: "fortyTwo",

@@ -106,8 +106,17 @@ describe("question generation", () => {
     expect(result).toEqual(valid);
     const prompt = JSON.parse(fetchMock.mock.calls[0][1].body).contents[0].parts[0].text;
     expect(prompt).toContain("Eligible curriculum years: 1, 2, 3.");
-    expect(prompt).not.toContain("Difficulty: hard");
+    expect(prompt).toContain("Difficulty: hard");
     expect(prompt).not.toContain("Year 4:");
+  });
+
+  it("rejects unselected earlier years and the wrong subject", async () => {
+    const valid = prompts.slice(0, 5).map((p, index) => ({ ...question(p), curriculumYear: (index % 2 + 2) as 2 | 3, medicalSubject: "physiology" as const }));
+    const earlier = { ...question(prompts[5]), curriculumYear: 1 as const, medicalSubject: "physiology" as const };
+    const wrongSubject = { ...question(prompts[6]), curriculumYear: 2 as const, medicalSubject: "anatomy" as const };
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(response([earlier, wrongSubject, ...valid])));
+    const result = await generateQuestions({ ...settings, category: "medicine", medicalYear: 3, medicalYears: [2, 3], medicalSubject: "physiology" });
+    expect(result).toEqual(valid);
   });
 
   it("fails closed when permanent history is unavailable", async () => {

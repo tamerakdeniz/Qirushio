@@ -16,6 +16,8 @@ const roomColumns = [
   "category",
   "difficulty",
   "medical_year",
+  "medical_years",
+  "medical_subject",
   "scope",
   "question_count",
   "question_time_seconds",
@@ -27,7 +29,7 @@ const roomColumns = [
   "phase_ends_at",
   "generation_error",
 ] as const;
-const legacyRoomColumns = roomColumns.filter((column) => column !== "mode" && column !== "medical_year");
+const legacyRoomColumns = roomColumns.filter((column) => column !== "mode" && !column.startsWith("medical_"));
 
 const playerEmbed = "players!players_room_id_fkey(nickname, is_host)";
 
@@ -38,7 +40,7 @@ type ListedRoomRow = Parameters<typeof mapRoom>[0] & {
 };
 
 function isListingSchemaDrift(message: string): boolean {
-  return /last_active_at|question_pause_ms|medical_year|mode|schema cache|relationship|players_room_id_fkey/i.test(
+  return /last_active_at|question_pause_ms|medical_year|medical_subject|mode|schema cache|relationship|players_room_id_fkey/i.test(
     message,
   );
 }
@@ -55,6 +57,8 @@ function mapListedRooms(rows: ListedRoomRow[]): RoomSummary[] {
         category: room.category,
         difficulty: room.difficulty,
         medicalYear: room.medicalYear,
+        medicalYears: room.medicalYears,
+        medicalSubject: room.medicalSubject,
         scope: room.scope,
         questionCount: room.questionCount,
         questionTimeSeconds: room.questionTimeSeconds,

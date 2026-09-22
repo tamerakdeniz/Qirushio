@@ -10,5 +10,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
       changeFrequency: "weekly",
       priority: 1,
     },
+    { url: absoluteUrl("/med"), changeFrequency: "weekly", priority: 0.8 },
   ];
 }

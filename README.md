@@ -81,15 +81,22 @@ Skor hesabı server-side çalışır:
 score = isCorrect ? Math.floor(remainingTimeMs / 1000) * 10 : 0;
 ```
 
-## Tıp kategorisi
+## Tıp modu
 
-Tıp ayrı seçilir; rastgele havuzuna dahil değildir. Kolay/orta/zor yerine **1–6. sınıf** seçilir. N. sınıf, 1’den N’ye kadar konuları kapsar; yıl bilgisi oda ayarlarında kalıcıdır ve oda listesi/özetinde gösterilir. Genel zorluk ve kapsam, tıp sorusu üretiminde kullanılmaz. Model her sorunun `curriculumYear` bilgisini üretir; eksik veya seçilen sınıfı aşan adaylar sunucuda elenir. İçeriğin gerçek akademik düzeyi modelin doğru sınıflandırmasına bağlıdır.
+Ana sayfadaki **Tıp moduna geç** bağlantısı `/med` arayüzünü açar. Tıp, klasik oda oluşturma kategorilerinde yer almaz; kendi ekranında sınıf, ders, zorluk ve oda ayarları sunulur. Açık oda listesi de bu alan için tıp odalarını gösterir.
 
-Oyunun konu dağılımı: 1. sınıfta hücre/temel bilimler; 2’de normal yapı ve işlev; 3’te patoloji, mikrobiyoloji ve farmakoloji temelleri; 4’te ana klinik stajlar; 5’te uzmanlık stajları; 6’da intörnlük düzeyinde bütünleştirme. Her fakültenin birebir yıl müfredatı olduğu iddia edilmez. Eğlenceli kısa sorular, mekanizma bulmacaları ve uygun sınıflarda özgün kurgu vakalar kullanılır; gerçek sınav soruları kopyalanmaz.
+1–6. sınıflar tek tek veya birlikte seçilir: yalnızca 2, yalnızca 3, yalnızca 2 ve 3 gibi. Seçilmeyen önceki sınıflar dahil edilmez. `medical_years` ve `medical_subject` oda oluşturma, lobi düzenleme, oda özeti ve soru üretimi boyunca korunur. Eski odaların `medical_years` alanı null ise önceki kümülatif kapsam korunur. Kolay/orta/zor seçimi, seçilen sınıf kapsamı içinde uygulanır. Türkiye bağlamı sabittir; soru dili Türkçe veya İngilizce olabilir.
 
-Genel eğitim çerçevesi için [YÖK UÇEP](https://www.yok.gov.tr/kurumsal/idari-birimler/egitim-ogretim-dairesi/ulusal-cekirdek-egitimi-programlari), [Hacettepe](https://halksagligi.hacettepe.edu.tr/eng/egitim/lisans.php) ve [İstanbul Medeniyet](https://tip.medeniyet.edu.tr/tr/egitim/lisans) esas alındı; sınıf konu blokları oyunun pedagojik seçimidir. Tıp üretimi Gemini veya Anthropic anahtarı gerektirir; genel demo sorularına düşmez.
+Modelin döndürdüğü `curriculumYear` seçili değilse veya belirli bir ders seçilmişken `medicalSubject` uyuşmuyorsa aday elenir. İçeriğin gerçek akademik düzeyi modelin doğru sınıflandırmasına bağlıdır. Sorular eğitim/tekrar amaçlıdır; sınıf konu dağılımı fakülteler arasında farklılık gösterebilir. Tıp soruları rastgele havuzuna dahil edilmez ve Gemini veya Anthropic anahtarı gerektirir.
 
-Deploy öncesi `0015_medicine_category.sql` uygulanmalıdır.
+Genel eğitim çerçevesi için [YÖK UÇEP](https://www.yok.gov.tr/kurumsal/idari-birimler/egitim-ogretim-dairesi/ulusal-cekirdek-egitimi-programlari), [Hacettepe](https://halksagligi.hacettepe.edu.tr/eng/egitim/lisans.php) ve [İstanbul Medeniyet](https://tip.medeniyet.edu.tr/tr/egitim/lisans) esas alındı; sınıf konu blokları oyunun pedagojik seçimidir.
+
+Deploy öncesi `0015_medicine_category.sql`, `0016_medical_filters.sql` ve `0017_medical_subject_catalog.sql` uygulanmalıdır.
+
+## Soru geçişleri
+
+`POST /advance` güncel `RoomSnapshot` döndürür; istemci ayrıca `GET /state` beklemez. Geçişler ve normal durum okumaları aynı birleştirilmiş istek kuyruğunu kullanır. Oyuncu ve soru okumaları paraleldir. Cevaptan sonra tek bildirim, ilerletme tamamlandıktan sonra `after()` ile gönderilir. Zamanlayıcılar sunucu saatine göre düzeltilir; geçici hatalarda geçiş 500 ms sonra tekrar denenir.
+
 
 ## Kalıcı tekrar önleme
 
@@ -129,3 +136,9 @@ Teslim edilen görsellerin kaynak dosyalarında yön adları ters olduğu için 
 - `public/assets/logo.png` ve `public/favicon.ico`: marka asset'leri
 
 Orijinal referans ekranları ve HTML tasarımları `c&c-design/` klasöründe korunur.
+
+### Tıp ders kataloğu ve görsel tema
+
+Ders seçimi 55 tıbbi alanı dört grupta sunar: temel, dahili, cerrahi ve toplum sağlığı/hekimlik uygulamaları. Katalog [Hacettepe eğitim kapsamı](https://tip.hacettepe.edu.tr/tr/sss), [Dönem IV–VI staj rehberleri](https://tip.hacettepe.edu.tr/tr/staj_rehberi-35) ve [Ankara ders kataloğu](https://www.medicine.ankara.edu.tr/dersler-ve-kredileri/) ile karşılaştırılmıştır. Fakülteye özgü seçmeliler ve genel üniversite ortak dersleri, bu tıp konu kataloğuyla birebir eşdeğer değildir.
+
+`/med` ve tıp odaları `background-medicine.webp` kullanır; renk paleti korunur. Görsel yerleşik image_gen aracıyla üretilmiş, WebP olarak yaklaşık 90 KB'a sıkıştırılmıştır. Üretim istemi `docs/medical-background-prompt.md` dosyasındadır.

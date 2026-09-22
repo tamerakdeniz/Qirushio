@@ -1,0 +1,5 @@
+# Medical background
+
+Mode: built-in image_gen. Output: `public/assets/background-medicine.webp`.
+
+Use case: stylized-concept. Asset type: decorative full-screen background for a medical-student quiz web app, not a UI mockup. Create a polished wide 1536x1024 illustration, premium playful 3D objects with soft matte surfaces: recognizable stethoscope, DNA double helix, microscope, small anatomical heart model, molecular structures and a subtle ECG trace. Arrange these around the outer edges with generous calm negative space through the center for UI cards. Palette: deep midnight navy #070d19, royal blue #3989ff, warm orange #ff7e33, restrained pale blue highlights. Moody soft studio lighting, tasteful depth, sparse balanced composition, crisp silhouettes. Suitable behind translucent dark or light cards. No text, no letters, no logos, no watermark, no people, no gore. Make medical objects large enough to be recognizable, avoid tiny visual clutter. Return a saved local image artifact for integration into the website.

@@ -1,3 +1,5 @@
+import type { MedicalSubject } from "@/lib/medicine";
+
 export type RoomPhase =
   | "lobby"
   | "generating"
@@ -44,6 +46,8 @@ export interface RoomSettings {
   category: QuizCategory;
   difficulty: QuizDifficulty;
   medicalYear: MedicalYear;
+  medicalYears?: MedicalYear[];
+  medicalSubject?: MedicalSubject;
   scope: QuizScope;
   questionCount: number;
   questionTimeSeconds: number;
@@ -118,6 +122,7 @@ export interface RoomSession {
 
 export interface GeneratedQuestion {
   curriculumYear?: MedicalYear;
+  medicalSubject?: MedicalSubject;
   knowledgeKey?: string;
   category: string;
   prompt: string;
