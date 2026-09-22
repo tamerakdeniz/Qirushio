@@ -173,9 +173,12 @@ export function isDivingQuestion(question: GeneratedQuestion): boolean {
   return /\b(scuba|diving|diver|divers|dive|dalis\w*|dalic\w*|padi|cmas|nitrox|decompression|dekompresyon)\b/u.test(text);
 }
 
-function similarPrompts(left: string, right: string): boolean {
-  const a = new Set(normalizeQuestionPrompt(left).split(" "));
-  const b = new Set(normalizeQuestionPrompt(right).split(" "));
+function similarQuestions(left: GeneratedQuestion, right: GeneratedQuestion): boolean {
+  if (normalizeQuestionPrompt(left.options[left.correctOption]) !== normalizeQuestionPrompt(right.options[right.correctOption])) {
+    return false;
+  }
+  const a = new Set(normalizeQuestionPrompt(left.prompt).split(" "));
+  const b = new Set(normalizeQuestionPrompt(right.prompt).split(" "));
   const shared = [...a].filter((word) => b.has(word)).length;
   return shared / Math.max(a.size, b.size) >= 0.8;
 }
@@ -364,7 +367,7 @@ async function generateUniqueQuestions(
       const key = question.knowledgeKey ? normalizeQuestionPrompt(question.knowledgeKey) : null;
       const duplicate = isDuplicate(question.prompt, seen)
         || (key !== null && seenKeys.has(key))
-        || [...result, ...unique].some((previous) => similarPrompts(previous.prompt, question.prompt));
+        || [...result, ...unique].some((previous) => similarQuestions(previous, question));
       seen.add(normalizeQuestionPrompt(question.prompt));
       if (key) seenKeys.add(key);
       attemptedPrompts.push(question.prompt);

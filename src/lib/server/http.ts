@@ -89,13 +89,24 @@ export function mapPlayer(row: PlayerRow): PlayerView {
 }
 
 export async function findRoom(code: string): Promise<RoomView> {
-  const { data, error } = await getSupabaseAdmin()
+  const admin = getSupabaseAdmin();
+  const readRoom = () => admin
     .from("rooms")
     .select(
       "id, code, phase, host_player_id, mode, language, category, difficulty, scope, question_count, question_time_seconds, speedrun_mode, question_pause_ms, is_public, max_players, round_number, current_question_index, phase_ends_at, generation_error",
     )
     .eq("code", code.toUpperCase())
     .maybeSingle<RoomRow>();
+  let { data, error } = await readRoom();
+
+  if (!error && data?.phase === "generating" && data.phase_ends_at
+    && Date.parse(data.phase_ends_at) <= Date.now()) {
+    // Conditional DB update cannot cancel a newer round or a completed publish.
+    const recovery = await admin.rpc("recover_expired_generation", { p_room_id: data.id });
+    if (recovery.error) throw new Error(recovery.error.message);
+    // Re-read even if recovery lost a race with publication/another client.
+    ({ data, error } = await readRoom());
+  }
 
   if (error) {
     throw new Error(error.message);

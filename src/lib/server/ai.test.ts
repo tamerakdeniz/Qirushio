@@ -75,6 +75,19 @@ describe("question generation", () => {
     expect(result.filter((q) => q.knowledgeKey === "turkey|capital|ankara")).toHaveLength(1);
   });
 
+  it("keeps similar templates when they test different facts", async () => {
+    const france = question("What is the capital of France?", "france|capital|paris");
+    france.options[0] = "Paris";
+    const italy = question("What is the capital of Italy?", "italy|capital|rome");
+    italy.options[0] = "Rome";
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(response([
+      france, italy, ...prompts.slice(0, 5).map((p) => question(p)),
+    ])));
+    const result = await generateQuestions(settings);
+    expect(result).toContainEqual(france);
+    expect(result).toContainEqual(italy);
+  });
+
   it("fails closed when permanent history is unavailable", async () => {
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue(response(prompts.slice(0, 7).map((p) => question(p)))));
     await expect(generateQuestions(settings, [], async () => { throw new Error("history unavailable"); })).rejects.toThrow("history unavailable");

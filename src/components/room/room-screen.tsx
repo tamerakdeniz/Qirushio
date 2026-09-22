@@ -33,6 +33,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { AppHeader } from "@/components/brand";
 import { RoomSettingsForm } from "@/components/room-settings-form";
 import { ErrorNotice, Modal, Spinner } from "@/components/ui";
+import { createCoalescedTask } from "@/lib/coalesced-task";
 import { apiRequest } from "@/lib/client-api";
 import {
   categoryLabelsByLanguage,
@@ -76,6 +77,7 @@ export function RoomScreen({ code }: { code: string }) {
   const [selectedPending, setSelectedPending] = useState<number | null>(null);
   const [preferredLocale, setPreferredLocale] = useState<QuizLanguage>("tr");
   const answerInFlightRef = useRef(false);
+  const refreshRunnerRef = useRef<(() => Promise<void>) | null>(null);
   const [advanceTick, setAdvanceTick] = useState(0);
 
   useEffect(() => {
@@ -88,41 +90,52 @@ export function RoomScreen({ code }: { code: string }) {
   const locale = snapshot?.room.language ?? preferredLocale;
   const copy = roomCopy[locale];
 
-  const refresh = useCallback(async () => {
-    if (!session) {
-      return;
-    }
-    try {
-      const nextSnapshot = await apiRequest<RoomSnapshot>(
-        `/api/rooms/${encodeURIComponent(code)}/state`,
-        {},
-        session,
-      );
-      setSnapshot(nextSnapshot);
-      const currentQuestionId = nextSnapshot.question?.id;
-      const pending = currentQuestionId
-        ? readPendingAnswers(code).find((item) => item.questionId === currentQuestionId)
-        : null;
-      if (nextSnapshot.myAnswer) {
-        if (currentQuestionId) {
-          removePendingAnswer(code, currentQuestionId);
+  const refresh = useCallback(() => refreshRunnerRef.current?.() ?? Promise.resolve(), []);
+
+  useEffect(() => {
+    let active = true;
+    refreshRunnerRef.current = createCoalescedTask(async () => {
+      if (!active || !session) {
+        return;
+      }
+      try {
+        const nextSnapshot = await apiRequest<RoomSnapshot>(
+          `/api/rooms/${encodeURIComponent(code)}/state`,
+          {},
+          session,
+        );
+        if (!active) return;
+        setSnapshot(nextSnapshot);
+        const currentQuestionId = nextSnapshot.question?.id;
+        const pending = currentQuestionId
+          ? readPendingAnswers(code).find((item) => item.questionId === currentQuestionId)
+          : null;
+        if (nextSnapshot.myAnswer) {
+          if (currentQuestionId) {
+            removePendingAnswer(code, currentQuestionId);
+          }
+          setSelectedPending(null);
+        } else if (pending) {
+          setSelectedPending(pending.selectedOption);
+        } else {
+          setSelectedPending(null);
         }
-        setSelectedPending(null);
-      } else if (pending) {
-        setSelectedPending(pending.selectedOption);
-      } else {
-        setSelectedPending(null);
+        setError(null);
+      } catch (reason) {
+        if (!active) return;
+        const message = reason instanceof Error ? reason.message : "Oda güncellenemedi.";
+        if (message.includes("oturumu") || message.includes("katılın")) {
+          removeRoomSession(code);
+          setSession(null);
+          setSnapshot(null);
+        }
+        setError(message);
       }
-      setError(null);
-    } catch (reason) {
-      const message = reason instanceof Error ? reason.message : "Oda güncellenemedi.";
-      if (message.includes("oturumu") || message.includes("katılın")) {
-        removeRoomSession(code);
-        setSession(null);
-        setSnapshot(null);
-      }
-      setError(message);
-    }
+    });
+    return () => {
+      active = false;
+      refreshRunnerRef.current = null;
+    };
   }, [code, session]);
 
   useEffect(() => {

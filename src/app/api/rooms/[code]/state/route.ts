@@ -63,21 +63,25 @@ export async function GET(
       }
       question = data;
 
-      const { count } = await admin
-        .from("answers")
-        .select("id", { count: "exact", head: true })
-        .eq("question_id", data.id);
-      answeredCount = count ?? 0;
-
-      if (authorized) {
-        const { data: answer } = await admin
+      const [countResult, answerResult] = await Promise.all([
+        admin
           .from("answers")
-          .select("selected_option")
-          .eq("question_id", data.id)
-          .eq("player_id", authorized.player.id)
-          .maybeSingle<{ selected_option: number }>();
-        myAnswer = answer ? { selectedOption: answer.selected_option } : null;
+          .select("id", { count: "exact", head: true })
+          .eq("question_id", data.id),
+        authorized
+          ? admin
+              .from("answers")
+              .select("selected_option")
+              .eq("question_id", data.id)
+              .eq("player_id", authorized.player.id)
+              .maybeSingle<{ selected_option: number }>()
+          : Promise.resolve({ data: null, error: null }),
+      ]);
+      if (countResult.error || answerResult.error) {
+        throw new Error(countResult.error?.message ?? answerResult.error?.message);
       }
+      answeredCount = countResult.count ?? 0;
+      myAnswer = answerResult.data ? { selectedOption: answerResult.data.selected_option } : null;
     }
 
     if (room.phase === "finished" && authorized) {

@@ -82,6 +82,21 @@ begin
 end;
 $$;
 
+-- Generation timeout survives process death and ignores unrelated room activity.
+update public.rooms set phase = 'generating', round_number = 2 where code = 'TESTAB';
+select pg_temp.assert_true((select phase_ends_at > clock_timestamp() + interval '110 seconds' from public.rooms where code = 'TESTAB'), 'generation deadline installed');
+select pg_temp.assert_true(not public.recover_expired_generation('00000000-0000-0000-0000-000000000002'), 'active generation preserved');
+update public.rooms set phase_ends_at = clock_timestamp() - interval '1 second' where code = 'TESTAB';
+select pg_temp.assert_true(public.recover_expired_generation('00000000-0000-0000-0000-000000000002'), 'stuck generation recovered');
+select pg_temp.assert_true((select phase = 'lobby' and generation_error is not null from public.rooms where code = 'TESTAB'), 'recovered room playable');
+update public.rooms set phase = 'generating', round_number = 3 where code = 'TESTAB';
+select pg_temp.assert_true(not public.recover_expired_generation('00000000-0000-0000-0000-000000000002'), 'new round cannot be cancelled by stale recovery');
+
+insert into public.questions (room_id, round_number, position, category, prompt, options, correct_option, explanation, knowledge_key)
+values ('00000000-0000-0000-0000-000000000002', 3, 0, 'General', 'What is the capital city of France?', '["Paris","B","C","D","E"]', 0, 'The capital is Paris.', 'france|capital|paris');
+select pg_temp.assert_true(not public.is_known_question('What is the capital city of Italy?', 'Rome', 'italy|capital|rome'), 'similar template with different answer is allowed');
+select pg_temp.assert_true(public.is_known_question('What is the capital city of France?', 'Lyon', 'unreliable key'), 'identical prompt blocked even with a changed answer');
+
 -- RLS and RPC permissions must not expose question memory to browsers.
 select pg_temp.assert_true(not has_table_privilege('anon', 'public.question_history', 'SELECT'), 'anonymous history access denied');
 select pg_temp.assert_true(not has_function_privilege('authenticated', 'public.publish_generated_round(uuid,integer,jsonb)', 'EXECUTE'), 'browser publication denied');
