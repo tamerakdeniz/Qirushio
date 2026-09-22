@@ -14,13 +14,13 @@ Arkadaşlarla link veya kısa oda kodu üzerinden oynanan, her turda AI tarafın
 - Local storage üzerinde saklanan takma ad ve oda bazlı güvenli oyuncu oturumu
 - Oda oluşturma, kodla katılma ve katılıma açık lobi listesi
 - Türkçe/İngilizce arayüz ve oda bazlı soru dili seçimi
-- Host ayarları: tüm kategorilere yayılan rastgele soru havuzu dahil kategori, zorluk, kapsam, soru sayısı, süre ve açık/gizli oda
+- Host ayarları: genel kültür, bilim, spor, sanat ve tarihten oluşan rastgele havuz dahil (scuba hariç) kategori, zorluk, kapsam, soru sayısı, süre ve açık/gizli oda
 - Kalıcı açık/koyu tema seçimi, responsive arka plan görselleri ve koyu temada okunabilirliği koruyan karartma katmanı
 - Lobi hazır durumu, bağlantı paylaşımı ve Presence ile çevrimiçi göstergesi
 - AI hazırlık ekranı, 10 saniyelik oyun başlangıcı ve sorular arası 3 saniyelik geçiş
 - Beş seçenekli kilitlenen cevap akışı ve herkes cevapladığında erken ilerleme
 - Leaderboard, tekrar oynama, lobiye dönüş ve kişisel cevap analizi
-- Dört saatlik oda TTL'i; silinen oda ile birlikte oyuncular, sorular ve yanıtlar cascade silinir
+- Son aktiviteden itibaren bir günlük oda TTL'i; oyun verileri temizlenirken kalıcı soru geçmişi korunur
 
 ## Yerel Kurulum
 
@@ -65,19 +65,29 @@ Tüm kalıcı veri erişimi Next.js API route'larında service role ile yapılı
 - `player_sessions`: browser'a verilen rastgele token'ın SHA-256 özeti; RLS ile istemciye kapalı.
 - `questions`: o tura ait AI soruları ve doğru cevapları; istemciye oyun bitene kadar doğru seçenek dönmez.
 - `answers`: oyuncu yanıtı, kalan süre ve hesaplanan puan.
+- `question_history`: oda ve oyuncudan bağımsız, süresiz soru hafızası; normalize metin, doğru cevap ve bilgi anahtarı içerir. Browser erişimine kapalıdır.
 
 Önemli oyun işlemleri PostgreSQL RPC üzerinde atomiktir:
 
-- `begin_round`: eski tur verisini siler, puanları sıfırlar ve AI üretim fazını başlatır.
+- `begin_round`: puanları sıfırlar ve yeni turun AI üretim fazını başlatır.
+- `publish_generated_round`: tüm soruları ve kalıcı geçmişi tek transaction içinde kaydeder, ardından geri sayımı başlatır; bir tekrar varsa tamamını geri alır.
 - `submit_answer`: cevabı bir kez kabul eder ve puanı database saatine göre hesaplar.
 - `advance_game`: süre sona erdiğinde veya herkes cevapladığında bir sonraki faza geçer.
-- `return_to_lobby`: oyuncuları odada tutarak tur verisini temizler.
+- `return_to_lobby`: oyuncuları odada tutarak puan ve hazır durumlarını sıfırlar.
 
 Skor hesabı server-side çalışır:
 
 ```ts
 score = isCorrect ? Math.floor(remainingTimeMs / 1000) * 10 : 0;
 ```
+
+## Kalıcı tekrar önleme
+
+`0013_permanent_question_history.sql` uygulama sürümünden **önce** uygulanmalıdır. Migration, halen DB’de bulunan tüm eski soruları (24 saatten eskiler dahil) kalıcı geçmişe aktarır. Daha önce silinmiş sorular geri getirilemez. Günlük cron yalnızca süresi dolan odaları ve oyun verilerini temizler. `reset.sql` de mevcut soru hafızasını korur.
+
+Model son 80 soruyu örnek olarak görür; her adayın asıl kontrolü indeksli sorgularla **tüm geçmişe** karşı yapılır. Büyük/küçük harf, aksan, noktalama ve boşluk farkları normalize edilir. `pg_trgm` benzerliği ve doğru cevap, küçük metin değişikliklerini yakalar; dil ve soru biçiminden bağımsız İngilizce `knowledgeKey` aynı bilginin başka şekilde sorulmasını azaltır. Bilgi anahtarı model tarafından üretildiği için bütün anlamsal eşdeğerlikleri yüzde yüz yakalama garantisi yoktur. Eski soruların bilgi anahtarı bulunmadığından bunlar metin/cevap benzerliğiyle kontrol edilir.
+
+Kontrol tüm oyuncular ve odalar için ortaktır; dil, kategori veya zorluk değiştirmek geçmişi sıfırlamaz. Kayıt trigger'ı kısa bir transaction kilidiyle eşzamanlı oyunların çakışmasını engeller. Çakışmada tur tamamen geri alınır ve yeni adaylar üretilir. Üretim 100 saniyelik bütçe içinde sınırlı sayıda yeniden denenir; yeterli yeni soru yoksa tekrarlı/eksik sorularla başlamak yerine hata gösterilir. Aynı kural küçük demo havuzu için de geçerlidir.
 
 ## Deployment
 
@@ -97,6 +107,8 @@ npm run typecheck
 npm test
 npm run build
 ```
+
+Veritabanı regresyon testleri: migration uygulanmış, izole bir geliştirme DB’sinde `psql "$TEST_DATABASE_URL" -v ON_ERROR_STOP=1 -f supabase/tests/question_history.sql`. Test verileri transaction sonunda geri alınır.
 
 ## Tasarım Asset'leri
 

@@ -114,6 +114,7 @@ export interface RoomSession {
 }
 
 export interface GeneratedQuestion {
+  knowledgeKey?: string;
   category: string;
   prompt: string;
   options: [string, string, string, string, string];

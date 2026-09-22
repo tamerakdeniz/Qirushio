@@ -1,5 +1,7 @@
 import "server-only";
 
+import { randomUUID } from "node:crypto";
+
 import { fortyTwoQuestionContext } from "@/lib/server/forty-two-sources";
 import { scubaQuestionContext } from "@/lib/server/scuba-sources";
 import { generatedQuestionsSchema } from "@/lib/validation";
@@ -7,8 +9,7 @@ import type { ClassicQuizCategory, GeneratedQuestion, RoomSettings } from "@/lib
 
 const BATCH_SIZE = 8;
 const MAX_USED_PROMPTS_IN_PROMPT = 80;
-const MAX_GENERATION_ATTEMPTS = 4;
-const USED_PROMPT_WINDOW_MS = 24 * 60 * 60 * 1000;
+const MAX_GENERATION_ATTEMPTS = 8;
 
 const GEMINI_PRIMARY_MODEL = process.env.GEMINI_MODEL ?? "gemini-3.1-flash-lite";
 const GEMINI_FALLBACK_MODEL = process.env.GEMINI_FALLBACK_MODEL ?? "gemini-2.5-flash-lite";
@@ -28,6 +29,7 @@ class ProviderRequestError extends Error {
 
 export function normalizeQuestionPrompt(prompt: string): string {
   return prompt
+    .replace(/[İı]/g, "i")
     .toLowerCase()
     .normalize("NFKD")
     .replace(/\p{M}/gu, "")
@@ -39,10 +41,6 @@ export function normalizeQuestionPrompt(prompt: string): string {
 function isDuplicate(prompt: string, seen: Set<string>): boolean {
   const normalized = normalizeQuestionPrompt(prompt);
   return !normalized || seen.has(normalized);
-}
-
-export function usedPromptsSince(): string {
-  return new Date(Date.now() - USED_PROMPT_WINDOW_MS).toISOString();
 }
 
 function maxOutputTokens(questionCount: number): number {
@@ -64,6 +62,14 @@ interface PromptContext {
   totalBatches: number;
   usedPrompts: string[];
   attempt: number;
+  variationSeed: string;
+  deadline: number;
+}
+
+function requestSignal(context: PromptContext): AbortSignal {
+  const remaining = context.deadline - Date.now();
+  if (remaining <= 0) throw new Error("Question generation timed out.");
+  return AbortSignal.timeout(Math.min(50_000, remaining));
 }
 
 function promptForQuestions(settings: RoomSettings, context: PromptContext): string {
@@ -74,10 +80,16 @@ function promptForQuestions(settings: RoomSettings, context: PromptContext): str
   const usedSection =
     usedInDb.length > 0
       ? [
-          "These exact prompts were already used in the last 24 hours. Do not repeat any of them:",
+          "These are examples from permanent question history. Do not repeat or paraphrase them, or test the same fact:",
           ...usedInDb.map((prompt) => `- ${prompt}`),
         ].join("\n")
-      : "No prompts were used in the database during the last 24 hours.";
+      : "No recent examples are provided. All candidates will still be checked against permanent history.";
+  const varietyInstructions = [
+    `Variation seed: ${context.variationSeed}; attempt ${context.attempt + 1}. Choose fresh subtopics, entities, eras and scenarios.`,
+    "Avoid common stock trivia. Changing punctuation, options, word order or translating an old question does not make it new.",
+    "Include knowledgeKey: a concise canonical English subject|relationship|answer identifier of the tested fact, independent of wording, language, options and difficulty.",
+    "Example: turkey|capital|ankara. Different facts about the same subject must have different keys. Never add a random ID to knowledgeKey.",
+  ].join("\n");
   const fortyTwoContext = fortyTwoQuestionContext(settings);
 
   if (fortyTwoContext) {
@@ -87,9 +99,10 @@ function promptForQuestions(settings: RoomSettings, context: PromptContext): str
       fortyTwoContext,
       "Each question must have exactly five credible answer options and exactly one correct answer.",
       "Every prompt in this batch must be unique and must not match any prompt listed below.",
+      varietyInstructions,
       usedSection,
       "Use this JSON shape only, without markdown:",
-      '[{"category":"...","prompt":"...","options":["...","...","...","...","..."],"correctOption":0,"explanation":"..."}]',
+      '[{"category":"...","prompt":"...","options":["...","...","...","...","..."],"correctOption":0,"explanation":"...","knowledgeKey":"subject|relationship|answer"}]',
       "correctOption is a zero-based integer from 0 to 4. Explanations must be concise and cite the relevant rule/process in plain language.",
     ].join("\n");
   }
@@ -103,9 +116,10 @@ function promptForQuestions(settings: RoomSettings, context: PromptContext): str
       scubaContext,
       "Each question must have exactly five credible answer options and exactly one correct answer.",
       "Every prompt in this batch must be unique and must not match any prompt listed below.",
+      varietyInstructions,
       usedSection,
       "Use this JSON shape only, without markdown:",
-      '[{"category":"...","prompt":"...","options":["...","...","...","...","..."],"correctOption":0,"explanation":"..."}]',
+      '[{"category":"...","prompt":"...","options":["...","...","...","...","..."],"correctOption":0,"explanation":"...","knowledgeKey":"subject|relationship|answer"}]',
       "correctOption is a zero-based integer from 0 to 4. Explanations must be concise and should identify the relevant scuba concept in plain language.",
     ].join("\n");
   }
@@ -122,7 +136,7 @@ function promptForQuestions(settings: RoomSettings, context: PromptContext): str
   }[classicCategory];
   const categoryInstruction =
     classicCategory === "random"
-      ? "Category pool: mix questions across general knowledge, science, sports, arts, history, and scuba diving."
+      ? "Category pool: mix questions ONLY across general knowledge, science, sports, arts, and history. Exclude scuba diving, diving theory, underwater diving equipment, dive planning, and diver certification questions, even when they could be classified as science or sports."
       : `Category: ${category}.`;
 
   return [
@@ -131,9 +145,10 @@ function promptForQuestions(settings: RoomSettings, context: PromptContext): str
     `${categoryInstruction} Difficulty: ${difficulty}. Context: ${scope}.`,
     "Each question must have exactly five credible answer options and exactly one correct answer.",
     "Every prompt in this batch must be unique and must not match any prompt listed below.",
+    varietyInstructions,
     usedSection,
     "Use this JSON shape only, without markdown:",
-    '[{"category":"...","prompt":"...","options":["...","...","...","...","..."],"correctOption":0,"explanation":"..."}]',
+    '[{"category":"...","prompt":"...","options":["...","...","...","...","..."],"correctOption":0,"explanation":"...","knowledgeKey":"subject|relationship|answer"}]',
     "correctOption is a zero-based integer from 0 to 4. Explanations must be concise.",
   ].join("\n");
 }
@@ -153,22 +168,19 @@ function parseQuestions(text: string, expectedCount: number): GeneratedQuestion[
   return questions.slice(0, expectedCount);
 }
 
-function dedupeQuestions(
-  questions: GeneratedQuestion[],
-  seen: Set<string>,
-): GeneratedQuestion[] {
-  const unique: GeneratedQuestion[] = [];
-
-  for (const question of questions) {
-    if (isDuplicate(question.prompt, seen)) {
-      continue;
-    }
-    seen.add(normalizeQuestionPrompt(question.prompt));
-    unique.push(question);
-  }
-
-  return unique;
+export function isDivingQuestion(question: GeneratedQuestion): boolean {
+  const text = normalizeQuestionPrompt([question.category, question.prompt, question.explanation, question.knowledgeKey ?? ""].join(" "));
+  return /\b(scuba|diving|diver|divers|dive|dalis\w*|dalic\w*|padi|cmas|nitrox|decompression|dekompresyon)\b/u.test(text);
 }
+
+function similarPrompts(left: string, right: string): boolean {
+  const a = new Set(normalizeQuestionPrompt(left).split(" "));
+  const b = new Set(normalizeQuestionPrompt(right).split(" "));
+  const shared = [...a].filter((word) => b.has(word)).length;
+  return shared / Math.max(a.size, b.size) >= 0.8;
+}
+
+export type QuestionFilter = (questions: GeneratedQuestion[]) => Promise<GeneratedQuestion[]>;
 
 function geminiErrorMessage(payload: unknown, status: number): string {
   if (payload && typeof payload === "object") {
@@ -199,11 +211,11 @@ async function generateWithGeminiModel(
         contents: [{ parts: [{ text: promptForQuestions(settings, context) }] }],
         generationConfig: {
           responseMimeType: "application/json",
-          temperature: 0.75 + context.attempt * 0.05,
+          temperature: Math.min(1, 0.75 + context.attempt * 0.05),
           maxOutputTokens: maxOutputTokens(context.batchSize),
         },
       }),
-      signal: AbortSignal.timeout(50_000),
+      signal: requestSignal(context),
     },
   );
 
@@ -275,10 +287,10 @@ async function generateWithAnthropic(
     body: JSON.stringify({
       model: ANTHROPIC_MODEL,
       max_tokens: maxOutputTokens(context.batchSize),
-      temperature: 0.75 + context.attempt * 0.05,
+      temperature: Math.min(1, 0.75 + context.attempt * 0.05),
       messages: [{ role: "user", content: promptForQuestions(settings, context) }],
     }),
-    signal: AbortSignal.timeout(50_000),
+    signal: requestSignal(context),
   });
 
   const payload = (await response.json().catch(() => null)) as {
@@ -324,44 +336,51 @@ async function generateBatch(
 async function generateUniqueQuestions(
   settings: RoomSettings,
   usedPrompts: string[],
+  filterQuestions: QuestionFilter,
+  deadline: number,
 ): Promise<GeneratedQuestion[]> {
   const seen = new Set(usedPrompts.map(normalizeQuestionPrompt));
+  const seenKeys = new Set<string>();
+  const attemptedPrompts: string[] = [];
   const result: GeneratedQuestion[] = [];
   const target = settings.questionCount;
   const totalBatches = Math.ceil(target / BATCH_SIZE);
-  let attempts = 0;
+  const variationSeed = randomUUID();
 
-  while (result.length < target && attempts < MAX_GENERATION_ATTEMPTS) {
+  for (let attempt = 0; result.length < target && attempt < MAX_GENERATION_ATTEMPTS && Date.now() < deadline; attempt++) {
     const remaining = target - result.length;
-    const requestSize = Math.min(BATCH_SIZE + 2, remaining + 2);
-
     const context: PromptContext = {
-      batchSize: requestSize,
+      batchSize: Math.min(BATCH_SIZE + 2, remaining + 2),
       batchIndex: Math.floor(result.length / BATCH_SIZE),
       totalBatches,
-      usedPrompts: [...usedPrompts, ...result.map((question) => question.prompt)],
-      attempt: attempts,
+      usedPrompts: [...usedPrompts, ...attemptedPrompts],
+      attempt,
+      variationSeed,
+      deadline,
     };
-
     const generated = await generateBatch(settings, context);
-    const unique = dedupeQuestions(generated, seen);
-
-    if (unique.length === 0) {
-      attempts += 1;
-      continue;
+    const unique: GeneratedQuestion[] = [];
+    for (const question of generated) {
+      const key = question.knowledgeKey ? normalizeQuestionPrompt(question.knowledgeKey) : null;
+      const duplicate = isDuplicate(question.prompt, seen)
+        || (key !== null && seenKeys.has(key))
+        || [...result, ...unique].some((previous) => similarPrompts(previous.prompt, question.prompt));
+      seen.add(normalizeQuestionPrompt(question.prompt));
+      if (key) seenKeys.add(key);
+      attemptedPrompts.push(question.prompt);
+      if (duplicate || (settings.category === "random" && isDivingQuestion(question))) continue;
+      unique.push(question);
     }
-
-    result.push(...unique.slice(0, remaining));
-    attempts += 1;
+    if (unique.length) {
+      // This checks ALL permanent history, not just the sample in the AI prompt.
+      result.push(...(await filterQuestions(unique)).slice(0, remaining));
+    }
   }
 
-  if (result.length < target) {
-    throw new Error(
-      `Could not produce enough unique questions (${result.length}/${target}).`,
-    );
+  if (result.length !== target) {
+    throw new Error(`Could not produce enough unique questions (${result.length}/${target}).`);
   }
-
-  return result.slice(0, target);
+  return result;
 }
 
 const demoBank: GeneratedQuestion[] = [
@@ -785,17 +804,8 @@ function demoQuestions(settings: RoomSettings, context: PromptContext): Generate
 export async function generateQuestions(
   settings: RoomSettings,
   usedPrompts: string[] = [],
+  filterQuestions: QuestionFilter = async (questions) => questions,
+  deadline = Date.now() + 100_000,
 ): Promise<GeneratedQuestion[]> {
-  if (process.env.ALLOW_DEMO_QUESTIONS === "true" && !process.env.GEMINI_API_KEY && !process.env.ANTHROPIC_API_KEY) {
-    const context: PromptContext = {
-      batchSize: settings.questionCount,
-      batchIndex: 0,
-      totalBatches: 1,
-      usedPrompts,
-      attempt: 0,
-    };
-    return demoQuestions(settings, context).slice(0, settings.questionCount);
-  }
-
-  return generateUniqueQuestions(settings, usedPrompts);
+  return generateUniqueQuestions(settings, usedPrompts, filterQuestions, deadline);
 }

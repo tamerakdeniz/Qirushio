@@ -97,6 +97,7 @@ export const answerSyncSchema = z.object({
 });
 
 export const generatedQuestionSchema = z.object({
+  knowledgeKey: z.string().trim().min(5).max(240),
   category: z.string().trim().min(1).max(60),
   prompt: z.string().trim().min(5).max(350),
   options: z
